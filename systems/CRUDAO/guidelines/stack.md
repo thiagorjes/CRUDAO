@@ -5,8 +5,10 @@ _Versão: 1.0 | Data: 2026-08-22_
 
 ## Backend
 
-- **Linguagem:** Java 25, executado via imagem Docker (JDK 25).
-- **Framework:** Spring Boot (versão LTS mais recente disponível no momento do desenvolvimento).
+- **Linguagem:** Java 25, executado via imagem Docker (JDK 25) — build via `maven:3.9-eclipse-temurin-25`, runtime via `eclipse-temurin:25-jre` (ver `backend/Dockerfile`).
+- **Framework:** Spring Boot **3.5.16** (fixado na TASK-00.2 — versões < 3.5 não geram bytecode compatível com Java 25 no `spring-boot-maven-plugin`).
+- **Lombok:** **1.18.46** (fixado — versões anteriores incompatíveis com o `javac` do JDK 25).
+- **Spotless Maven Plugin:** **3.10.0** (fixado pelo mesmo motivo — Google Java Format via javac interno).
 - **Persistência:** Spring Data JPA / Hibernate (a definir entre os dois durante implementação, priorizando compatibilidade e performance).
 - **Tempo real:** WebSocket com protocolo STOMP (`spring-boot-starter-websocket`).
 - **Autenticação:** Client OIDC (Spring Security OAuth2/OIDC) integrado a Keycloak.

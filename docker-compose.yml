@@ -15,3 +15,54 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: crudao-postgres
+    environment:
+      POSTGRES_DB: crudao
+      POSTGRES_USER: crudao
+      POSTGRES_PASSWORD: crudao
+    ports:
+      - "5432:5432"
+    volumes:
+      - crudao-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crudao -d crudao"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    container_name: crudao-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: crudao
+      DB_USER: crudao
+      DB_PASSWORD: crudao
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/crudao
+      KEYCLOAK_CLIENT_SECRET: crudao-app-secret-dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: crudao-frontend
+    environment:
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  crudao-postgres-data:

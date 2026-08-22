@@ -25,7 +25,7 @@ _Atualizado em: 2026-08-22_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Em implementação — TASK-00.1 concluída, próxima: TASK-00.2 |
+| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Em implementação — TASK-00.1 e TASK-00.2 concluídas, próxima: TASK-01.1 |
 
 ---
 
@@ -35,7 +35,12 @@ _Atualizado em: 2026-08-22_
 - **Arquivos:** `docker-compose.yml`, `infra/keycloak/crudao-realm.json`, `docs/contracts/CRUDAO-keycloak-contract.md` (substitui o mock)
 - **Testes:** validação manual (não aplicável a TDD — task de infraestrutura); login via password grant e claims conferidas
 - **Nota técnica:** `realm_access.roles` está no `access_token`, não no `id_token` — considerar na TASK-04.1
-- **Próxima task:** TASK-00.2 — Setup do projeto base (backend, frontend, PostgreSQL)
+
+- **Task implementada:** TASK-00.2 — Setup do projeto base (backend, frontend, PostgreSQL) — 2026-08-22
+- **Arquivos:** `backend/` (Spring Boot 3.5.16, Java 25), `frontend/` (Next.js 16.3.2), `docker-compose.yml` (+ postgres, backend, frontend)
+- **Testes:** backend (JUnit5, Spotless) e frontend (Vitest, ESLint) passando; stack completa validada via `docker compose up -d --build`
+- **Nota técnica:** versões de Spring Boot/Lombok/Spotless fixadas por compatibilidade com Java 25 — detalhes em `systems/CRUDAO/guidelines/stack.md` e na própria task
+- **Próxima task:** TASK-01.1 — Modelo de domínio: Projeto, Workflow, Etapa e Transição
 
 ---
 

@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: kanban-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:crudao}
+    username: ${DB_USER:crudao}
+    password: ${DB_PASSWORD:crudao}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: crudao-app
+            client-secret: ${KEYCLOAK_CLIENT_SECRET:crudao-app-secret-dev}
+            authorization-grant-type: authorization_code
+            scope: openid, profile, email
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/crudao}
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/crudao}
+
+server:
+  port: 8080
+
+logging:
+  file:
+    name: logs/kanban-backend.log
+  logback:
+    rollingpolicy:
+      max-file-size: 5MB
+      max-history: 10
+      total-size-cap: 50MB
