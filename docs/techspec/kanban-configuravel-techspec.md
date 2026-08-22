@@ -151,11 +151,9 @@ flowchart LR
 
 | Sistema | Interface | Status | Mock? |
 |---------|-----------|--------|-------|
-| Keycloak | Autenticação OIDC | PENDENTE DE VALIDAÇÃO | Sim — [CRUDAO-keycloak-mock-contract.md](../contracts/CRUDAO-keycloak-mock-contract.md) |
+| Keycloak | Autenticação OIDC | ok — validado na TASK-00.1 | Não — [CRUDAO-keycloak-contract.md](../contracts/CRUDAO-keycloak-contract.md) |
 
-**Task de substituição:** provisionar instância real de Keycloak via Docker, configurar realm/client do CRUDAO, validar claims e substituir o mock contract (gerar em `/tasks`).
-
-> **Diretriz para /tasks:** esta task (setup do Keycloak via Docker) deve ser uma das primeiras do plano — antes de qualquer task de backend que dependa de autenticação/autorização (RF-013, RF-014, RNF-003), para não bloquear o fluxo de implementação.
+**Task de substituição:** concluída — TASK-00.1 provisionou Keycloak via Docker, configurou realm/client do CRUDAO e validou as claims (2026-08-22).
 
 ---
 
@@ -217,7 +215,7 @@ Cenários prioritários de teste: engine de transições de workflow (permitido/
 | # | Questão | Responsável | Prazo |
 |---|---------|------------|-------|
 | Q-001 | Validar `LISTEN/NOTIFY` sob carga real (2+ pods, centenas de usuários) — decidir se migra para Redis Pub/Sub (ADR-002/ADR-004) | Thiago Goncalves Cavalcante | Após primeira entrega em ambiente com múltiplos pods |
-| Q-002 | Provisionar e validar instância real de Keycloak, substituindo o mock contract | Thiago Goncalves Cavalcante | Antes de habilitar RF-014 em produção |
+| Q-002 | ~~Provisionar e validar instância real de Keycloak~~ — **resolvido na TASK-00.1** (2026-08-22). Nota: `realm_access.roles` está no `access_token`, não no `id_token` — ajustar leitura de papel na TASK-04.1 | Thiago Goncalves Cavalcante | Concluído |
 | Q-003 | Definir granularidade final da lista de Permissões (chaves) | Thiago Goncalves Cavalcante | Durante `/tasks`/implementação |
 | Q-004 | Definir valores do enum TipoTarefa | Thiago Goncalves Cavalcante | Durante `/tasks`/implementação |
 | Q-005 | Escolher ferramenta de E2E (ex.: Playwright) | Thiago Goncalves Cavalcante | Durante `/tasks` |

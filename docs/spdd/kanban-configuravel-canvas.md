@@ -86,7 +86,7 @@ _Atualizado por: /techspec v1.0 — 2026-08-22_
 Backend Spring Boot (Controller/Service/Repository + Mapper via MapStruct) com API REST e endpoint STOMP; frontend Next.js. PostgreSQL como única fonte de estado, acessada por N pods do backend. Autenticação delegada ao Keycloak (OIDC); autorização (papéis/permissões) modelada na aplicação.
 
 **Dependências externas:**
-- Keycloak (OIDC) — mock contract pendente de validação: [CRUDAO-keycloak-mock-contract.md](../contracts/CRUDAO-keycloak-mock-contract.md)
+- Keycloak (OIDC) — contrato validado: [CRUDAO-keycloak-contract.md](../contracts/CRUDAO-keycloak-contract.md)
 
 ---
 

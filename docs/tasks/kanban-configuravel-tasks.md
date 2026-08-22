@@ -355,7 +355,7 @@ _Ordem de início — sequencial, sem paralelismo._
 
 | Prioridade | Task | Arquivo | Motivo |
 |-----------|------|---------|--------|
-| 1 | TASK-00.1 | [kanban-configuravel/TASK-00.1-provisionar-keycloak-docker.md](kanban-configuravel/TASK-00.1-provisionar-keycloak-docker.md) | Diretriz explícita: Keycloak deve ser uma das primeiras tasks, antes de qualquer dependência de autenticação |
+| 1 | ~~TASK-00.1~~ ✅ | [kanban-configuravel/TASK-00.1-provisionar-keycloak-docker.md](kanban-configuravel/TASK-00.1-provisionar-keycloak-docker.md) | Concluída 2026-08-22 — Diretriz explícita: Keycloak deve ser uma das primeiras tasks, antes de qualquer dependência de autenticação |
 | 2 | TASK-00.2 | [kanban-configuravel/TASK-00.2-setup-projeto-base.md](kanban-configuravel/TASK-00.2-setup-projeto-base.md) | Base de infraestrutura para todo o restante |
 | 3 | TASK-01.1 | [kanban-configuravel/TASK-01.1-dominio-projeto-workflow-etapa-transicao.md](kanban-configuravel/TASK-01.1-dominio-projeto-workflow-etapa-transicao.md) | Núcleo de domínio (projeto/workflow/etapas/transições) do qual tudo depende |
 | 4 | TASK-01.2 | [kanban-configuravel/TASK-01.2-raias-swimlanes.md](kanban-configuravel/TASK-01.2-raias-swimlanes.md) | Completa o domínio de board (raias) |

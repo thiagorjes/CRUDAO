@@ -1,9 +1,6 @@
 # SSPDD workspace .gitignore
 # Gerado em: 2026-08-22 para CRUDAO
 
-# Sistemas externos — cada um tem seu próprio repositório git
-systems/
-
 # Segredos e credenciais
 .env
 .env.*

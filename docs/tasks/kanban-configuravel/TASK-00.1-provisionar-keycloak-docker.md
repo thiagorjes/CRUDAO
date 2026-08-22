@@ -11,11 +11,11 @@ Diretriz definida na techspec (seção 6): esta task deve ser uma das primeiras,
 
 ## O que deve ser feito
 
-- [ ] Subir instância local de Keycloak via `docker-compose` (`quay.io/keycloak/keycloak`)
-- [ ] Criar realm `crudao` e client para a aplicação (Authorization Code Flow)
-- [ ] Criar usuários e papéis de teste (admin, user)
-- [ ] Validar claims retornadas (`sub`, `email`, `preferred_username`, `realm_access.roles`) contra o mock em `docs/contracts/CRUDAO-keycloak-mock-contract.md`
-- [ ] Substituir o mock contract pelo contrato real (renomear e atualizar status para `ok`, conforme checklist do próprio arquivo)
+- [x] Subir instância local de Keycloak via `docker-compose` (`quay.io/keycloak/keycloak:26.0`)
+- [x] Criar realm `crudao` e client `crudao-app` (Authorization Code Flow)
+- [x] Criar usuários e papéis de teste (admin, user)
+- [x] Validar claims retornadas (`sub`, `email`, `preferred_username`, `realm_access.roles`) contra o mock em `docs/contracts/CRUDAO-keycloak-mock-contract.md`
+- [x] Substituir o mock contract pelo contrato real (`docs/contracts/CRUDAO-keycloak-contract.md`, status `ok`)
 
 ## Guia técnico
 
@@ -24,8 +24,12 @@ Diretriz definida na techspec (seção 6): esta task deve ser uma das primeiras,
 
 ## Critérios de aceite
 
-- Keycloak acessível localmente via Docker, com realm/client configurados
-- Contrato de autenticação validado e documento renomeado para `CRUDAO-keycloak-contract.md` com status `ok`
+- [x] Keycloak acessível localmente via Docker, com realm/client configurados
+- [x] Contrato de autenticação validado e documento renomeado para `CRUDAO-keycloak-contract.md` com status `ok`
+
+## Status: Concluída — 2026-08-22
+
+Validado via `docker compose up -d keycloak` + `password grant` de teste; claims conferidas (ver `docs/contracts/CRUDAO-keycloak-contract.md`). Nota registrada para TASK-04.1: `realm_access.roles` vem no `access_token`, não no `id_token`.
 
 ---
 

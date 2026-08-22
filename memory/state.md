@@ -25,7 +25,17 @@ _Atualizado em: 2026-08-22_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Pronto para implementação (/implement TASK-00.1) |
+| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Em implementação — TASK-00.1 concluída, próxima: TASK-00.2 |
+
+---
+
+## Implementação — kanban-configuravel
+
+- **Task implementada:** TASK-00.1 — Provisionar Keycloak via Docker — 2026-08-22
+- **Arquivos:** `docker-compose.yml`, `infra/keycloak/crudao-realm.json`, `docs/contracts/CRUDAO-keycloak-contract.md` (substitui o mock)
+- **Testes:** validação manual (não aplicável a TDD — task de infraestrutura); login via password grant e claims conferidas
+- **Nota técnica:** `realm_access.roles` está no `access_token`, não no `id_token` — considerar na TASK-04.1
+- **Próxima task:** TASK-00.2 — Setup do projeto base (backend, frontend, PostgreSQL)
 
 ---
 
@@ -37,7 +47,7 @@ _Atualizado em: 2026-08-22_
 | docs/prd/kanban-configuravel-prd.md | 1.1 | ok |
 | docs/techspec/kanban-configuravel-techspec.md | 1.0 | ok |
 | docs/techspec/kanban-configuravel/data-model.md | 1.0 | ok |
-| docs/contracts/CRUDAO-keycloak-mock-contract.md | 0.1 | pendente de validação |
+| docs/contracts/CRUDAO-keycloak-contract.md | 1.0 | ok (validado na TASK-00.1) |
 | docs/design/kanban-configuravel-design-brief.md | 1.0 | ok |
 | docs/design/prototypes/kanban-configuravel/ (fontes + Artifact https://claude.ai/code/artifact/a7612319-88d0-434d-9729-64d3d1604c6c) | — | aprovado pelo usuário em 2026-08-22 |
 | docs/tasks/kanban-configuravel-tasks.md (índice) | 1.0 | ok |
