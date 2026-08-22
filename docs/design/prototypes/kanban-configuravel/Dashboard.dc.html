@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+  <style>
+    :root {
+      --primary: #0d6efd;
+      --success: #198754;
+      --error: #dc3545;
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --text-primary: #212529;
+      --text-secondary: #6c757d;
+      --border: #dee2e6;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Roboto', system-ui, sans-serif; background: var(--bg); color: var(--text-primary); }
+    a { color: var(--primary); }
+    a:hover { color: #0a58ca; }
+    button { font-family: inherit; cursor: pointer; }
+    input { font-family: inherit; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .skeleton { animation: pulse 1.3s ease-in-out infinite; background: #e9ecef; border-radius: 6px; }
+  </style>
+</helmet>
+
+<div style="min-width:1100px; padding:24px 32px;">
+
+  <div style="font-size:20px; font-weight:700; margin-bottom:4px;">Dashboard de Gestão</div>
+  <div style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">Projeto Alpha — lead-time médio por etapa e tempo em impedimento</div>
+
+  <!-- Period selector - fixed at top -->
+  <div style="position:sticky; top:0; z-index:5; display:flex; align-items:flex-end; gap:16px; padding:14px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:20px;">
+    <div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Data início</div>
+      <input type="date" value="{{dataInicio}}" onChange="{{onChangeInicio}}" style="padding:7px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px;">
+    </div>
+    <div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Data fim</div>
+      <input type="date" value="{{dataFim}}" onChange="{{onChangeFim}}" style="padding:7px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px;">
+    </div>
+    <button onClick="{{onAtualizar}}" style="display:flex; align-items:center; gap:6px; padding:9px 16px; background:{{accent}}; color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:500;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Atualizar
+    </button>
+    <div style="margin-left:auto; font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Cálculo processado em segundo plano — resultado chega automaticamente
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <sc-if value="{{loading}}" hint-placeholder-val="{{false}}">
+    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:20px;">
+      <div class="skeleton" style="height:280px;"></div>
+      <div class="skeleton" style="height:280px;"></div>
+    </div>
+    <div class="skeleton" style="height:200px;"></div>
+  </sc-if>
+
+  <!-- Loaded state -->
+  <sc-if value="{{loaded}}" hint-placeholder-val="{{true}}">
+
+    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:20px;">
+
+      <!-- Bar chart -->
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:20px;">
+        <div style="font-size:14px; font-weight:500; margin-bottom:16px;">Lead-time médio por etapa (dias)</div>
+        <div style="display:flex; align-items:flex-end; gap:24px; height:200px; padding:0 8px;">
+          <sc-for list="{{etapas}}" as="etapa" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end;">
+              <div style="font-size:12px; font-weight:500;">{{etapa.valorLabel}}</div>
+              <div style="width:100%; max-width:56px; height:{{etapa.barHeight}}px; background:{{accent}}; border-radius:4px 4px 0 0;"></div>
+              <div style="font-size:11px; color:var(--text-secondary); text-align:center;">{{etapa.nome}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Impediment stat -->
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:center; gap:12px;">
+        <div style="display:flex; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px;">
+          <span style="width:12px; height:12px; border-radius:50%; background:var(--error);"></span>
+          Tempo médio em impedimento
+        </div>
+        <div style="font-size:32px; font-weight:700; color:var(--error);">{{tempoMedioImpedimento}}</div>
+        <div style="font-size:12px; color:var(--text-secondary);">no período selecionado, somado a todas as etapas</div>
+        <div style="height:1px; background:var(--border); margin:8px 0;"></div>
+        <div style="display:flex; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Tarefas concluídas no período
+        </div>
+        <div style="font-size:22px; font-weight:700;">{{tarefasConcluidas}}</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:var(--bg); text-align:left;">
+            <th style="padding:10px 16px; font-weight:500; color:var(--text-secondary);">Etapa</th>
+            <th style="padding:10px 16px; font-weight:500; color:var(--text-secondary);">Lead-time médio</th>
+            <th style="padding:10px 16px; font-weight:500; color:var(--text-secondary);">Tempo médio em impedimento</th>
+            <th style="padding:10px 16px; font-weight:500; color:var(--text-secondary);">Tarefas no período</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{etapas}}" as="etapa" hint-placeholder-count="4">
+            <tr style="border-top:1px solid var(--border);">
+              <td style="padding:10px 16px; font-weight:500;">{{etapa.nome}}</td>
+              <td style="padding:10px 16px;">{{etapa.valorLabel}}</td>
+              <td style="padding:10px 16px; color:var(--error);">{{etapa.impedimentoLabel}}</td>
+              <td style="padding:10px 16px; color:var(--text-secondary);">{{etapa.qtdTarefas}}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+
+  </sc-if>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#0d6efd","options":["#0d6efd","#198754","#212529"]}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      loading: false,
+      dataInicio: '2026-08-01',
+      dataFim: '2026-08-22',
+      data: {
+        etapas: [
+          { nome: 'Backlog', valor: 0.6, impedimento: '2h', qtd: 8 },
+          { nome: 'Em Andamento', valor: 2.1, impedimento: '9h', qtd: 5 },
+          { nome: 'Em Revisão', valor: 1.4, impedimento: '3h', qtd: 4 },
+          { nome: 'Concluído', valor: 0.3, impedimento: '0h', qtd: 6 },
+        ],
+        tempoMedioImpedimento: '5h 30min',
+        tarefasConcluidas: 6,
+      },
+    };
+  }
+
+  changeInicio(evt) {
+    this.setState({ dataInicio: evt && evt.target ? evt.target.value : this.state.dataInicio });
+  }
+
+  changeFim(evt) {
+    this.setState({ dataFim: evt && evt.target ? evt.target.value : this.state.dataFim });
+  }
+
+  atualizar() {
+    this.setState({ loading: true });
+    setTimeout(() => {
+      this.setState({
+        loading: false,
+        data: {
+          etapas: [
+            { nome: 'Backlog', valor: 0.4, impedimento: '1h', qtd: 7 },
+            { nome: 'Em Andamento', valor: 2.6, impedimento: '11h', qtd: 6 },
+            { nome: 'Em Revisão', valor: 1.1, impedimento: '2h', qtd: 5 },
+            { nome: 'Concluído', valor: 0.3, impedimento: '0h', qtd: 9 },
+          ],
+          tempoMedioImpedimento: '6h 10min',
+          tarefasConcluidas: 9,
+        },
+      });
+    }, 1100);
+  }
+
+  renderVals() {
+    const accent = this.props.accent ?? '#0d6efd';
+    const maxValor = Math.max(...this.state.data.etapas.map((e) => e.valor), 0.1);
+    const etapas = this.state.data.etapas.map((e) => ({
+      nome: e.nome,
+      valorLabel: e.valor.toFixed(1).replace('.', ',') + 'd',
+      impedimentoLabel: e.impedimento,
+      qtdTarefas: e.qtd,
+      barHeight: Math.max(8, Math.round((e.valor / maxValor) * 170)),
+    }));
+
+    return {
+      accent,
+      dataInicio: this.state.dataInicio,
+      dataFim: this.state.dataFim,
+      onChangeInicio: (evt) => this.changeInicio(evt),
+      onChangeFim: (evt) => this.changeFim(evt),
+      onAtualizar: () => this.atualizar(),
+      loading: this.state.loading,
+      loaded: !this.state.loading,
+      etapas,
+      tempoMedioImpedimento: this.state.data.tempoMedioImpedimento,
+      tarefasConcluidas: this.state.data.tarefasConcluidas,
+    };
+  }
+}
+</script>
+</body>
+</html>

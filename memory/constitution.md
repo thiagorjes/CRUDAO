@@ -28,6 +28,8 @@ _Criada em: 2026-08-22_
 | [ADR-001](../docs/decisions/ADR-001-stack-backend-java-spring.md) | Stack de backend: Java 25 + Spring Boot (LTS) | accepted |
 | [ADR-002](../docs/decisions/ADR-002-postgresql-sem-cache-tempo-real.md) | PostgreSQL como único armazenamento; sem cache/broker nesta fase | accepted |
 | [ADR-003](../docs/decisions/ADR-003-rbac-hibrido-keycloak.md) | RBAC híbrido: Keycloak para autenticação, permissões na aplicação | accepted |
+| [ADR-004](../docs/decisions/ADR-004-broadcast-multi-pod-listen-notify.md) | Broadcast de eventos entre pods via PostgreSQL LISTEN/NOTIFY | accepted |
+| [ADR-005](../docs/decisions/ADR-005-dashboard-assincrono.md) | Cálculo do dashboard de gestão de forma assíncrona | accepted |
 
 ### BDR
 
@@ -43,6 +45,9 @@ _Criada em: 2026-08-22_
 
 | ID | Título | Status |
 |----|--------|--------|
+| [DDR-001](../docs/decisions/ddr-001-design-tokens-base.md) | Tokens base de design: cores, tipografia e espaçamento | accepted |
+| [DDR-002](../docs/decisions/ddr-002-drag-and-drop-board.md) | Interação do board: drag-and-drop com destaque + menu alternativo | accepted |
+| [DDR-003](../docs/decisions/ddr-003-feedback-async-acessibilidade.md) | Padrões de feedback, loading assíncrono e nível de acessibilidade | accepted |
 
 ---
 
