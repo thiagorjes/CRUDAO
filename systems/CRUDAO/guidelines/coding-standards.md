@@ -17,3 +17,4 @@ _Versão: 1.0 | Data: 2026-08-22_
 ## Geral
 
 - Sem convenções de nomenclatura de domínio específicas definidas nesta fase — revisar quando surgir necessidade concreta.
+- **Evitar nomes de campo boolean com duas letras maiúsculas seguidas após o prefixo (ex.: `eFinal`, `xATivo`).** A introspecção padrão de JavaBeans (usada por Jackson, MapStruct e afins) só decapitaliza a primeira letra quando ela não é seguida por outra maiúscula — `isEFinal()` vira a propriedade `EFinal`, não `eFinal`, quebrando serialização/mapeamento silenciosamente (sem erro de compilação ou teste óbvio). Achado real na TASK-01.1 (`Etapa.eFinal` → renomeado para `etapaFinal`). Prefira nomes onde a letra após o prefixo já é minúscula.

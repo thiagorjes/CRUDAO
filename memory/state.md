@@ -25,7 +25,7 @@ _Atualizado em: 2026-08-22_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Em implementação — TASK-00.1 e TASK-00.2 concluídas, próxima: TASK-01.1 |
+| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Em implementação — TASK-00.1, TASK-00.2, TASK-01.1 concluídas, próxima: TASK-01.2 |
 
 ---
 
@@ -40,7 +40,12 @@ _Atualizado em: 2026-08-22_
 - **Arquivos:** `backend/` (Spring Boot 3.5.16, Java 25), `frontend/` (Next.js 16.3.2), `docker-compose.yml` (+ postgres, backend, frontend)
 - **Testes:** backend (JUnit5, Spotless) e frontend (Vitest, ESLint) passando; stack completa validada via `docker compose up -d --build`
 - **Nota técnica:** versões de Spring Boot/Lombok/Spotless fixadas por compatibilidade com Java 25 — detalhes em `systems/CRUDAO/guidelines/stack.md` e na própria task
-- **Próxima task:** TASK-01.1 — Modelo de domínio: Projeto, Workflow, Etapa e Transição
+- **Task implementada:** TASK-01.1 — Modelo de domínio: Projeto, Workflow, Etapa e Transição — 2026-08-22
+- **Arquivos:** `backend/src/main/java/com/crudao/kanban/domain/{projeto,workflow}/*`, `backend/src/main/java/com/crudao/kanban/common/*`, testes em `backend/src/test/java/.../workflow/*`
+- **Testes:** 6 testes TDD (`TransicaoEngineTest`) + `WorkflowFluxoIT` (Testcontainers) — validados via `mvn test` (unitários) e fluxo REST real via `docker compose`
+- **Achado técnico:** campo `eFinal` renomeado para `etapaFinal` — colisão com convenção JavaBeans quebrava serialização silenciosamente (ver `coding-standards.md`)
+- **Nota RN-005:** verificação de tarefas ativas é uma porta (`VerificadorDeTarefasAtivas`) ainda sem implementação real — TASK-02.1 deve substituí-la
+- **Próxima task:** TASK-01.2 — Raias (swimlanes) por projeto e default globais
 
 ---
 

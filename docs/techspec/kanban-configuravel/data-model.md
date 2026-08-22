@@ -60,7 +60,7 @@ erDiagram
 | workflow_id | UUID | FK Workflow |
 | nome | string | obrigatório |
 | ordem | int | posição no board |
-| e_final | boolean | true = etapa terminal, sem transição de saída padrão (RN-004) |
+| etapa_final | boolean | true = etapa terminal, sem transição de saída padrão (RN-004). Nomeado `etapaFinal` (não `eFinal`) na implementação — `eFinal` colide com a convenção JavaBeans de introspecção (`isEFinal()` resolve para a propriedade `EFinal`, não `eFinal`), quebrando serialização/mapeamento silenciosamente (achado na TASK-01.1). |
 
 **Regra:** exclusão bloqueada se houver tarefas na etapa (RN-005). Toda etapa não-final deve ter ao menos uma transição de saída configurada (RN-003).
 
