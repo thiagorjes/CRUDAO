@@ -1,0 +1,27 @@
+{
+  "skill": "tasks",
+  "artifact_pattern": "docs/tasks/*-tasks.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md",
+        "docs/techspec/{{FEATURE}}-techspec.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## Sumário de Epics",
+        "## Grafo de Dependências",
+        "## Backlog Priorizado"
+      ],
+      "id_patterns": {
+        "TASK": "TASK-\\d{2}\\.\\d{1,2}",
+        "EPIC": "EPIC-\\d{2}"
+      },
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": []
+    }
+  }
+}

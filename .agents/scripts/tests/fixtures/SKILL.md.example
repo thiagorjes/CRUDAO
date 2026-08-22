@@ -1,0 +1,38 @@
+---
+name: exemplo
+description: Skill de exemplo mínima e válida usada como referência para contributors ao criar uma nova skill.
+canvas-dimensions: [R, E]
+input-artifacts:
+  - docs/prd/exemplo-prd.md
+output-artifacts:
+  - docs/techspec/exemplo-techspec.md
+---
+
+## Objetivo
+
+Descreva em 1-2 frases o que esta skill produz e por que existe.
+
+## Pré-condições
+
+- Liste os artefatos ou estados que devem existir antes de executar esta skill.
+
+## Workflow
+
+Descreva as fases da skill (leitura de contexto, execução, verificação, handoff).
+
+## Artefatos
+
+**Entrada:**
+- Lista de artefatos lidos.
+
+**Saída:**
+- Lista de artefatos gerados ou atualizados.
+
+## Canvas
+
+Declare quais dimensões REASONS (R, E, A, S, O, N) esta skill atualiza e em qual fase.
+Se não atualiza o canvas, declare explicitamente.
+
+## Handoff
+
+Descreva o que registrar em `memory/state.md` ao concluir e qual a próxima skill sugerida.

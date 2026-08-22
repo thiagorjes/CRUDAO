@@ -1,0 +1,32 @@
+{
+  "skill": "designer",
+  "artifact_pattern": "docs/design/*-design-brief.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md",
+        "docs/prd/{{FEATURE}}-prd.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## 1. Contexto e Objetivo",
+        "## 2. Tokens de Cor",
+        "## 3. Tipografia",
+        "## 4. Espaçamento e Grid",
+        "## 5. Componentes",
+        "## 6. Padrões de Interação",
+        "## 7. Acessibilidade",
+        "## 8. Decision Records de Design (DDR)",
+        "## 9. Referências"
+      ],
+      "id_patterns": {
+        "DDR": "DDR-\\d{3}"
+      },
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": []
+    }
+  }
+}

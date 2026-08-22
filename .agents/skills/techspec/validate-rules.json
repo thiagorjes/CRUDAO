@@ -1,0 +1,33 @@
+{
+  "skill": "techspec",
+  "artifact_pattern": "docs/techspec/*-techspec.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md",
+        "docs/prd/{{FEATURE}}-prd.md",
+        "systems/{{SYSTEM}}/guidelines/stack.md",
+        "systems/{{SYSTEM}}/guidelines/architecture.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## 1. Visão Geral Técnica",
+        "## 2. Decisões Arquiteturais",
+        "## 9. Matriz de Rastreabilidade"
+      ],
+      "id_patterns": {},
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": [
+        {
+          "name": "check_rf_coverage",
+          "script": ".agents/skills/techspec/scripts/check_rf_coverage.py",
+          "args": ["--prd", "{{INPUT_ARTIFACT}}"],
+          "on_failure": "warning"
+        }
+      ]
+    }
+  }
+}
