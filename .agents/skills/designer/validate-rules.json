@@ -26,7 +26,13 @@
       },
       "gherkin_required_for_ids": [],
       "no_empty_placeholders": true,
-      "custom_steps": []
+      "custom_steps": [
+        {
+          "name": "check_design_artifacts",
+          "script": ".agents/skills/designer/scripts/check_design_artifacts.py",
+          "args": ["--artifact", "{{INPUT_ARTIFACT}}"]
+        }
+      ]
     }
   }
 }

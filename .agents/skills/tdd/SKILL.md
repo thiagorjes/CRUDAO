@@ -50,6 +50,14 @@ Ler nesta ordem antes de qualquer código:
 
 1.3. Salvar arquivo(s) de teste
 
+1.4. Executar os testes e classificar o resultado:
+
+| Resultado | O que fazer |
+|---|---|
+| Todos falhando (RED confirmado) | Prosseguir para a Fase 2 |
+| Alguns passando | Revisar — teste que passa sem implementação não testa nada real (mock com valor default, asserção vazia). Corrigir o teste antes de prosseguir |
+| Erro de compilação/import (módulo não existe) | Normal em TDD estrito — criar os arquivos com stubs vazios (função que lança `NotImplementedError`/equivalente) apenas para viabilizar a execução dos testes, sem implementar lógica ainda |
+
 **Output desta fase:** suite de testes falhando, cobrindo todos os critérios de aceite.
 
 ### Fase 2 — GREEN: Implementar o mínimo

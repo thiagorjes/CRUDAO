@@ -21,7 +21,13 @@
       },
       "gherkin_required_for_ids": [],
       "no_empty_placeholders": true,
-      "custom_steps": []
+      "custom_steps": [
+        {
+          "name": "check_task_files",
+          "script": ".agents/skills/tasks/scripts/check_task_files.py",
+          "args": ["--artifact", "{{INPUT_ARTIFACT}}"]
+        }
+      ]
     }
   }
 }

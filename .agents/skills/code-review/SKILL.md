@@ -16,6 +16,13 @@ output-artifacts:
 
 Revisar o código implementado contra: TechSpec, guidelines do sistema, critérios de aceite da task e padrões de segurança (OWASP Top 10 mínimo). Ao concluir, extrai guardrails descobertos durante a revisão e atualiza a dimensão S do canvas — podendo transitar o canvas para READY se S for a última dimensão faltante.
 
+## Argumentos recebidos
+
+- (sem argumento) — revisa as mudanças staged/unstaged atuais
+- `TASK-2.1` — revisa com foco nos critérios de aceite desta task
+- `--security` — aprofunda a categoria 3 (todas as categorias OWASP Top 10, análise de dependências, verificação de secrets hardcoded)
+- `--full` — revisão completa com todas as categorias em detalhe máximo
+
 ## Pré-condições
 
 - Código implementado disponível (diff ou arquivos)
@@ -26,16 +33,20 @@ Revisar o código implementado contra: TechSpec, guidelines do sistema, critéri
 
 ## Workflow
 
-### Fase 0 — Leitura de contexto
+### Fase 0 — Leitura de contexto e gate de testes
 
 1. Identificar a task sendo revisada (ID e critérios de aceite)
 2. Ler `docs/spdd/[feature]-canvas.md` — dimensão S atual (Safeguards já conhecidos)
 3. Ler `docs/techspec/[feature]-techspec.md` — seção de Segurança e Observabilidade
 4. Ler guidelines relevantes: `security.md`, `coding-standards.md`, `testing.md`
+5. **Gate obrigatório — executar a suíte de testes antes de revisar:**
+   - Se os testes **falharem**: reportar imediatamente como 🔴 CRÍTICO "Testes falhando" e encerrar com veredicto `❌ Requer alterações`. Não prosseguir para a Fase 1 — um código com testes falhando não está pronto para review.
+   - Se os testes **passarem**: prosseguir normalmente.
+   - Se não for possível executar os testes (ambiente sem runtime): sinalizar no relatório e continuar com revisão estática apenas.
 
 ### Fase 1 — Revisão por categoria
 
-Revisar o código em **5 categorias obrigatórias**, documentando findings com localização:
+Revisar o código em **5 categorias obrigatórias**, documentando findings com localização. Com `--security`: aprofundar a categoria 3 cobrindo todo o OWASP Top 10 e análise de dependências (`npm audit`/`pip audit` ou equivalente). Com `--full`: aplicar o mesmo nível de detalhe às 5 categorias.
 
 **1. Critérios de aceite da task:**
 - Cada critério de aceite está implementado?
@@ -67,21 +78,37 @@ Revisar o código em **5 categorias obrigatórias**, documentando findings com l
 - Métricas instrumentadas se definido na TechSpec?
 - Tratamento de erros com contexto suficiente para debug?
 
+### Fase 1.5 — Verificação dos critérios de aceite (se task fornecida)
+
+Para cada critério de aceite da task, produzir uma linha de evidência — não apenas afirmar que foi atendido:
+
+| # | Critério de Aceite | Verificado? | Evidência |
+|---|---------------------|-------------|-----------|
+| 1 | [AC da task] | ✅ / ❌ / ⚠️ | [arquivo:linha ou "não encontrado"] |
+
 ### Fase 2 — Geração do relatório
 
 Criar `docs/checklists/[feature]-[task-id]-review.md` com:
 
-**Formato de finding:**
+**Formato de finding — cada um cita o guideline violado e mostra antes/depois quando aplicável:**
 ```
-[CRÍTICO|IMPORTANTE|SUGESTÃO]: [arquivo:linha] — [descrição do problema]
-Recomendação: [o que fazer]
+#### [C1|I1|S1] [Título conciso do problema]
+Arquivo: [caminho:linha]
+Problema: [o que está errado e por que é um problema]
+Como corrigir:
+  Atual:   [trecho problemático]
+  Correto: [como deve ficar]
+Guideline violado: [arquivo.md — seção específica] (obrigatório — se não houver guideline cobrindo o caso, dizer explicitamente "não coberto — recomendo adicionar")
 ```
 
 **Seções obrigatórias do relatório:**
+- `## Critérios de Aceite` — tabela da Fase 1.5 (se task fornecida)
+- `## 🔴 Crítico` — bloqueiam o merge (vazio = "nenhum")
+- `## 🟡 Importante` — devem ser corrigidos antes do merge (vazio = "nenhum")
+- `## 🔵 Sugestão` — melhorias que não bloqueiam (vazio = "nenhuma")
+- `## ✅ Pontos Positivos` — algo bem feito no código revisado (cultura de feedback — nunca omitir, mesmo que curto)
 - `## Segurança` — findings de segurança (vazio = "Nenhum finding de segurança")
-- `## Qualidade de Código` — findings de qualidade
 - `## Conformidade com TechSpec` — desvios da especificação
-- `## Observabilidade` — findings de logs/métricas
 - `## Resultado` — APROVADO | APROVADO COM RESSALVAS | REPROVADO
 
 Salvar progressivamente por seção.

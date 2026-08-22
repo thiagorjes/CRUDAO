@@ -10,6 +10,9 @@ input-artifacts:
 output-artifacts:
   - docs/techspec/{{FEATURE}}-techspec.md
   - docs/techspec/{{FEATURE}}/data-model.md
+  - docs/techspec/{{FEATURE}}/contracts/*.md
+  - docs/techspec/{{FEATURE}}/quickstart.md
+  - docs/techspec/{{FEATURE}}-research.md
   - docs/spdd/{{FEATURE}}-canvas.md
 ---
 
@@ -55,6 +58,15 @@ python .agents/scripts/validate.py --mode input \
 ```
 Se stale: alertar e aguardar confirmação para prosseguir com `--force` consciente.
 
+### Fase 0.5 — Pesquisa de incertezas técnicas (condicional)
+
+> Só executa quando existem incertezas técnicas reais. Se tudo já é conhecido pelos guidelines/PRD, informar "Nenhuma incerteza técnica identificada — prosseguindo para a Fase 1." e seguir.
+
+1. Identificar incertezas que, se não resolvidas agora, geram decisões erradas na TechSpec: integração externa sem documentação clara, escolha de biblioteca com trade-off não óbvio, padrão de modelagem não coberto pelos guidelines, estratégia de auth para caso específico do PRD, comportamento de concorrência/consistência eventual.
+2. Para cada incerteza: documentar o que é desconhecido, pesquisar (guidelines ou web), registrar a decisão tomada com justificativa.
+3. **Se houver 2+ incertezas**: gerar `docs/techspec/[feature]-research.md` com, por incerteza — contexto (requisito do PRD que a origina), opções avaliadas com pros/contras, decisão, justificativa, impacto na TechSpec. Fechar com tabela de incertezas não resolvidas (questão / impacto / bloqueante?).
+4. **Incertezas bloqueantes**: apresentar ao usuário e aguardar resposta antes de prosseguir. Não bloqueantes vão para a Seção 10 da TechSpec ("Questões em Aberto").
+
 ### Fase 1 — Decisões técnicas (com o usuário)
 
 Fazer perguntas técnicas necessárias **uma de cada vez**, absorvendo o máximo dos guidelines sem perguntar o que já está decidido:
@@ -78,11 +90,13 @@ Para cada decisão técnica que envolva trade-off: criar ADR.
 
 **Salvar a cada seção concluída.**
 
+**Princípio de fonte única de verdade**: modelagem de dados e contratos de API são volumosos demais para viver dentro do documento principal — vivem em artefatos granulares que o TechSpec resume e referencia. Nunca gerar o mesmo conteúdo em dois lugares.
+
 2.1. Criar `docs/techspec/[feature]-techspec.md` usando template techspec
    - Seção 1 (Visão Geral Técnica) → salvar
    - Seção 2 (Decisões Arquiteturais) com referências aos ADRs criados → salvar
-   - Seção 3 (Modelo de Dados) — criar também `docs/techspec/[feature]/data-model.md` → salvar ambos
-   - Seção 4 (Contratos de API/Interface) → salvar
+   - Seção 3 (Modelo de Dados) — **resumo + link**; criar `docs/techspec/[feature]/data-model.md` como fonte de verdade (diagrama ER, entidades com campos/índices, ciclo de vida de estados, estratégia de migrations) → salvar ambos
+   - Seção 4 (Contratos de API/Interface) — **índice de endpoints + link**; criar um arquivo por recurso/área funcional em `docs/techspec/[feature]/contracts/[recurso].md` (request, response, tabela de erros, RF atendido) → salvar cada um. Se a feature não tiver API, omitir e registrar "Nenhuma interface de API identificada — contratos não gerados."
    - Seção 5 (Arquitetura e Fluxo) → salvar
    - Seção 6 (Dependências Inter-Sistemas) — incluir mocks se criados → salvar
    - Seção 7 (Estratégia de Testes) → salvar
@@ -99,7 +113,9 @@ Para cada decisão técnica que envolva trade-off: criar ADR.
 
 2.2. Se mock contracts criados: gerar task de substituição e documentar em Seção 6
 
-2.3. Validação ao final:
+2.3. **Gerar `docs/techspec/[feature]/quickstart.md` (obrigatório, não sob demanda)**: stack, estrutura de pastas, setup mínimo, cenários principais por RF (Dado/Quando/Então + exemplo executável), pontos de atenção e cenários de teste críticos. É o guia rápido que `/implement` e `/tdd` consultam antes de codificar.
+
+2.4. Validação ao final:
 ```
 python .agents/scripts/validate.py --mode output \
   --rules .agents/skills/techspec/validate-rules.json \
@@ -129,12 +145,23 @@ Salvar cada dimensão no canvas `docs/spdd/[feature]-canvas.md` individualmente:
 
 Salvar canvas após cada dimensão atualizada.
 
+### Fase 3.5 — Comitê de Análise Assíncrono (opcional)
+
+Com a TechSpec e os artefatos granulares salvos, oferecer revisão cruzada:
+
+> "A TechSpec foi gerada e salva. Deseja que eu submeta este planejamento aos agents especialistas (Architect, Security, Database, DevOps, QA) em background para revisão crítica antes de avançar para `/tasks`? [Sim/Não]"
+
+- **Se sim**: invocar os agents relevantes via ferramenta `Agent`, cada um lendo os arquivos salvos em disco (não colar conteúdo no prompt), avaliando gargalos de performance, falhas de modelagem, riscos de segurança e testabilidade dos contratos. Apresentar feedback consolidado (1-3 pontos por agent) e perguntar se aceita atualizar os arquivos salvos. Se aceitar, aplicar e re-validar.
+- **Se não**: seguir para a Fase 4.
+
 ### Fase 4 — Handoff
 
 Atualizar `memory/state.md`:
 - Artifact Registry: `docs/techspec/[feature]-techspec.md | 1.0 | ok`
 - Se PRD foi mantido sem alteração: TechSpec status = `ok`
 - Marcar feature como "Em especificação técnica → pronto para /tasks"
+
+**Rede de segurança — detecção de interface visual:** se `docs/design/[feature]-design-brief.md` **não existir** e algum `systems/[sistema]/guidelines/stack.md` envolvido indicar framework de UI (React, Next.js, Vue, Angular, Flutter, SwiftUI etc.), alertar o usuário e recomendar rodar `/designer` antes do `/tasks` — mesmo que o `/prd` já devesse ter sugerido. Nunca assumir silenciosamente que a feature é backend-only.
 
 ## Artefatos
 
@@ -145,7 +172,10 @@ Atualizar `memory/state.md`:
 
 **Saída:**
 - `docs/techspec/[feature]-techspec.md` — TechSpec principal
-- `docs/techspec/[feature]/data-model.md` — modelo de dados detalhado
+- `docs/techspec/[feature]/data-model.md` — modelo de dados detalhado (fonte de verdade)
+- `docs/techspec/[feature]/contracts/[recurso].md` — um arquivo por recurso de API (fonte de verdade), se aplicável
+- `docs/techspec/[feature]/quickstart.md` — guia rápido de implementação (obrigatório)
+- `docs/techspec/[feature]-research.md` — se 2+ incertezas técnicas foram resolvidas na Fase 0.5
 - `docs/contracts/[X]-mock-contract.md` — se sistemas externos indisponíveis
 - `docs/decisions/ADR-[NNN]-*.md` — ADRs de decisões técnicas
 - `docs/spdd/[feature]-canvas.md` — dimensões E, A, S, N atualizadas

@@ -13,6 +13,12 @@ output-artifacts:
 
 Aplicar um checklist de qualidade a um artefato (PRD ou TechSpec), tratando cada requisito como um caso a validar — não a implementação em si, mas a qualidade da especificação. Gera `docs/checklists/[feature]-[tipo].md` diferenciando itens críticos (bloqueiam a próxima etapa do pipeline) de itens não-críticos (melhorias sugeridas).
 
+## Argumentos recebidos
+
+- (sem argumento) — gera/atualiza o checklist do artefato mais recente, perguntando o tipo (PRD/TechSpec) se ambíguo
+- `"nome-da-feature"` — aplica ao artefato de uma feature específica
+- `--audit` — não gera checklist novo; audita todos os checklists existentes em `docs/checklists/` e reporta % de aprovação por arquivo
+
 ## Pré-condições
 
 - `docs/prd/[feature]-prd.md` deve existir (mínimo)
@@ -73,6 +79,30 @@ python .agents/scripts/validate.py --mode output \
 ```
 
 Se houver itens críticos: alertar o usuário que a próxima etapa do pipeline está bloqueada até resolução.
+
+## Modo `--audit`
+
+Quando invocado com `--audit`, pular as Fases 0-4 e executar:
+
+1. Ler todos os arquivos em `docs/checklists/`
+2. Para cada um, contar: total de itens `CHK-NNN` / itens marcados `[x]` (aprovados) / itens críticos ainda abertos
+3. Reportar:
+
+```markdown
+## Auditoria de Checklists — [data]
+
+| Arquivo | Total | Aprovados [x] | % | Críticos abertos |
+|---------|-------|--------------|---|-------------------|
+| [feature]-prd.md | N | N | N% | N |
+
+### Checklists com baixa aprovação (< 80%) ou críticos abertos
+- [arquivo] — [N itens pendentes — resumo do que falta]
+
+### Recomendação
+- [arquivo]: [ação sugerida — ex: "resolver os N críticos antes de /techspec"]
+```
+
+Não persistir a auditoria como artefato — é um relatório de sessão apresentado ao usuário.
 
 ## Artefatos
 

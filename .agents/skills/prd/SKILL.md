@@ -93,6 +93,15 @@ Atualizar dimensão **R** do canvas `docs/spdd/[feature]-canvas.md`:
 - Adicionar referência a BDRs criados (se houver decisões de escopo/priorização)
 - Salvar canvas imediatamente
 
+### Fase 3.5 — Comitê de Análise Assíncrono (opcional)
+
+Com o PRD salvo, oferecer revisão cruzada antes de liberar para `/techspec`:
+
+> "O PRD foi gerado e salvo. Deseja que eu submeta os requisitos aos agents especialistas (Architect, Security, QA) em background para uma crítica antes de avançar? [Sim/Não]"
+
+- **Se sim**: invocar `.agents/agents/architect.md`, `.agents/agents/security.md`, `.agents/agents/qa.md` via ferramenta `Agent`, instruindo cada um a **ler o PRD salvo em disco** (não colar o conteúdo no prompt) e apontar riscos, gaps de escopo ou requisitos não testáveis. Apresentar o feedback consolidado (1-3 pontos por agent) e perguntar se aceita que o PRD salvo seja atualizado. Se aceitar, aplicar e re-validar.
+- **Se não**: seguir para a Fase 4.
+
 ### Fase 4 — Handoff
 
 Atualizar `memory/state.md`:
@@ -100,10 +109,12 @@ Atualizar `memory/state.md`:
 - Artifact Registry: adicionar entrada `docs/prd/[feature]-prd.md | 1.0 | ok`
 - Se canvas foi criado/atualizado: `docs/spdd/[feature]-canvas.md | — | draft`
 
+**Detecção de interface visual:** verificar se algum sistema afetado tem front-end (ler `systems/[sistema]/guidelines/stack.md` procurando frameworks de UI — React, Next.js, Vue, Angular, Flutter, SwiftUI etc. — ou se o PRD descreve telas/jornadas de usuário final). Se sim, incluir `/designer` na lista de próximos passos, **antes** de `/techspec`.
+
 Informar ao usuário:
 - Caminho do PRD gerado
 - Resultado da validação
-- Próximo passo sugerido: `/clarify` (se houver questões em aberto) ou `/techspec [feature] --system [sistema]`
+- Próximo passo sugerido: `/clarify` (se houver questões em aberto) → `/designer` (se detectada interface visual) → `/techspec [feature] --system [sistema]`
 
 ## Artefatos
 
@@ -138,7 +149,8 @@ Ao concluir, registrar em `memory/state.md`:
 - **Artefato:** docs/prd/[feature]-prd.md
 - **RFs Must Have:** RF-001, RF-002, ...
 - **Questões em aberto:** [listar ou "nenhuma"]
-- **Próximo comando:** /techspec [feature] --system [sistema]
+- **Interface visual detectada:** [sim/não — se sim, recomendar /designer antes do /techspec]
+- **Próximo comando:** /designer [feature] (se interface visual) ou /techspec [feature] --system [sistema]
 ```
 
 Artifact Registry:

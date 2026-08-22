@@ -14,11 +14,19 @@ output-artifacts:
   - systems/{{SYSTEM}}/guidelines/git-workflow.md
   - systems/{{SYSTEM}}/guidelines/skill-conventions.md
   - systems/{{SYSTEM}}/guidelines/spdd-integration.md
+  - systems/{{SYSTEM}}/guidelines/design.md
+  - systems/{{SYSTEM}}/guidelines/legacy-context.md
 ---
 
 ## Objetivo
 
-Gerar os 9 arquivos de guidelines para um sistema, capturando decisões de stack, arquitetura e padrões de engenharia através de entrevista interativa. Cada decisão técnica significativa gera um ADR (Architecture Decision Record). Os guidelines são a fonte de verdade para todas as skills subsequentes do pipeline.
+Gerar os guidelines de um sistema, capturando decisões de stack, arquitetura e padrões de engenharia através de entrevista interativa — adaptada ao **cenário** do sistema (greenfield, brownfield ou migração). Cada decisão técnica significativa gera um ADR. Os guidelines são a fonte de verdade para todas as skills subsequentes do pipeline, incluindo o design system lido pelo `/designer`.
+
+## Argumentos recebidos
+
+- (sem argumento) — descobre os sistemas pendentes em `memory/state.md` e conduz o processo para eles
+- `[sistema]` (ex: `api-auth`) — foca no sistema informado
+- `[sistema] [arquivo]` (ex: `api-auth security`) — foca em um arquivo específico de um sistema já configurado
 
 ## Pré-condições
 
@@ -28,14 +36,43 @@ Gerar os 9 arquivos de guidelines para um sistema, capturando decisões de stack
 
 ## Workflow
 
-### Fase 0 — Verificação
+### Fase 0 — Verificação e detecção de cenário
 
-1. Identificar o sistema-alvo: ler `--system` do argumento ou perguntar
+1. Identificar o sistema-alvo: ler o argumento ou perguntar
 2. Verificar se `systems/[sistema]/guidelines/` já existe
    - Se sim: listar os arquivos existentes e perguntar "Atualizar guidelines existentes?"
 3. Criar diretório `systems/[sistema]/guidelines/` se não existir
+4. **Determinar o cenário** (gravado na tabela Sistemas de `memory/state.md`, ou perguntar se ausente):
+
+| Cenário | Fonte primária das respostas | Comportamento da entrevista |
+|---|---|---|
+| **Greenfield** (novo, sem código) | Entrevista completa | Perguntas prescritivas — define os padrões do zero |
+| **Brownfield** (código existente adotando SSPDD) | Inventário do código (Fase 0.5) | Módulos viram confirmação: "Detectei X — confirma?"; só pergunta o que não pode inferir |
+| **Migração** (legado trocando de tecnologia) | Inventário do legado (as-is) + entrevista do alvo (to-be) | Duas passadas: inventário automático gera `legacy-context.md`; entrevista prescritiva define os guidelines do alvo + Módulo de Migração |
+
+### Fase 0.5 — Inventário do código (obrigatório para Brownfield e Migração)
+
+> Em Greenfield, pular esta fase.
+
+Antes de perguntar qualquer coisa, montar o inventário — a resposta já está no repositório:
+
+1. **Stack e dependências**: manifests (`package.json`, `pyproject.toml`, `pom.xml`, `go.mod`, `*.csproj`) — linguagens, frameworks, versões exatas
+2. **Estrutura**: árvore de `src/` (ou equivalente) — padrão arquitetural em prática
+3. **Ferramentas**: configs presentes (`.eslintrc*`, `.prettierrc*`, `ruff.toml`, configs de teste, pipelines em `.github/workflows/`) — lint, testes, CI
+4. **Convenções git**: amostra do histórico (`git log --oneline -20` dentro de `systems/[sistema]/`) — formato de commits e branches em uso
+5. Registrar cada item como inferência com evidência (ex: "Arquitetura: por camada — `src/controllers`, `src/services`") — na Fase 1 esses itens são **confirmados em bloco**, não perguntados do zero
+
+**Adicionalmente para Migração**: identificar também integrações externas, pontos de entrada (rotas, jobs, listeners) e débitos/riscos evidentes (dependências EOL, áreas sem teste) — alimenta `legacy-context.md` (Fase 3).
+
+Apresentar o diagnóstico em texto antes de iniciar a entrevista: o que foi inferido, o que será confirmado, o que precisa ser perguntado do zero.
 
 ### Fase 1 — Entrevista de stack (uma pergunta por vez)
+
+**Regra de arquivos extras**: se `systems/[sistema]/guidelines/` já contém um arquivo fora do padrão (ex: `GUIDELINE_ARQUITETURA.md`) cobrindo total ou parcialmente um módulo abaixo, pular as perguntas já respondidas por ele — na Fase 3, o arquivo padrão correspondente só registra uma referência ao arquivo extra + eventuais gaps, sem duplicar conteúdo.
+
+**Brownfield**: onde o inventário da Fase 0.5 já inferiu a resposta, confirmar em bloco ("Detectei: TypeScript 5.4, NestJS 10, PostgreSQL via Prisma — confirma?") e perguntar apenas os gaps. Se o usuário quiser um padrão diferente do que o código pratica, registrar as duas colunas no guideline: *estado atual* e *alvo*.
+
+**Migração**: conduzir como greenfield para o sistema **alvo** (to-be); o inventário do legado é só referência. Ao final, conduzir também o Módulo de Migração.
 
 **Módulo A — Linguagem e runtime:**
 - "Qual linguagem principal? (ex: Python, TypeScript, Go, Rust)"
@@ -75,6 +112,24 @@ Gerar os 9 arquivos de guidelines para um sistema, capturando decisões de stack
 - "Há pipeline de CI/CD? Qual ferramenta?"
 - "Quais checks são obrigatórios antes do merge?"
 
+**Módulo I — Design e UI/UX** *(pular se o sistema for puramente backend/API ou CLI sem interface gráfica)*
+
+Antes de perguntar: verificar, na ordem, `DESIGN.md` na raiz do sistema, `systems/[sistema]/guidelines/design.md` com conteúdo real, `docs/design/*/design-tokens.json` de feature anterior, ou diretório de tema no código (`src/theme/`, `styles/tokens/`). Se algo for encontrado, extrair e **perguntar só os gaps**.
+
+- "Já existem tokens de cor definidos (hex de primária/acento/fundo/erro/sucesso) ou preciso levantá-los no `/designer`?"
+- "Qual a estratégia de componentes? (100% customizado / biblioteca headless + customização / biblioteca opinionada completa)"
+- "Qual o padrão de iconografia?"
+- "Quais os breakpoints e a estratégia de responsividade (mobile-first / desktop-first / ambos)?"
+- "Qual o nível mínimo de acessibilidade exigido? (WCAG AA / AAA / sem requisito formal)"
+
+Se nada for encontrado e o sistema tiver UI: conduzir o módulo completo — a resposta popula `guidelines/design.md` (Fase 3), que o `/designer` e o agente prototipador leem como fonte de verdade.
+
+**Módulo de Migração** *(somente cenário Migração — respostas geram `legacy-context.md` e um ADR inicial)*
+- "Qual abordagem de migração? (Strangler Fig / Big Bang / convivência paralela / a definir)"
+- "Qual o nível de paridade exigido com o legado? (total / funcional / parcial — descrever)"
+- "Como os dados do legado serão tratados? (migração completa / incremental / sistema novo começa vazio)"
+- "Qual o critério de corte do legado? (ex: 100% do tráfego no novo por 30 dias sem incidente)"
+
 ### Fase 2 — Criação de ADRs
 
 Para cada decisão técnica significativa tomada durante a entrevista (escolha de stack, framework, padrão arquitetural), criar um ADR:
@@ -101,6 +156,8 @@ Gerar em ordem, salvando após cada um:
 7. `systems/[sistema]/guidelines/git-workflow.md` — branching, commits, PR process, CI/CD
 8. `systems/[sistema]/guidelines/skill-conventions.md` — padrões de uso das skills do pipeline
 9. `systems/[sistema]/guidelines/spdd-integration.md` — como SPDD/canvas se integra ao workflow do time
+10. `systems/[sistema]/guidelines/design.md` — **somente se o Módulo I foi conduzido** (sistema com UI). Tokens visuais (hex exatos), inventário de componentes, breakpoints, acessibilidade — é a fonte que `/designer` e o agente prototipador leem antes de gerar qualquer protótipo. Se um design system externo (`DESIGN.md`) já é a fonte primária, este arquivo só referencia + registra gaps complementares
+11. `legacy-context.md` — **somente cenário Migração**. Stack legada, pontos de entrada, integrações externas, comportamentos a preservar, débitos conhecidos, e a estratégia de migração decidida no Módulo de Migração. Registrar a decisão também como ADR inicial em `memory/constitution.md`
 
 Executar validação ao final:
 ```
@@ -110,11 +167,21 @@ python .agents/scripts/validate.py --mode output \
   --system [sistema]
 ```
 
+### Fase 3.5 — Comitê de Análise Assíncrono (opcional)
+
+Antes de finalizar, oferecer revisão cruzada:
+
+> "Os guidelines foram estruturados. Deseja que eu submeta este planejamento aos agents especialistas (Architect, Security, DevOps) em background para revisar antes de fechar? [Sim/Não]"
+
+- **Se sim**: invocar os agents `.agents/agents/architect.md`, `.agents/agents/security.md`, `.agents/agents/devops.md` via ferramenta `Agent`, instruindo cada um a **ler os arquivos recém-salvos em disco** (não colar o conteúdo no prompt) e avaliar riscos, gaps e trade-offs não considerados. Apresentar o feedback consolidado (1-3 pontos por agent) e perguntar se aceita incorporar antes de fechar. Se aceitar, atualizar os arquivos e re-executar a validação.
+- **Se não**: seguir direto para a Fase 4.
+
 ### Fase 4 — Handoff
 
 Atualizar `memory/state.md`:
 - Tabela de Sistemas: marcar Guidelines como `ok` para o sistema
 - Artifact Registry: adicionar cada arquivo de guidelines com status `ok`
+- Se restarem sistemas pendentes na fila da Fase 0: retornar à Fase 0.5/1 para o próximo antes de encerrar
 
 ## Artefatos
 
@@ -122,8 +189,8 @@ Atualizar `memory/state.md`:
 - `memory/state.md` (obrigatório)
 
 **Saída:**
-- `systems/{{SYSTEM}}/guidelines/` — 9 arquivos de guidelines
-- `docs/decisions/ADR-[NNN]-*.md` — um ou mais ADRs de decisões de stack
+- `systems/{{SYSTEM}}/guidelines/` — 9 arquivos padrão + `design.md` (se sistema com UI) + `legacy-context.md` (se Migração)
+- `docs/decisions/ADR-[NNN]-*.md` — um ou mais ADRs de decisões de stack (inclui ADR de estratégia de migração, se aplicável)
 
 **Validação:** `python .agents/scripts/validate.py --mode output --rules .agents/skills/guidelines/validate-rules.json --artifact [guideline] --system [sistema]`
 

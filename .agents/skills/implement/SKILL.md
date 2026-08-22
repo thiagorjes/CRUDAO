@@ -14,6 +14,13 @@ output-artifacts: []
 
 Implementar uma task específica do documento de tasks com fidelidade à TechSpec e ao REASONS Canvas. O canvas fornece contexto crítico de Norms (padrões a seguir) e Safeguards (restrições a respeitar) antes de qualquer linha de código. Cada task implementada é rastreável aos RFs de origem.
 
+## Argumentos recebidos
+
+- `TASK-2.1` — implementa a task pelo ID (com decisão TDD automática)
+- `"Título da task"` — implementa pela descrição
+- (sem argumento) — lista as tasks disponíveis e pergunta qual executar
+- `TASK-2.1 --no-tdd` — implementação direta, sem ciclo TDD mesmo se os critérios da Fase 1 indicariam TDD
+
 ## Pré-condições
 
 - `docs/tasks/[feature]-tasks.md` deve existir com a task solicitada
@@ -54,8 +61,17 @@ Avaliar automaticamente se TDD é aplicável:
 | Documentação, SKILL.md, templates Markdown | Não |
 | Migração de banco de dados | Não (testar integração separada) |
 
-Se TDD aplicável: seguir ciclo Red → Green → Refactor antes de implementar.
-Se TDD não aplicável: implementar diretamente com verificação manual.
+Se TDD aplicável (e `--no-tdd` não foi passado): seguir ciclo Red → Green → Refactor antes de implementar.
+Se TDD não aplicável ou `--no-tdd`: implementar diretamente com verificação manual.
+
+### Fase 1.5 — Caminho rápido vs. completo
+
+Antes de codificar, decidir o nível de confirmação com base no tamanho da task:
+
+- **Caminho rápido (task `[P]` — até 4h)**: se os requisitos estão claros e sem ambiguidade, pular a confirmação de plano — implementar direto, mencionando em uma linha o que será feito antes de começar.
+- **Caminho completo (task `[M]`/`[G]` ou com ambiguidade)**: apresentar um plano de implementação em bullets (arquivo a criar/modificar → o que será feito) e aguardar confirmação antes de prosseguir.
+
+Se houver ambiguidade ou informação ausente na task que impeça implementar com segurança, perguntar ao usuário antes — em qualquer um dos dois caminhos. Não assumir.
 
 ### Fase 2 — Implementação
 
@@ -86,6 +102,18 @@ Após implementar, verificar **cada critério de aceite** da task:
 
 Se algum critério não for atendido: corrigir antes de reportar conclusão.
 
+### Fase 3.5 — Handoff de code review
+
+Task concluída — perguntar:
+
+> "Deseja submeter os arquivos a um code review antes de prosseguir? (a) Sim — agent QA revisa em contexto fresco [recomendado para tasks M/G] / (b) Inline — review rápido no contexto atual / (c) Não — seguir direto para o relatório"
+
+- **(a) Agent QA**: invocar `.agents/agents/qa.md` via ferramenta `Agent`, passando a lista de arquivos criados/modificados e a referência à task + critérios de aceite, instruindo a aplicar as dimensões do `/code-review`. Apresentar o relatório recebido ao usuário.
+- **(b) Inline**: aplicar as mesmas 5 categorias do `/code-review` no contexto atual (correção funcional, aderência aos guidelines, segurança — obrigatória, qualidade, testes).
+- **(c)**: seguir direto para a Fase 4.
+
+Se houver findings 🟡/🔴 em (a) ou (b): aguardar decisão do usuário — (i) corrigir agora, (ii) criar task de bug-fix separada, (iii) ignorar e concluir mesmo assim — antes de avançar.
+
 ### Fase 4 — Sugestão de validação e próximos passos
 
 Após implementação concluída, informar ao usuário:
@@ -98,7 +126,9 @@ Após implementação concluída, informar ao usuário:
      --rules .agents/skills/[skill]/validate-rules.json \
      --artifact [artefato-gerado]
    ```
-4. Sugerir próximos passos: `/code-review` ou próxima task
+4. Sugerir próximos passos: `/code-review` (se não feito na Fase 3.5) ou próxima task
+
+Marcar `Status: Concluída` no arquivo individual `docs/tasks/[feature]/TASK-[EPIC].[SEQ]-[slug].md` da task.
 
 Atualizar `memory/state.md` se task for a última do Epic:
 - Marcar Epic como concluído no status da feature
