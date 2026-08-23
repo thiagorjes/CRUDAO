@@ -19,6 +19,7 @@ import com.crudao.kanban.domain.workflow.TransicaoEngine;
 import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.realtime.EventoBoardPublisher;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,7 +38,9 @@ class TarefaServiceTest {
   @Mock private WorkflowRepository workflowRepository;
   @Mock private EtapaRepository etapaRepository;
   @Mock private RaiaRepository raiaRepository;
+  @Mock private ObservadorRepository observadorRepository;
   @Mock private TransicaoRepository transicaoRepository;
+  @Mock private EventoBoardPublisher eventoBoardPublisher;
 
   private TarefaService tarefaService;
   private Workflow workflow;
@@ -55,9 +58,11 @@ class TarefaServiceTest {
             workflowRepository,
             etapaRepository,
             raiaRepository,
+            observadorRepository,
             transicaoRepository,
             new TransicaoEngine(),
-            Mappers.getMapper(TarefaMapper.class));
+            Mappers.getMapper(TarefaMapper.class),
+            eventoBoardPublisher);
 
     workflow = new Workflow();
     workflow.setId(UUID.randomUUID());
@@ -66,8 +71,12 @@ class TarefaServiceTest {
     etapaDestino = etapaComId(workflow);
     etapaSemTransicao = etapaComId(workflow);
 
+    Projeto projeto = new Projeto();
+    projeto.setId(UUID.randomUUID());
+
     tarefa = new Tarefa();
     tarefa.setId(UUID.randomUUID());
+    tarefa.setProjeto(projeto);
     tarefa.setWorkflow(workflow);
     tarefa.setEtapaAtual(etapaOrigem);
 

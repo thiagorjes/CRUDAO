@@ -25,7 +25,7 @@ _Atualizado em: 2026-08-22_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Em implementação — TASK-00.1, TASK-00.2, TASK-01.1 concluídas, próxima: TASK-01.2 |
+| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Em implementação — EPIC-00/01/02 concluídos (até TASK-02.2), próxima: TASK-04.1 ou TASK-03.1 |
 
 ---
 
@@ -54,7 +54,13 @@ _Atualizado em: 2026-08-22_
 - **Testes:** TDD (`TarefaServiceTest`, 8 casos — mover permitido/proibido/reabertura, impedimento independente de etapa, mover entre projetos) via `mvn test`; fluxo REST completo validado via `docker compose` (2 projetos, workflows, transições, RN-005, mover-projeto)
 - **Code review:** agent QA — aprovado com ressalvas; 3 findings 🟡 corrigidos (testes de `moverParaProjeto` e REABERTURA adicionados, comentário sobre `motivo` não persistido)
 - **Nota técnica:** RegistroEtapa/Impedimento (histórico de lead-time) ficam para TASK-03.1; RBAC de `mover-projeto` fica para TASK-04.1 (TODO no código); nenhum endpoint do projeto tem controle de acesso ainda (`permitAll()` global, decisão da TASK-00.2)
-- **Próxima task:** TASK-02.2 — Tempo real (WebSocket/STOMP), broadcast multi-pod e observadores
+
+- **Task implementada:** TASK-02.2 — Tempo real (WebSocket/STOMP), broadcast multi-pod e observadores — 2026-08-22
+- **Arquivos:** `backend/src/main/java/com/crudao/kanban/config/WebSocketConfig.java`; `backend/src/main/java/com/crudao/kanban/realtime/*` (TipoEventoBoard, NotificacaoMinima, EventoBoardDTO, EventoBoardPublisher, PostgresNotificationListener); `domain/tarefa/{Observador,ObservadorRepository}.java`; `domain/tarefa/{TarefaService,TarefaController}.java` (hooks de publicação + endpoints de observadores); `pom.xml` (driver `postgresql` movido de `runtime` para `compile` — listener usa `PGConnection`/`PGNotification` diretamente)
+- **Testes:** `RealtimeBoardIT` (Testcontainers + 2 clientes STOMP reais) validando entrega em até 2s; suíte unitária completa (18 testes) verde; fluxo REST completo (observadores + movimentação) validado via `docker compose`
+- **Nota técnica:** listener mantém conexão JDBC dedicada via `DriverManager` (fora do pool Hikari, requisito do `LISTEN`) com reconexão automática; publicação do evento ocorre em `afterCommit` da transação para garantir que o pod receptor já encontre a linha persistida ao consultar o banco
+- **Code review:** agent QA — 1 finding 🔴 corrigido (excluir tarefa com observador violava FK — `TarefaService.excluir` agora remove observadores antes) e 3 findings 🟡 corrigidos (endpoint STOMP duplicado em `WebSocketConfig`, falha silenciosa de `pg_notify` agora logada em vez de `@SneakyThrows`, `TransactionTemplate` do listener marcado `readOnly`); adicionado teste de observadores no `RealtimeBoardIT`
+- **Próxima task:** TASK-04.1 — RBAC híbrido (canvas lista antes de TASK-03.1) ou TASK-03.1 — Lead-time/Dashboard, a definir com o usuário
 
 ---
 

@@ -13,11 +13,15 @@ import com.crudao.kanban.domain.workflow.TransicaoEngine;
 import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.realtime.EventoBoardPublisher;
+import com.crudao.kanban.realtime.TipoEventoBoard;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /** CRUD e movimentação de Tarefa — RF-002, RF-003, RF-004, RF-012. */
 @Service
@@ -29,9 +33,11 @@ public class TarefaService {
   private final WorkflowRepository workflowRepository;
   private final EtapaRepository etapaRepository;
   private final RaiaRepository raiaRepository;
+  private final ObservadorRepository observadorRepository;
   private final TransicaoRepository transicaoRepository;
   private final TransicaoEngine transicaoEngine;
   private final TarefaMapper tarefaMapper;
+  private final EventoBoardPublisher eventoBoardPublisher;
 
   @Transactional(readOnly = true)
   public List<TarefaDTO> listarPorProjeto(UUID projetoId) {
@@ -60,7 +66,9 @@ public class TarefaService {
     tarefa.setTitulo(request.titulo());
     tarefa.setDescricao(request.descricao());
     tarefa.setResponsavelId(request.responsavelId());
-    return tarefaMapper.paraDTO(tarefaRepository.save(tarefa));
+    Tarefa salva = tarefaRepository.save(tarefa);
+    publicarAposCommit(TipoEventoBoard.TAREFA_CRIADA, salva);
+    return tarefaMapper.paraDTO(salva);
   }
 
   @Transactional
@@ -77,7 +85,9 @@ public class TarefaService {
 
   @Transactional
   public void excluir(UUID id) {
-    tarefaRepository.delete(buscarEntidade(id));
+    Tarefa tarefa = buscarEntidade(id);
+    observadorRepository.deleteAll(observadorRepository.findByTarefaId(id));
+    tarefaRepository.delete(tarefa);
   }
 
   /**
@@ -99,7 +109,9 @@ public class TarefaService {
 
     tarefa.setEtapaAtual(etapaDestino);
     tarefa.setAtualizadoEm(java.time.Instant.now());
-    return tarefaMapper.paraDTO(tarefaRepository.save(tarefa));
+    Tarefa salva = tarefaRepository.save(tarefa);
+    publicarAposCommit(TipoEventoBoard.TAREFA_MOVIDA, salva);
+    return tarefaMapper.paraDTO(salva);
   }
 
   /**
@@ -120,7 +132,9 @@ public class TarefaService {
     tarefa.setWorkflow(workflowDestino);
     tarefa.setEtapaAtual(etapaDestino);
     tarefa.setAtualizadoEm(java.time.Instant.now());
-    return tarefaMapper.paraDTO(tarefaRepository.save(tarefa));
+    Tarefa salva = tarefaRepository.save(tarefa);
+    publicarAposCommit(TipoEventoBoard.TAREFA_MOVIDA, salva);
+    return tarefaMapper.paraDTO(salva);
   }
 
   /**
@@ -134,7 +148,9 @@ public class TarefaService {
     Tarefa tarefa = buscarEntidade(id);
     tarefa.setImpedida(true);
     tarefa.setAtualizadoEm(java.time.Instant.now());
-    return tarefaMapper.paraDTO(tarefaRepository.save(tarefa));
+    Tarefa salva = tarefaRepository.save(tarefa);
+    publicarAposCommit(TipoEventoBoard.IMPEDIMENTO_ALTERADO, salva);
+    return tarefaMapper.paraDTO(salva);
   }
 
   @Transactional
@@ -142,7 +158,55 @@ public class TarefaService {
     Tarefa tarefa = buscarEntidade(id);
     tarefa.setImpedida(false);
     tarefa.setAtualizadoEm(java.time.Instant.now());
-    return tarefaMapper.paraDTO(tarefaRepository.save(tarefa));
+    Tarefa salva = tarefaRepository.save(tarefa);
+    publicarAposCommit(TipoEventoBoard.IMPEDIMENTO_ALTERADO, salva);
+    return tarefaMapper.paraDTO(salva);
+  }
+
+  /** Observadores da tarefa (RN-007) — usuários notificados a cada transição de etapa (RF-005). */
+  @Transactional(readOnly = true)
+  public List<UUID> listarObservadores(UUID tarefaId) {
+    return observadorRepository.findByTarefaId(tarefaId).stream()
+        .map(Observador::getUsuarioId)
+        .toList();
+  }
+
+  @Transactional
+  public void adicionarObservador(UUID tarefaId, UUID usuarioId) {
+    Tarefa tarefa = buscarEntidade(tarefaId);
+    if (observadorRepository.existsByTarefaIdAndUsuarioId(tarefaId, usuarioId)) {
+      return;
+    }
+    Observador observador = new Observador();
+    observador.setTarefa(tarefa);
+    observador.setUsuarioId(usuarioId);
+    observadorRepository.save(observador);
+  }
+
+  @Transactional
+  public void removerObservador(UUID tarefaId, UUID usuarioId) {
+    observadorRepository.deleteByTarefaIdAndUsuarioId(tarefaId, usuarioId);
+  }
+
+  /**
+   * Publica o evento de board somente após o commit da transação (ADR-004): o pod receptor busca
+   * o estado da tarefa no banco ao receber a notificação, então a linha precisa já estar
+   * persistida.
+   */
+  private void publicarAposCommit(TipoEventoBoard tipo, Tarefa tarefa) {
+    UUID tarefaId = tarefa.getId();
+    UUID projetoId = tarefa.getProjeto().getId();
+    if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+      eventoBoardPublisher.publicar(tipo, tarefaId, projetoId);
+      return;
+    }
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            eventoBoardPublisher.publicar(tipo, tarefaId, projetoId);
+          }
+        });
   }
 
   private Projeto buscarProjeto(UUID projetoId) {

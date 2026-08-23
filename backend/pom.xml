@@ -52,7 +52,8 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
+      <!-- compile (não runtime): PostgresNotificationListener usa PGConnection/PGNotification
+           diretamente para LISTEN/NOTIFY (ADR-004). -->
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>

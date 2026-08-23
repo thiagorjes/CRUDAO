@@ -1,5 +1,7 @@
 # TASK-02.2 — Tempo real (WebSocket/STOMP), broadcast multi-pod e observadores [G]
 
+**Status:** Concluída — 2026-08-22
+
 **Epic:** EPIC-02 — Tarefas, Board e Tempo Real | **User Story:** US-02.1 — Gestão de tarefas e movimentação no board
 **Sistema:** CRUDAO | **RF:** RF-005, RNF-001, RNF-002 | **Dependências:** TASK-02.1
 

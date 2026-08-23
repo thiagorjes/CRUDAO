@@ -75,4 +75,22 @@ public class TarefaController {
   public TarefaDTO desmarcarImpedimento(@PathVariable UUID id) {
     return tarefaService.desmarcarImpedimento(id);
   }
+
+  @GetMapping("/{id}/observadores")
+  public List<UUID> listarObservadores(@PathVariable UUID id) {
+    return tarefaService.listarObservadores(id);
+  }
+
+  @PostMapping("/{id}/observadores/{usuarioId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void adicionarObservador(@PathVariable UUID id, @PathVariable UUID usuarioId) {
+    tarefaService.adicionarObservador(id, usuarioId);
+  }
+
+  @DeleteMapping("/{id}/observadores/{usuarioId}")
+  public ResponseEntity<Void> removerObservador(
+      @PathVariable UUID id, @PathVariable UUID usuarioId) {
+    tarefaService.removerObservador(id, usuarioId);
+    return ResponseEntity.noContent().build();
+  }
 }
