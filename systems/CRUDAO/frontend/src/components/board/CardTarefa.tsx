@@ -18,17 +18,20 @@ export function CardTarefa({
   acoes,
   onExecutarAcao,
   onArrastarInicio,
+  onArrastarFim,
 }: {
   tarefa: Tarefa;
   responsavel: Usuario | undefined;
   acoes: AcaoTransicao[];
   onExecutarAcao: (acao: AcaoTransicao) => void;
   onArrastarInicio: (tarefaId: string) => void;
+  onArrastarFim: () => void;
 }) {
   const [menuAberto, setMenuAberto] = useState(false);
   const router = useRouter();
 
   const inicial = responsavel?.nome?.trim().charAt(0).toUpperCase() ?? '?';
+  const irParaDetalhe = () => router.push(`/tarefas/${tarefa.id}`);
 
   return (
     <div
@@ -38,7 +41,17 @@ export function CardTarefa({
         e.dataTransfer.setData('text/plain', tarefa.id);
         onArrastarInicio(tarefa.id);
       }}
-      onClick={() => router.push(`/tarefas/${tarefa.id}`)}
+      // Garante a limpeza do destaque de colunas válidas mesmo se o drop for cancelado (ESC,
+      // solto fora de qualquer célula) — sem isso o estado "arrastando" ficava preso até a
+      // próxima interação (achado de code review da TASK-05.1).
+      onDragEnd={onArrastarFim}
+      onClick={irParaDetalhe}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          irParaDetalhe();
+        }
+      }}
       role="button"
       tabIndex={0}
     >

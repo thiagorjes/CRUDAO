@@ -85,10 +85,14 @@ export function BoardApp() {
       const existe = atual.tarefas.some((t) => t.id === evento.tarefaId);
       if (!existe) {
         // Tarefa criada por outro cliente ou movida para este projeto — busca o estado completo.
+        // Reconfirma o projeto ao aplicar: o usuário pode ter trocado de board enquanto o fetch
+        // estava em voo (finding do code review da TASK-05.1).
         api
           .get<Tarefa>(`/tarefas/${evento.tarefaId}`)
           .then((tarefa) =>
-            setEstado((a) => (a ? { ...a, tarefas: [...a.tarefas, tarefa] } : a)),
+            setEstado((a) =>
+              a && a.projeto.id === evento.projetoId ? { ...a, tarefas: [...a.tarefas, tarefa] } : a,
+            ),
           )
           .catch(() => undefined);
         return atual;
@@ -107,7 +111,9 @@ export function BoardApp() {
   // Tempo real (RF-005, RNF-001): reconsulta o estado da tarefa afetada em até 2s.
   useEffect(() => {
     if (!projetoId) return;
-    return conectarBoard(projetoId, atualizarTarefaLocal);
+    return conectarBoard(projetoId, atualizarTarefaLocal, () =>
+      mostrarToast('Conexão em tempo real perdida — atualize a página para reconectar.', 'info'),
+    );
   }, [projetoId, atualizarTarefaLocal]);
 
   const usuariosPorId = useMemo(() => new Map(usuarios.map((u) => [u.id, u])), [usuarios]);
@@ -207,6 +213,10 @@ export function BoardApp() {
           arrastando={arrastando}
           celulaSobre={celulaSobre}
           onArrastarInicio={setArrastando}
+          onArrastarFim={() => {
+            setArrastando(null);
+            setCelulaSobre(null);
+          }}
           onCelulaSobre={setCelulaSobre}
           onSoltar={(etapaId) => {
             if (arrastando) mover(arrastando, etapaId);
@@ -232,6 +242,7 @@ function BoardGrid({
   arrastando,
   celulaSobre,
   onArrastarInicio,
+  onArrastarFim,
   onCelulaSobre,
   onSoltar,
   onExecutarAcao,
@@ -245,6 +256,7 @@ function BoardGrid({
   arrastando: string | null;
   celulaSobre: string | null;
   onArrastarInicio: (tarefaId: string) => void;
+  onArrastarFim: () => void;
   onCelulaSobre: (chave: string | null) => void;
   onSoltar: (etapaId: string) => void;
   onExecutarAcao: (tarefaId: string, acao: AcaoTransicao) => void;
@@ -308,6 +320,7 @@ function BoardGrid({
                     responsavel={tarefa.responsavelId ? usuariosPorId.get(tarefa.responsavelId) : undefined}
                     acoes={acoesDoMenu(tarefa.etapaAtualId, transicoes, etapas)}
                     onArrastarInicio={onArrastarInicio}
+                    onArrastarFim={onArrastarFim}
                     onExecutarAcao={(acao) => onExecutarAcao(tarefa.id, acao)}
                   />
                 ))}

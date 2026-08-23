@@ -40,6 +40,10 @@ Dois endpoints de leitura adicionados ao backend, necessários para o board func
 
 Via `docker compose` real: login → board carrega dados reais pelo proxy autenticado; `PATCH /tarefas/{id}/mover` para etapa sem transição válida retorna 409 (validação server-side); marcar/desmarcar impedimento reflete em `registros-etapa`; evento STOMP em `/topic/projetos/{id}/board` chega ao subscriber em ~200ms (RNF-001 exige <2s), testado com cliente STOMP real (`@stomp/stompjs`) contra o backend real. 43 testes unitários (vitest) verdes, lint e `next build` limpos; backend `mvn verify` verde.
 
+## Code review (agent QA)
+
+1 finding 🔴 e 5 🟡 corrigidos: STOMP CONNECT sem autenticação (`StompAuthChannelInterceptor` no backend + `GET /api/ws-token` no frontend, validado via `docker compose` real — CONNECT sem token rejeitado, com token aceito, evento chega em tempo real), `UsuarioDTO` sem mais expor e-mail, guard de projeto ao aplicar evento tardio de tarefa desconhecida, `onDragEnd` para limpar estado de drag cancelado, fetch redundante removido do toggle de impedimento, feedback de falha de conexão STOMP. Guardrails G-RT-01, G-RBAC-05, G-FE-01 registrados na dimensão Safeguards do canvas.
+
 ---
 
 _Origem: [docs/tasks/kanban-configuravel-tasks.md](../kanban-configuravel-tasks.md)_

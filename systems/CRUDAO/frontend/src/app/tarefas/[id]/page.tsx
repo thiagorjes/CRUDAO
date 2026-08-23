@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api/client';
 import { Etapa, RegistroEtapa, Tarefa, Usuario } from '@/lib/api/types';
@@ -18,12 +18,7 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
-    carregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  async function carregar() {
+  const carregar = useCallback(async () => {
     try {
       const [t, regs, obs, usrs] = await Promise.all([
         api.get<Tarefa>(`/tarefas/${id}`),
@@ -43,7 +38,13 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
     } catch {
       setErro('Não foi possível carregar a tarefa.');
     }
-  }
+  }, [id]);
+
+  useEffect(() => {
+    (async () => {
+      await carregar();
+    })();
+  }, [carregar]);
 
   async function alternarImpedimento() {
     if (!tarefa) return;
@@ -53,7 +54,12 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
         : await api.post<Tarefa>(`/tarefas/${id}/impedimento`, {});
       setTarefa(atualizada);
       mostrarToast(atualizada.impedida ? 'Tarefa marcada como impedida.' : 'Impedimento removido.');
-      carregar();
+      // Só o histórico de tempo por etapa muda ao (des)marcar impedimento — evita re-buscar
+      // usuários/observadores, que não mudaram (achado de code review da TASK-05.1).
+      api
+        .get<RegistroEtapa[]>(`/tarefas/${id}/registros-etapa`)
+        .then(setRegistros)
+        .catch(() => undefined);
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível alterar o impedimento.');
     }

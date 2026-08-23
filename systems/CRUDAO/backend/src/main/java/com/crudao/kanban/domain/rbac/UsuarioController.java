@@ -22,7 +22,7 @@ public class UsuarioController {
   @GetMapping
   public List<UsuarioDTO> listar() {
     return usuarioRepository.findAll().stream()
-        .map(u -> new UsuarioDTO(u.getId(), u.getNome(), u.getEmail()))
+        .map(u -> new UsuarioDTO(u.getId(), u.getNome()))
         .toList();
   }
 }

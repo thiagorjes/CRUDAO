@@ -57,7 +57,6 @@ export type Tarefa = {
 export type Usuario = {
   id: string;
   nome: string;
-  email: string;
 };
 
 export type RegistroEtapa = {

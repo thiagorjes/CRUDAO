@@ -82,7 +82,7 @@ _Atualizado em: 2026-08-22_
 - **Testes:** 43 testes unitários (vitest) verdes — engine de transições (avançar/retroceder/reabertura, RF-012), agrupamento raia×etapa, formatação de duração, libs de auth da TASK-05.0; lint e `next build` limpos; backend `mvn verify` verde
 - **Testes manuais via `docker compose` real:** login → board carrega dados reais pelo proxy; `mover` para etapa sem transição válida retorna 409 (server-side); impedimento marca/desmarca e reflete em `registros-etapa`; evento STOMP chega ao subscriber em ~200ms (RNF-001 exige <2s), testado com cliente `@stomp/stompjs` real
 - **Nota técnica:** escopo consciente — RF-003 (criação de tarefa) fora do RF desta task, sem UI de criação; Painel de Administração (TASK-05.3) e Dashboard (TASK-05.2) ficam para tasks seguintes
-- **Code review:** solicitado ao agent QA em background — resultado e eventuais correções a registrar na próxima atualização
+- **Code review:** agent QA — 1 finding 🔴 corrigido (STOMP CONNECT sem autenticação — `StompAuthChannelInterceptor` no backend valida JWT no frame CONNECT; `GET /api/ws-token` no frontend expõe o access_token ao client só para esse fim, exceção documentada à regra geral de token-nunca-no-JS) e 5 🟡 corrigidos (email removido do `UsuarioDTO`, guard de projeto em evento tardio, `onDragEnd` para limpar drag cancelado, fetch redundante removido, feedback de falha de conexão STOMP); guardrails G-RT-01, G-RBAC-05, G-FE-01 registrados no canvas
 
 ## Reorganização — código movido para systems/CRUDAO/
 

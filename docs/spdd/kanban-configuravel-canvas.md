@@ -129,7 +129,7 @@ _Atualizado por: /techspec v1.0 — 2026-08-22_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review (agent QA) — 2026-08-22, a partir da TASK-05.0_
+_Atualizado por: /code-review (agent QA) — 2026-08-23, a partir das TASK-05.0 e TASK-05.1_
 > Decisões: —
 
 **Restrições:**
@@ -137,8 +137,12 @@ _Atualizado por: /code-review (agent QA) — 2026-08-22, a partir da TASK-05.0_
 - **G-AUTH-02**: rotas `route.ts` de fluxo OIDC (login/callback/logout) e o proxy autenticado devem ter teste automatizado cobrindo os ramos de erro (state inválido, refresh falho, cookie malformado) — não só as libs puras que elas chamam.
 - **G-AUTH-03**: `COOKIE_SECURE=true` é obrigatório em qualquer ambiente com TLS. Guardrail de log implementado (`session.ts` avisa se `NODE_ENV=production` sem `COOKIE_SECURE=true`) — reforçar com checklist de release quando um TLS termination for introduzido.
 - **G-AUTH-04**: renovação de `refresh_token` deve ser resiliente a falha (nunca propagar exceção crua como 500 — sempre 401 explícito) e deduplicada por chave (refresh_token) para evitar corrida em rotação de refresh token. Ver `garantirSessaoValida` em `frontend/src/lib/auth/renovacao.ts`.
+- **G-RT-01** (TASK-05.1): conexões WebSocket/STOMP devem exigir credencial válida no frame CONNECT (header `Authorization: Bearer`, validado via o mesmo `JwtDecoder` da API REST) — o handshake HTTP de upgrade pode ser `permitAll()` (necessário para o upgrade em si), mas isso não dispensa autenticação no nível do protocolo STOMP. Ver `StompAuthChannelInterceptor` (backend) e `conectarBoard`/`GET /api/ws-token` (frontend). Autorização por projeto (restringir subscription a membros do projeto) ainda não é aplicada — RBAC atual é por papel/permissão global, sem escopo por projeto em nenhum outro endpoint do sistema.
+- **G-RBAC-05**: DTOs de leitura pública (ex.: `UsuarioDTO`) não devem expor PII (e-mail, etc.) além do estritamente necessário ao consumidor — minimização de dados. `UsuarioDTO` expõe só `id`/`nome`.
+- **G-FE-01**: todo fluxo de drag-and-drop deve implementar `onDragEnd` para garantir limpeza de estado de UI (destaque de coluna, item arrastando) mesmo em cancelamento ou drop fora de área válida.
 
 **O que NÃO fazer:**
-- Não expor `access_token`/`refresh_token`/`id_token` ao JS do browser — toda chamada autenticada à API passa pelo proxy server-side (`/api/proxy/[...path]`), nunca por fetch direto do client com o token.
+- Não expor `access_token`/`refresh_token`/`id_token` ao JS do browser para chamadas REST — toda chamada autenticada à API passa pelo proxy server-side (`/api/proxy/[...path]`), nunca por fetch direto do client com o token. **Exceção documentada:** `GET /api/ws-token` expõe o `access_token` ao client especificamente para o header CONNECT do STOMP (a lib roda no browser e conecta direto ao backend, sem passar pelo proxy) — o token não é persistido pelo client (sem localStorage/cookie), só usado em memória no momento do connect.
 - Não usar `NODE_ENV === 'production'` como proxy para "servir por HTTPS" — são coisas independentes neste deploy (Docker on-premise sem TLS nesta fase). Usar env var dedicada (`COOKIE_SECURE`).
 - Não confiar em validação feita apenas na escrita de um valor vindo de input do usuário (ex.: `returnTo`) — revalidar também no ponto de uso (defesa em profundidade), como feito em `callback/route.ts`.
+- Não tratar `/ws/**` como "seguro por padrão" só porque `permitAll()` está no `SecurityConfig` — o `permitAll()` ali é sobre o handshake HTTP, não sobre autenticação STOMP (ver G-RT-01).
