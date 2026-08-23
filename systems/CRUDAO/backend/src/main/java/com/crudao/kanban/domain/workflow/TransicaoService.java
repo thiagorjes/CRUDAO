@@ -1,6 +1,7 @@
 package com.crudao.kanban.domain.workflow;
 
 import com.crudao.kanban.common.RecursoNaoEncontradoException;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,14 @@ public class TransicaoService {
   private final TransicaoRepository transicaoRepository;
   private final EtapaRepository etapaRepository;
   private final WorkflowMapper workflowMapper;
+
+  /** Usado pelo frontend para calcular colunas de destino válidas durante o drag (DDR-002). */
+  @Transactional(readOnly = true)
+  public List<TransicaoDTO> listarPorWorkflow(UUID workflowId) {
+    return transicaoRepository.findByWorkflowId(workflowId).stream()
+        .map(workflowMapper::paraDTO)
+        .toList();
+  }
 
   @Transactional
   public TransicaoDTO criar(TransicaoRequest request) {

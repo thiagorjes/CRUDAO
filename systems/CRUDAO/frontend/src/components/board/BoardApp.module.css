@@ -1,0 +1,89 @@
+.pagina {
+  padding: var(--spacing-xl) var(--spacing-xl);
+  min-height: 100vh;
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.titulo {
+  font: var(--font-heading-1);
+}
+
+.seletorProjeto {
+  font: var(--font-body);
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.grade {
+  display: grid;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: var(--spacing-md);
+}
+
+.cabecalhoRaia {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 10px;
+  font: var(--font-body);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.colunaHeader {
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.colunaHeaderDestacada {
+  border-color: var(--color-primary);
+}
+
+.colunaHeaderNome {
+  font: var(--font-heading-2);
+  font-size: 14px;
+}
+
+.colunaHeaderContagem {
+  margin-left: auto;
+  font: var(--font-caption);
+}
+
+.celula {
+  min-height: 140px;
+  padding: var(--spacing-sm);
+  background: var(--color-background);
+  border: 2px dashed transparent;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.celulaValida {
+  background: rgba(13, 110, 253, 0.06);
+  border-color: var(--color-primary);
+}
+
+.vazio {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font: var(--font-body);
+}

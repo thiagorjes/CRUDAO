@@ -75,7 +75,14 @@ _Atualizado em: 2026-08-22_
 - **Testes:** 28 testes unitários (vitest) verdes nas libs puras de auth (config, token-exchange, proxy-url, return-to, renovacao — incl. dedupe de refresh concorrente); lint e `next build` limpos; backend 37 testes + build limpo; fluxo completo validado via `docker compose` real (login → Keycloak → callback → sessão em cookie httpOnly → proxy retorna dados reais do backend autenticado → logout limpa sessão)
 - **Nota técnica:** achado de infra — no modo `start-dev` do Keycloak, o `iss` do token em fluxos Authorization Code segue o host do `/authorize` (público), não o da troca do `code` (interno); backend agora separa jwk-set-uri (interno) de validação de `iss` (público) — ver TASK-05.0 para detalhes
 - **Code review:** agent QA — aprovado com ressalvas; 1 finding 🔴 (open redirect via `returnTo`) e 5 🟡 corrigidos (fallback 401 no refresh falho, dedupe de refresh concorrente, parse seguro do cookie de state, guardrail de log para `COOKIE_SECURE`); guardrails G-AUTH-01 a G-AUTH-04 registrados em `docs/spdd/kanban-configuravel-canvas.md` (dimensão S)
-- **Próxima task:** TASK-05.1 — Frontend: Board principal (em andamento)
+- **Próxima task:** TASK-05.2 — Frontend: Dashboard de gestão (aguardando autorização)
+
+- **Task implementada:** TASK-05.1 — Frontend: Board principal (drag-and-drop, cards, raias) — 2026-08-23
+- **Arquivos:** `frontend/src/lib/api/{types,client}.ts`; `frontend/src/lib/board/{transicoes,agrupar,tempo,realtime}.ts` (+ testes); `frontend/src/components/board/{BoardApp,CardTarefa}.tsx` (+ CSS modules); `frontend/src/components/ui/{toast,ModalErro,Skeleton}.tsx`; `frontend/src/app/page.tsx` (board), `frontend/src/app/tarefas/[id]/page.tsx` (detalhe: tempo por etapa, impedimento, observadores); `frontend/src/app/{globals.css,layout.tsx}` (tokens DDR-001, fonte Roboto); `frontend/package.json` (+ `@stomp/stompjs`); `backend/.../domain/workflow/{TransicaoController,TransicaoService}.java` (+ `GET /api/transicoes?workflowId=`, endpoint de leitura que não existia); `backend/.../domain/rbac/{UsuarioController,UsuarioDTO}.java` (novo — `GET /api/usuarios` somente leitura, resolve responsável em nome/inicial no card)
+- **Testes:** 43 testes unitários (vitest) verdes — engine de transições (avançar/retroceder/reabertura, RF-012), agrupamento raia×etapa, formatação de duração, libs de auth da TASK-05.0; lint e `next build` limpos; backend `mvn verify` verde
+- **Testes manuais via `docker compose` real:** login → board carrega dados reais pelo proxy; `mover` para etapa sem transição válida retorna 409 (server-side); impedimento marca/desmarca e reflete em `registros-etapa`; evento STOMP chega ao subscriber em ~200ms (RNF-001 exige <2s), testado com cliente `@stomp/stompjs` real
+- **Nota técnica:** escopo consciente — RF-003 (criação de tarefa) fora do RF desta task, sem UI de criação; Painel de Administração (TASK-05.3) e Dashboard (TASK-05.2) ficam para tasks seguintes
+- **Code review:** solicitado ao agent QA em background — resultado e eventuais correções a registrar na próxima atualização
 
 ## Reorganização — código movido para systems/CRUDAO/
 

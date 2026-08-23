@@ -96,16 +96,16 @@ _Atualizado por: /tasks v1.0 — 2026-08-22_
 > Decisões: —
 
 **Tasks ordenadas por dependência (sequencial, sem paralelismo):**
-- [ ] TASK-00.1 — Provisionar Keycloak via Docker
-- [ ] TASK-00.2 — Setup do projeto base (backend, frontend, PostgreSQL)
-- [ ] TASK-01.1 — Modelo de domínio: Projeto, Workflow, Etapa e Transição
+- [x] TASK-00.1 — Provisionar Keycloak via Docker
+- [x] TASK-00.2 — Setup do projeto base (backend, frontend, PostgreSQL)
+- [x] TASK-01.1 — Modelo de domínio: Projeto, Workflow, Etapa e Transição
 - [x] TASK-01.2 — Raias (swimlanes) por projeto e default globais
 - [x] TASK-02.1 — CRUD de Tarefa e movimentação entre etapas
 - [x] TASK-02.2 — Tempo real (WebSocket/STOMP), broadcast multi-pod e observadores
 - [x] TASK-04.1 — RBAC híbrido: papéis, permissões e integração Keycloak
 - [x] TASK-03.1 — Cálculo de lead-time, impedimento e Dashboard assíncrono
 - [x] TASK-05.0 — Frontend: Login via Keycloak (OIDC Authorization Code) — lacuna identificada em 2026-08-22
-- [ ] TASK-05.1 — Frontend: Board principal
+- [x] TASK-05.1 — Frontend: Board principal
 - [ ] TASK-05.2 — Frontend: Dashboard de gestão
 - [ ] TASK-05.3 — Frontend: Painel de Administração
 - [ ] TASK-06.1 — Testes E2E dos fluxos principais e revisão de cobertura
