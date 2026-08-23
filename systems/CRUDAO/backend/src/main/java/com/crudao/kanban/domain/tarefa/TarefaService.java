@@ -2,6 +2,7 @@ package com.crudao.kanban.domain.tarefa;
 
 import com.crudao.kanban.common.RecursoNaoEncontradoException;
 import com.crudao.kanban.common.RegraDeNegocioException;
+import com.crudao.kanban.domain.leadtime.RegistroEtapaService;
 import com.crudao.kanban.domain.projeto.Projeto;
 import com.crudao.kanban.domain.projeto.ProjetoRepository;
 import com.crudao.kanban.domain.raia.Raia;
@@ -38,6 +39,7 @@ public class TarefaService {
   private final TransicaoEngine transicaoEngine;
   private final TarefaMapper tarefaMapper;
   private final EventoBoardPublisher eventoBoardPublisher;
+  private final RegistroEtapaService registroEtapaService;
 
   @Transactional(readOnly = true)
   public List<TarefaDTO> listarPorProjeto(UUID projetoId) {
@@ -67,6 +69,7 @@ public class TarefaService {
     tarefa.setDescricao(request.descricao());
     tarefa.setResponsavelId(request.responsavelId());
     Tarefa salva = tarefaRepository.save(tarefa);
+    registroEtapaService.abrirRegistro(salva, etapaInicial);
     publicarAposCommit(TipoEventoBoard.TAREFA_CRIADA, salva);
     return tarefaMapper.paraDTO(salva);
   }
@@ -107,9 +110,11 @@ public class TarefaService {
               .formatted(tarefa.getEtapaAtual().getNome(), etapaDestino.getNome()));
     }
 
+    registroEtapaService.fecharRegistroAtual(tarefa);
     tarefa.setEtapaAtual(etapaDestino);
     tarefa.setAtualizadoEm(java.time.Instant.now());
     Tarefa salva = tarefaRepository.save(tarefa);
+    registroEtapaService.abrirRegistro(salva, etapaDestino);
     publicarAposCommit(TipoEventoBoard.TAREFA_MOVIDA, salva);
     return tarefaMapper.paraDTO(salva);
   }
@@ -128,20 +133,21 @@ public class TarefaService {
     Workflow workflowDestino = buscarWorkflowAtivo(projetoDestino);
     Etapa etapaDestino = buscarEtapaDoWorkflow(request.etapaDestinoId(), workflowDestino);
 
+    registroEtapaService.fecharRegistroAtual(tarefa);
     tarefa.setProjeto(projetoDestino);
     tarefa.setWorkflow(workflowDestino);
     tarefa.setEtapaAtual(etapaDestino);
     tarefa.setAtualizadoEm(java.time.Instant.now());
     Tarefa salva = tarefaRepository.save(tarefa);
+    registroEtapaService.abrirRegistro(salva, etapaDestino);
     publicarAposCommit(TipoEventoBoard.TAREFA_MOVIDA, salva);
     return tarefaMapper.paraDTO(salva);
   }
 
   /**
-   * Marca/desmarca impedimento — independe da posição da tarefa no workflow (RF-004).
-   *
-   * <p>{@code request.motivo()} não é persistido aqui: o histórico de {@code Impedimento} (entidade
-   * com início/fim, usada no cálculo de lead-time) é escopo da TASK-03.1.
+   * Marca/desmarca impedimento — independe da posição da tarefa no workflow (RF-004). Abre/fecha um
+   * {@link com.crudao.kanban.domain.leadtime.Impedimento} vinculado ao registro de permanência
+   * atual da tarefa, usado no cálculo de lead-time de impedimento (RN-002).
    */
   @Transactional
   public TarefaDTO marcarImpedimento(UUID id, TarefaImpedimentoRequest request) {
@@ -149,6 +155,7 @@ public class TarefaService {
     tarefa.setImpedida(true);
     tarefa.setAtualizadoEm(java.time.Instant.now());
     Tarefa salva = tarefaRepository.save(tarefa);
+    registroEtapaService.abrirImpedimento(salva, request.motivo());
     publicarAposCommit(TipoEventoBoard.IMPEDIMENTO_ALTERADO, salva);
     return tarefaMapper.paraDTO(salva);
   }
@@ -159,6 +166,7 @@ public class TarefaService {
     tarefa.setImpedida(false);
     tarefa.setAtualizadoEm(java.time.Instant.now());
     Tarefa salva = tarefaRepository.save(tarefa);
+    registroEtapaService.fecharImpedimentoAtual(salva);
     publicarAposCommit(TipoEventoBoard.IMPEDIMENTO_ALTERADO, salva);
     return tarefaMapper.paraDTO(salva);
   }

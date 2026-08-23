@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.crudao.kanban.common.RecursoNaoEncontradoException;
 import com.crudao.kanban.common.RegraDeNegocioException;
+import com.crudao.kanban.domain.leadtime.RegistroEtapaService;
 import com.crudao.kanban.domain.projeto.Projeto;
 import com.crudao.kanban.domain.projeto.ProjetoRepository;
 import com.crudao.kanban.domain.raia.RaiaRepository;
@@ -41,6 +42,7 @@ class TarefaServiceTest {
   @Mock private ObservadorRepository observadorRepository;
   @Mock private TransicaoRepository transicaoRepository;
   @Mock private EventoBoardPublisher eventoBoardPublisher;
+  @Mock private RegistroEtapaService registroEtapaService;
 
   private TarefaService tarefaService;
   private Workflow workflow;
@@ -62,7 +64,8 @@ class TarefaServiceTest {
             transicaoRepository,
             new TransicaoEngine(),
             Mappers.getMapper(TarefaMapper.class),
-            eventoBoardPublisher);
+            eventoBoardPublisher,
+            registroEtapaService);
 
     workflow = new Workflow();
     workflow.setId(UUID.randomUUID());

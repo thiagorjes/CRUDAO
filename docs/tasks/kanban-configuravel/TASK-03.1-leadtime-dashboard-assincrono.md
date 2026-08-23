@@ -2,6 +2,7 @@
 
 **Epic:** EPIC-03 — Lead-time e Dashboard | **User Story:** US-03.1 — Métricas de andamento para gestão
 **Sistema:** CRUDAO | **RF:** RF-006, RF-007 | **Dependências:** TASK-02.2
+**Status: Concluída — 2026-08-22**
 
 ---
 
@@ -11,12 +12,12 @@ Dar visibilidade de lead-time por etapa e tempo em impedimento, com dashboard ag
 
 ## O que deve ser feito
 
-- [ ] Implementar entidades RegistroEtapa e Impedimento (histórico de permanência e tempo impedido por etapa, RN-001, RN-002)
-- [ ] Ao mover uma tarefa, fechar o RegistroEtapa da etapa anterior e abrir um novo na etapa destino
-- [ ] Exibir na tarefa: tempo por etapa + observação de tempo em impedimento durante aquela etapa (RF-006)
-- [ ] Endpoint `POST /api/projetos/{id}/dashboard/calcular` disparando cálculo `@Async`, respondendo com `jobId` (202)
-- [ ] Entrega do resultado via STOMP (`/topic/projetos/{id}/dashboard/{jobId}`) com fallback de polling (`GET .../jobs/{jobId}`)
-- [ ] Cálculo de lead-time médio por etapa e tempo médio em impedimento, filtrado pelo período (data início/fim) selecionado
+- [x] Implementar entidades RegistroEtapa e Impedimento (histórico de permanência e tempo impedido por etapa, RN-001, RN-002)
+- [x] Ao mover uma tarefa, fechar o RegistroEtapa da etapa anterior e abrir um novo na etapa destino
+- [x] Exibir na tarefa: tempo por etapa + observação de tempo em impedimento durante aquela etapa (RF-006)
+- [x] Endpoint `POST /api/projetos/{id}/dashboard/calcular` disparando cálculo `@Async`, respondendo com `jobId` (202)
+- [x] Entrega do resultado via STOMP (`/topic/projetos/{id}/dashboard/{jobId}`) com fallback de polling (`GET .../jobs/{jobId}`)
+- [x] Cálculo de lead-time médio por etapa e tempo médio em impedimento, filtrado pelo período (data início/fim) selecionado
 
 ## Guia técnico
 
