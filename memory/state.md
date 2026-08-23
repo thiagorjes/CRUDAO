@@ -49,7 +49,12 @@ _Atualizado em: 2026-08-22_
 - **Task implementada:** TASK-01.2 — Raias (swimlanes) por projeto e default globais — 2026-08-22
 - **Arquivos:** `backend/src/main/java/com/crudao/kanban/domain/raia/*` (Raia, RaiaResolver, RaiaRepository, RaiaService, RaiaController, RaiaMapper, RaiaDTO/Request), `common/VerificadorDeTarefasAtivas.java` (+ `existemTarefasNaRaia`)
 - **Testes:** TDD (`RaiaResolverTest`, 3 casos) via `mvn test`; fluxo REST validado via `docker compose` (raia própria vs. fallback para default global, exclusão)
-- **Próxima task:** TASK-02.1 — CRUD de Tarefa e movimentação entre etapas
+- **Task implementada:** TASK-02.1 — CRUD de Tarefa e movimentação entre etapas — 2026-08-22
+- **Arquivos:** `backend/src/main/java/com/crudao/kanban/domain/tarefa/*` (Tarefa, TipoTarefa, Repository, Service, Controller, Mapper, DTOs/Requests, VerificadorDeTarefasAtivasImpl); `common/VerificadorDeTarefasAtivas.java` (virou interface); `domain/projeto/ProjetoController.java` (+ endpoint `PUT /{id}/workflow-ativo`, expondo método de serviço já existente mas não roteado)
+- **Testes:** TDD (`TarefaServiceTest`, 8 casos — mover permitido/proibido/reabertura, impedimento independente de etapa, mover entre projetos) via `mvn test`; fluxo REST completo validado via `docker compose` (2 projetos, workflows, transições, RN-005, mover-projeto)
+- **Code review:** agent QA — aprovado com ressalvas; 3 findings 🟡 corrigidos (testes de `moverParaProjeto` e REABERTURA adicionados, comentário sobre `motivo` não persistido)
+- **Nota técnica:** RegistroEtapa/Impedimento (histórico de lead-time) ficam para TASK-03.1; RBAC de `mover-projeto` fica para TASK-04.1 (TODO no código); nenhum endpoint do projeto tem controle de acesso ainda (`permitAll()` global, decisão da TASK-00.2)
+- **Próxima task:** TASK-02.2 — Tempo real (WebSocket/STOMP), broadcast multi-pod e observadores
 
 ---
 

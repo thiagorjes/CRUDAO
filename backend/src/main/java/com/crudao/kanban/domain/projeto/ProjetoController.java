@@ -50,4 +50,11 @@ public class ProjetoController {
     projetoService.excluir(id);
     return ResponseEntity.noContent().build();
   }
+
+  @PutMapping("/{id}/workflow-ativo")
+  public ResponseEntity<Void> definirWorkflowAtivo(
+      @PathVariable UUID id, @Valid @RequestBody DefinirWorkflowAtivoRequest request) {
+    projetoService.definirWorkflowAtivo(id, request.workflowId());
+    return ResponseEntity.noContent().build();
+  }
 }

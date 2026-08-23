@@ -100,7 +100,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-22_
 - [ ] TASK-00.2 — Setup do projeto base (backend, frontend, PostgreSQL)
 - [ ] TASK-01.1 — Modelo de domínio: Projeto, Workflow, Etapa e Transição
 - [x] TASK-01.2 — Raias (swimlanes) por projeto e default globais
-- [ ] TASK-02.1 — CRUD de Tarefa e movimentação entre etapas
+- [x] TASK-02.1 — CRUD de Tarefa e movimentação entre etapas
 - [ ] TASK-02.2 — Tempo real (WebSocket/STOMP), broadcast multi-pod e observadores
 - [ ] TASK-04.1 — RBAC híbrido: papéis, permissões e integração Keycloak
 - [ ] TASK-03.1 — Cálculo de lead-time, impedimento e Dashboard assíncrono
