@@ -69,7 +69,7 @@ Para decisões de priorização ou escopo tomadas aqui: criar BDR (Business Deci
    - **[P] com TASK-X.Y** se pode ser executada em paralelo
    - **Contexto:** por que esta task existe, o que ela resolve
    - **O que deve ser feito:** checklist de ações concretas
-   - **Guia técnico:** arquivo a criar/modificar, padrão a seguir
+   - **Guia técnico:** arquivo a criar/modificar, padrão a seguir — **todo caminho de arquivo é relativo a `systems/[sistema]/`** (ex: `backend/src/main/...`, nunca `systems/[sistema]/backend/src/main/...` nem caminho a partir da raiz do workspace). `/implement` e `/tdd` resolvem `[sistema]` pelo campo Sistema da task e operam dentro desse diretório
    - **Critérios de aceite:** mensuráveis e verificáveis
 
 2.3. **Gerar arquivo individual por task (obrigatório):** para cada Task, salvar também `docs/tasks/[feature]/TASK-[EPIC].[SEQ]-[slug].md` contendo o conteúdo completo da task (todos os campos da 2.2) de forma autocontida — é o arquivo que `/implement TASK-X.Y` consome diretamente, sem precisar abrir o documento consolidado. Não é opcional nem gerado apenas sob pedido do usuário.

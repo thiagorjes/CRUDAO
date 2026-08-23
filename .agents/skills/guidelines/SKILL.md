@@ -31,7 +31,7 @@ Gerar os guidelines de um sistema, capturando decisões de stack, arquitetura e 
 ## Pré-condições
 
 - `memory/state.md` deve existir com o sistema registrado na tabela de Sistemas
-- `systems/[sistema]/` deve existir (ou será criado)
+- `systems/[sistema]/` deve existir (ou será criado) — é o **repositório do sistema**: além de `guidelines/`, é onde `/tasks`, `/implement`, `/tdd` e `/code-review` criam e editam todo o código (ex: `systems/[sistema]/backend/`, `systems/[sistema]/frontend/`). Nunca na raiz do workspace, mesmo em projetos de sistema único.
 - Se guidelines já existem: perguntar se deseja atualizar (bump de versão) ou substituir
 
 ## Workflow

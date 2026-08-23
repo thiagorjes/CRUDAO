@@ -35,7 +35,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./systems/CRUDAO/backend
     container_name: crudao-backend
     environment:
       DB_HOST: postgres
@@ -55,7 +55,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./systems/CRUDAO/frontend
     container_name: crudao-frontend
     environment:
       BACKEND_URL: http://backend:8080

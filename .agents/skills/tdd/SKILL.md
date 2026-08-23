@@ -25,6 +25,8 @@ Implementar uma task seguindo o ciclo TDD rigoroso: escrever testes que falham a
 
 ### Fase 0 — Leitura de contexto (obrigatória)
 
+**Regra fundamental de localização — todo o ciclo acontece dentro de `systems/[sistema]/`:** testes, implementação e comandos git rodam nesse diretório, no repositório daquele sistema — nunca na raiz do workspace. Resolver `[sistema]` pelo campo `Sistema:` da task.
+
 Ler nesta ordem antes de qualquer código:
 
 1. Task alvo: ID, critérios de aceite, guia técnico

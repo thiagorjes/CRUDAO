@@ -35,6 +35,8 @@ Implementar uma task específica do documento de tasks com fidelidade à TechSpe
 
 ### Fase 0 — Leitura de contexto (obrigatória)
 
+**Regra fundamental de localização — todo trabalho desta skill acontece dentro de `systems/[sistema]/`:** criação/edição de arquivos de código, execução de testes e comandos git rodam nesse diretório, no repositório daquele sistema — nunca na raiz do workspace. Resolver `[sistema]` pelo campo `Sistema:` da task (ou o único da tabela Sistemas de `memory/state.md`, se houver apenas um). Os caminhos do "Guia técnico de implementação" da task são sempre relativos a `systems/[sistema]/`.
+
 **Ler nesta ordem, sem pular:**
 
 1. `docs/tasks/[feature]-tasks.md` — localizar a task solicitada pelo ID (ex: TASK-01.1)
@@ -75,9 +77,9 @@ Se houver ambiguidade ou informação ausente na task que impeça implementar co
 
 ### Fase 2 — Implementação
 
-2.1. **Verificar se arquivo-alvo já existe:**
+2.1. **Verificar se arquivo-alvo já existe (dentro de `systems/[sistema]/`):**
    - Se sim: ler conteúdo antes de modificar (nunca sobrescrever cegamente)
-   - Se não: criar novo seguindo os padrões de N
+   - Se não: criar novo dentro de `systems/[sistema]/`, seguindo os padrões de N — nunca na raiz do workspace
 
 2.2. **Implementar seguindo os critérios de aceite da task:**
    - Cada item do checklist "O que deve ser feito" deve ser implementado

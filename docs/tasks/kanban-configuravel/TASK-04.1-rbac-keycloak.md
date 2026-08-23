@@ -1,5 +1,7 @@
 # TASK-04.1 — RBAC híbrido: papéis, permissões e integração Keycloak [G]
 
+**Status:** Concluída — 2026-08-22
+
 **Epic:** EPIC-04 — RBAC e Autenticação | **User Story:** US-04.1 — Controle de acesso configurável
 **Sistema:** CRUDAO | **RF:** RF-013, RF-014, RNF-003 | **Dependências:** TASK-00.2
 
@@ -11,13 +13,13 @@ Keycloak autentica; a aplicação modela papéis/permissões configuráveis pelo
 
 ## O que deve ser feito
 
-- [ ] Implementar entidades Usuário, Papel, Permissão, PapelPermissao
-- [ ] Seed dos papéis padrão `admin` (protegido) e `user`
-- [ ] CRUD de Papel/Permissão pelo admin (ou papel delegado, exceto sobre o próprio papel `admin`, RN-006)
-- [ ] Definir granularidade final das chaves de permissão (Q-003 da techspec: ex. `projeto:gerenciar`, `workflow:gerenciar`, `tarefa:gerenciar`, `impedimento:marcar`, `papel:gerenciar`, `dashboard:visualizar`)
-- [ ] Middleware/aspecto de validação de permissão em todo endpoint de escrita (RNF-003)
-- [ ] Integração OIDC completa com o Keycloak da TASK-00.1, mapeando claim/sub do usuário autenticado ao Usuário interno (RF-014)
-- [ ] Implementar fallback de autenticação própria caso Keycloak esteja indisponível
+- [x] Implementar entidades Usuário, Papel, Permissão, PapelPermissao
+- [x] Seed dos papéis padrão `admin` (protegido) e `user`
+- [x] CRUD de Papel/Permissão pelo admin (ou papel delegado, exceto sobre o próprio papel `admin`, RN-006)
+- [x] Definir granularidade final das chaves de permissão (Q-003 da techspec: ex. `projeto:gerenciar`, `workflow:gerenciar`, `tarefa:gerenciar`, `impedimento:marcar`, `papel:gerenciar`, `dashboard:visualizar`)
+- [x] Middleware/aspecto de validação de permissão em todo endpoint de escrita (RNF-003)
+- [x] Integração OIDC completa com o Keycloak da TASK-00.1, mapeando claim/sub do usuário autenticado ao Usuário interno (RF-014)
+- [x] Implementar fallback de autenticação própria caso Keycloak esteja indisponível
 
 ## Guia técnico
 

@@ -35,11 +35,12 @@ Revisar o código implementado contra: TechSpec, guidelines do sistema, critéri
 
 ### Fase 0 — Leitura de contexto e gate de testes
 
-1. Identificar a task sendo revisada (ID e critérios de aceite)
-2. Ler `docs/spdd/[feature]-canvas.md` — dimensão S atual (Safeguards já conhecidos)
-3. Ler `docs/techspec/[feature]-techspec.md` — seção de Segurança e Observabilidade
-4. Ler guidelines relevantes: `security.md`, `coding-standards.md`, `testing.md`
-5. **Gate obrigatório — executar a suíte de testes antes de revisar:**
+1. **Resolver o sistema em revisão**: pelo campo `Sistema:` da task, ou o repositório onde estão os arquivos alterados. O diff e os comandos git rodam **dentro de `systems/[sistema]/`** — nunca na raiz do workspace.
+2. Identificar a task sendo revisada (ID e critérios de aceite)
+3. Ler `docs/spdd/[feature]-canvas.md` — dimensão S atual (Safeguards já conhecidos)
+4. Ler `docs/techspec/[feature]-techspec.md` — seção de Segurança e Observabilidade
+5. Ler guidelines relevantes: `security.md`, `coding-standards.md`, `testing.md`
+6. **Gate obrigatório — executar a suíte de testes antes de revisar:**
    - Se os testes **falharem**: reportar imediatamente como 🔴 CRÍTICO "Testes falhando" e encerrar com veredicto `❌ Requer alterações`. Não prosseguir para a Fase 1 — um código com testes falhando não está pronto para review.
    - Se os testes **passarem**: prosseguir normalmente.
    - Se não for possível executar os testes (ambiente sem runtime): sinalizar no relatório e continuar com revisão estática apenas.
