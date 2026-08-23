@@ -20,6 +20,18 @@ export const COOKIE_STATE = 'crudao_auth_state';
  */
 export const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 
+// Guardrail (G-AUTH-03, code review da TASK-05.0): avisa alto se o processo está marcado como
+// produção sem `COOKIE_SECURE=true` — sinal de que o TLS termination foi introduzido (ou é
+// esperado) mas a env var ficou esquecida, deixando o cookie de sessão sem `Secure`. Não bloqueia
+// o boot (o deploy atual on-premise legitimamente roda sem TLS nesta fase), só torna o descuido
+// visível nos logs em vez de silencioso.
+if (process.env.NODE_ENV === 'production' && !COOKIE_SECURE) {
+  console.warn(
+    '[auth] NODE_ENV=production sem COOKIE_SECURE=true — cookies de sessão sairão sem o' +
+      ' atributo Secure. Se este deploy já serve por HTTPS, defina COOKIE_SECURE=true.',
+  );
+}
+
 export function calcularExpiracao(expiresInSegundos: number): number {
   return Date.now() + expiresInSegundos * 1000;
 }

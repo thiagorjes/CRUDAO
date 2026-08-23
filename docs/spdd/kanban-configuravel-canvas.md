@@ -104,7 +104,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-22_
 - [x] TASK-02.2 — Tempo real (WebSocket/STOMP), broadcast multi-pod e observadores
 - [x] TASK-04.1 — RBAC híbrido: papéis, permissões e integração Keycloak
 - [x] TASK-03.1 — Cálculo de lead-time, impedimento e Dashboard assíncrono
-- [ ] TASK-05.0 — Frontend: Login via Keycloak (OIDC Authorization Code) — lacuna identificada em 2026-08-22
+- [x] TASK-05.0 — Frontend: Login via Keycloak (OIDC Authorization Code) — lacuna identificada em 2026-08-22
 - [ ] TASK-05.1 — Frontend: Board principal
 - [ ] TASK-05.2 — Frontend: Dashboard de gestão
 - [ ] TASK-05.3 — Frontend: Painel de Administração
@@ -129,11 +129,16 @@ _Atualizado por: /techspec v1.0 — 2026-08-22_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review v1.0 — {{DATE}}_
+_Atualizado por: /code-review (agent QA) — 2026-08-22, a partir da TASK-05.0_
 > Decisões: —
 
 **Restrições:**
-- {{RESTRICAO_1}}
+- **G-AUTH-01**: toda URL de redirect pós-login (`returnTo` ou equivalente) deve ser validada como path relativo interno antes de uso — nunca aceitar URL absoluta vinda de input do usuário/query string (open redirect). Ver `caminhoRelativoSeguro` em `frontend/src/lib/auth/return-to.ts`.
+- **G-AUTH-02**: rotas `route.ts` de fluxo OIDC (login/callback/logout) e o proxy autenticado devem ter teste automatizado cobrindo os ramos de erro (state inválido, refresh falho, cookie malformado) — não só as libs puras que elas chamam.
+- **G-AUTH-03**: `COOKIE_SECURE=true` é obrigatório em qualquer ambiente com TLS. Guardrail de log implementado (`session.ts` avisa se `NODE_ENV=production` sem `COOKIE_SECURE=true`) — reforçar com checklist de release quando um TLS termination for introduzido.
+- **G-AUTH-04**: renovação de `refresh_token` deve ser resiliente a falha (nunca propagar exceção crua como 500 — sempre 401 explícito) e deduplicada por chave (refresh_token) para evitar corrida em rotação de refresh token. Ver `garantirSessaoValida` em `frontend/src/lib/auth/renovacao.ts`.
 
 **O que NÃO fazer:**
-- {{NAO_FAZER_1}}
+- Não expor `access_token`/`refresh_token`/`id_token` ao JS do browser — toda chamada autenticada à API passa pelo proxy server-side (`/api/proxy/[...path]`), nunca por fetch direto do client com o token.
+- Não usar `NODE_ENV === 'production'` como proxy para "servir por HTTPS" — são coisas independentes neste deploy (Docker on-premise sem TLS nesta fase). Usar env var dedicada (`COOKIE_SECURE`).
+- Não confiar em validação feita apenas na escrita de um valor vindo de input do usuário (ex.: `returnTo`) — revalidar também no ponto de uso (defesa em profundidade), como feito em `callback/route.ts`.
