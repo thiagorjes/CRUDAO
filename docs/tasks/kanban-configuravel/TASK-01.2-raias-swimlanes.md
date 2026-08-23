@@ -1,5 +1,7 @@
 # TASK-01.2 — Raias (swimlanes) por projeto e default globais [M]
 
+**Status:** Concluída — 2026-08-22
+
 **Epic:** EPIC-01 — Domínio: Projeto, Workflow, Etapas e Raias | **User Story:** US-01.1 — Estrutura configurável de workflow por projeto
 **Sistema:** CRUDAO | **RF:** RF-011 | **Dependências:** TASK-01.1
 
@@ -11,9 +13,9 @@ Suportar múltiplos desenvolvedores no mesmo board via raias horizontais, espec�
 
 ## O que deve ser feito
 
-- [ ] Implementar entidade Raia (projeto_id nullable = raia default global)
-- [ ] CRUD de Raia, com bloqueio de exclusão se houver tarefas (RN-005)
-- [ ] Regra: projeto sem raias próprias usa raias default globais, editáveis/removíveis pelo admin do projeto (clarificado no PRD)
+- [x] Implementar entidade Raia (projeto_id nullable = raia default global)
+- [x] CRUD de Raia, com bloqueio de exclusão se houver tarefas (RN-005)
+- [x] Regra: projeto sem raias próprias usa raias default globais, editáveis/removíveis pelo admin do projeto (clarificado no PRD)
 
 ## Guia técnico
 

@@ -21,4 +21,8 @@ public class VerificadorDeTarefasAtivas {
   public boolean existemTarefasNoProjeto(UUID projetoId) {
     return false; // TODO(TASK-02.1): consultar TarefaRepository.existsByProjetoId(projetoId)
   }
+
+  public boolean existemTarefasNaRaia(UUID raiaId) {
+    return false; // TODO(TASK-02.1): consultar TarefaRepository.existsByRaiaId(raiaId)
+  }
 }
