@@ -27,9 +27,17 @@ spring:
         provider:
           keycloak:
             issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/crudao}
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/crudao}
+
+# JwtDecoder é definido manualmente em SecurityConfig (não via
+# spring.security.oauth2.resourceserver.jwt.issuer-uri): a mesma URL não serve para as duas
+# finalidades em ambiente Docker — busca de chaves (JWKS) precisa de uma URL alcançável de dentro
+# do container (rede interna), enquanto a validação do claim `iss` precisa da URL pública usada
+# pelo browser no /authorize (é essa que o Keycloak estampa no token em fluxos Authorization Code
+# — TASK-05.0). Ver crudao.keycloak.* abaixo.
+crudao:
+  keycloak:
+    issuer-uri-interno: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/crudao}
+    issuer-uri-publico: ${KEYCLOAK_ISSUER_URI_PUBLIC:${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/crudao}}
 
 server:
   port: 8080

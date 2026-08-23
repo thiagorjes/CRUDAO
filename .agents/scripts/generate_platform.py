@@ -6,6 +6,7 @@ Usage: python generate_platform.py --platform claude|cursor|copilot|opencode|all
 
 import argparse
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -15,10 +16,28 @@ def parse_frontmatter(content: str) -> dict:
     if not m:
         return {}
     fm = {}
-    for line in m.group(1).splitlines():
-        if ":" in line:
+    lines = m.group(1).splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if ":" in line and not line.startswith((" ", "\t")):
             key, _, val = line.partition(":")
-            fm[key.strip()] = val.strip()
+            key = key.strip()
+            val = val.strip()
+            if val == ">":
+                # bloco dobrado: junta linhas indentadas seguintes em um único parágrafo
+                folded = []
+                i += 1
+                while i < len(lines) and (
+                    lines[i].startswith((" ", "\t")) or not lines[i].strip()
+                ):
+                    if lines[i].strip():
+                        folded.append(lines[i].strip())
+                    i += 1
+                fm[key] = " ".join(folded)
+                continue
+            fm[key] = val
+        i += 1
     return fm
 
 
@@ -60,19 +79,36 @@ def discover_agents(source: Path) -> list[dict]:
     if not agents_dir.exists():
         return agents
     for agent_file in sorted(agents_dir.glob("*.md")):
-        agents.append({"name": agent_file.stem})
+        content = agent_file.read_text(encoding="utf-8")
+        fm = parse_frontmatter(content)
+        agents.append(
+            {
+                "name": fm.get("name", agent_file.stem),
+                "description": fm.get("description", ""),
+                "tools": fm.get("tools", "Read, Glob, Grep, Bash"),
+            }
+        )
     return agents
 
 
 def generate_claude(skills: list[dict], path: Path, source_rel: str, source: Path):
-    commands_dir = path / ".claude" / "commands"
-    commands_dir.mkdir(parents=True, exist_ok=True)
+    # Resíduo de formato antigo (slash commands) — não usado mais, skills
+    # agora vivem em .claude/skills/ para descoberta nativa.
+    old_commands_dir = path / ".claude" / "commands"
+    if old_commands_dir.exists():
+        shutil.rmtree(old_commands_dir)
+
+    skills_dir = path / ".claude" / "skills"
     for skill in skills:
-        cmd_file = commands_dir / f"{skill['dir']}.md"
-        cmd_file.write_text(
-            f"@{source_rel}/skills/{skill['dir']}/SKILL.md\n", encoding="utf-8"
+        skill_dir = skills_dir / skill["dir"]
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        skill_file = skill_dir / "SKILL.md"
+        skill_file.write_text(
+            f"---\nname: {skill['name']}\ndescription: {skill['description']}\n---\n\n"
+            f"@{source_rel}/skills/{skill['dir']}/SKILL.md\n",
+            encoding="utf-8",
         )
-    print(f"  claude: {len(skills)} commands em {commands_dir}")
+    print(f"  claude: {len(skills)} skills em {skills_dir}")
 
     agents = discover_agents(source)
     if agents:
@@ -81,7 +117,10 @@ def generate_claude(skills: list[dict], path: Path, source_rel: str, source: Pat
         for agent in agents:
             agent_file = agents_dir / f"{agent['name']}.md"
             agent_file.write_text(
-                f"@{source_rel}/agents/{agent['name']}.md\n", encoding="utf-8"
+                f"---\nname: {agent['name']}\ndescription: {agent['description']}\n"
+                f"tools: {agent['tools']}\n---\n\n"
+                f"@{source_rel}/agents/{agent['name']}.md\n",
+                encoding="utf-8",
             )
         print(f"  claude: {len(agents)} agents em {agents_dir}")
 

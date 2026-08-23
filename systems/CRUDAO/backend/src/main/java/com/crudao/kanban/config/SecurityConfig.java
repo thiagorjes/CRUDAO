@@ -5,11 +5,17 @@ import static org.springframework.security.config.Customizer.withDefaults;
 import com.crudao.kanban.security.KeycloakJwtAuthenticationConverter;
 import com.crudao.kanban.security.LocalUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -28,6 +34,24 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  /**
+   * Busca as chaves de assinatura (JWKS) pela URL interna, alcançável de dentro do container
+   * (ex.: {@code http://keycloak:8080}), mas valida o claim {@code iss} contra a URL pública usada
+   * pelo browser no {@code /authorize} — é essa que o Keycloak estampa no token em fluxos
+   * Authorization Code (TASK-05.0). As duas coincidem fora do Docker (dev local sem compose).
+   */
+  @Bean
+  public JwtDecoder jwtDecoder(
+      @Value("${crudao.keycloak.issuer-uri-interno}") String issuerUriInterno,
+      @Value("${crudao.keycloak.issuer-uri-publico}") String issuerUriPublico) {
+    NimbusJwtDecoder decoder =
+        NimbusJwtDecoder.withJwkSetUri(issuerUriInterno + "/protocol/openid-connect/certs")
+            .build();
+    OAuth2TokenValidator<Jwt> validator = JwtValidators.createDefaultWithIssuer(issuerUriPublico);
+    decoder.setJwtValidator(validator);
+    return decoder;
   }
 
   @Bean

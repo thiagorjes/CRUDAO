@@ -104,6 +104,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-22_
 - [x] TASK-02.2 — Tempo real (WebSocket/STOMP), broadcast multi-pod e observadores
 - [x] TASK-04.1 — RBAC híbrido: papéis, permissões e integração Keycloak
 - [x] TASK-03.1 — Cálculo de lead-time, impedimento e Dashboard assíncrono
+- [ ] TASK-05.0 — Frontend: Login via Keycloak (OIDC Authorization Code) — lacuna identificada em 2026-08-22
 - [ ] TASK-05.1 — Frontend: Board principal
 - [ ] TASK-05.2 — Frontend: Dashboard de gestão
 - [ ] TASK-05.3 — Frontend: Painel de Administração

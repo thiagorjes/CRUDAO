@@ -17,7 +17,7 @@ _TechSpec: docs/techspec/kanban-configuravel-techspec.md v1.0_
 | EPIC-02 | Tarefas, Board e Tempo Real | 2 | ~2.5 dias | Após EPIC-01 |
 | EPIC-03 | Lead-time e Dashboard | 1 | ~1.5 dia | Após EPIC-02 |
 | EPIC-04 | RBAC e Autenticação (SSO Should Have) | 1 | ~1.5 dia | Após EPIC-00 (paralelo funcional, mas executado em sequência) |
-| EPIC-05 | Frontend Next.js | 3 | ~3.5 dias | Após cada backend correspondente |
+| EPIC-05 | Frontend Next.js | 4 | ~4 dias | Após cada backend correspondente |
 | EPIC-06 | Testes E2E e Fechamento | 1 | ~1 dia | Após EPIC-05 |
 
 **Legenda:** P ≤ 4h | M 4–8h | G 1–2 dias
@@ -33,7 +33,8 @@ EPIC-00
               └── TASK-02.1 (Tarefa CRUD + engine de movimentação) → TASK-02.2 (Tempo real + notificações)
                     └── TASK-03.1 (Lead-time + Dashboard assíncrono)
         └── TASK-04.1 (RBAC + integração Keycloak) [após TASK-00.2, antes ou junto de EPIC-01+]
-  └── TASK-05.1 (Frontend: Board) → depende de TASK-02.2
+  └── TASK-05.0 (Frontend: Login Keycloak) [lacuna, criada em 2026-08-22] → depende de TASK-00.2, TASK-04.1
+        └── TASK-05.1 (Frontend: Board) → depende de TASK-02.2 e TASK-05.0
   └── TASK-05.2 (Frontend: Dashboard) → depende de TASK-03.1
   └── TASK-05.3 (Frontend: Painel de Administração) → depende de TASK-04.1 e TASK-01.2
         └── TASK-06.1 (Testes E2E e fechamento)
@@ -363,7 +364,8 @@ _Ordem de início — sequencial, sem paralelismo._
 | 6 | TASK-02.2 | [kanban-configuravel/TASK-02.2-tempo-real-broadcast-observadores.md](kanban-configuravel/TASK-02.2-tempo-real-broadcast-observadores.md) | Tempo real e observadores, sobre a movimentação já implementada |
 | 7 | TASK-04.1 | [kanban-configuravel/TASK-04.1-rbac-keycloak.md](kanban-configuravel/TASK-04.1-rbac-keycloak.md) | RBAC completo, necessário antes do painel de administração e antes de expor o sistema |
 | 8 | TASK-03.1 | [kanban-configuravel/TASK-03.1-leadtime-dashboard-assincrono.md](kanban-configuravel/TASK-03.1-leadtime-dashboard-assincrono.md) | Lead-time e dashboard, sobre o histórico de movimentação já existente |
-| 9 | TASK-05.1 | [kanban-configuravel/TASK-05.1-frontend-board.md](kanban-configuravel/TASK-05.1-frontend-board.md) | Frontend do Board, após o backend de tempo real estar pronto |
+| 9a | TASK-05.0 | [kanban-configuravel/TASK-05.0-frontend-login-keycloak.md](kanban-configuravel/TASK-05.0-frontend-login-keycloak.md) | Lacuna identificada em 2026-08-22: login/OIDC no frontend, pré-requisito para qualquer chamada autenticada à API |
+| 9 | TASK-05.1 | [kanban-configuravel/TASK-05.1-frontend-board.md](kanban-configuravel/TASK-05.1-frontend-board.md) | Frontend do Board, após o backend de tempo real estar pronto e o login (TASK-05.0) |
 | 10 | TASK-05.2 | [kanban-configuravel/TASK-05.2-frontend-dashboard.md](kanban-configuravel/TASK-05.2-frontend-dashboard.md) | Frontend do Dashboard, após o backend de lead-time estar pronto |
 | 11 | TASK-05.3 | [kanban-configuravel/TASK-05.3-frontend-painel-administracao.md](kanban-configuravel/TASK-05.3-frontend-painel-administracao.md) | Frontend do Painel Admin, após RBAC e domínio completos |
 | 12 | TASK-06.1 | [kanban-configuravel/TASK-06.1-testes-e2e-fechamento.md](kanban-configuravel/TASK-06.1-testes-e2e-fechamento.md) | Fechamento com testes E2E, ao final de tudo |

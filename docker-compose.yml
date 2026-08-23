@@ -44,6 +44,7 @@ services:
       DB_USER: crudao
       DB_PASSWORD: crudao
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/crudao
+      KEYCLOAK_ISSUER_URI_PUBLIC: http://localhost:8081/realms/crudao
       KEYCLOAK_CLIENT_SECRET: crudao-app-secret-dev
     ports:
       - "8080:8080"
@@ -59,6 +60,11 @@ services:
     container_name: crudao-frontend
     environment:
       BACKEND_URL: http://backend:8080
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/crudao
+      KEYCLOAK_ISSUER_URI_PUBLIC: http://localhost:8081/realms/crudao
+      KEYCLOAK_CLIENT_ID: crudao-app
+      KEYCLOAK_CLIENT_SECRET: crudao-app-secret-dev
+      APP_BASE_URL: http://localhost:3000
     ports:
       - "3000:3000"
     depends_on:
