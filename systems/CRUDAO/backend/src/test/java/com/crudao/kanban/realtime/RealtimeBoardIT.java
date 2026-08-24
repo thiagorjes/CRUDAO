@@ -159,6 +159,31 @@ class RealtimeBoardIT {
     assertThat(evento.observadorIds()).containsExactly(observadorId);
   }
 
+  @Test
+  void eventoDeExclusaoChegaAoOutroClienteConectadoEmAte2Segundos() throws Exception {
+    BlockingQueue<EventoBoardDTO> filaCliente1 = new LinkedBlockingQueue<>();
+    BlockingQueue<EventoBoardDTO> filaCliente2 = new LinkedBlockingQueue<>();
+    inscrever(sessaoCliente1, filaCliente1);
+    inscrever(sessaoCliente2, filaCliente2);
+
+    var tarefa =
+        tarefaService.criar(
+            new TarefaRequest(
+                projetoId, backlog.getId(), null, TipoTarefa.FEATURE, "Tarefa Y", null, null));
+    // Drena o evento de criação para isolar o evento de exclusão nesta asserção.
+    filaCliente1.poll(2, TimeUnit.SECONDS);
+    filaCliente2.poll(2, TimeUnit.SECONDS);
+
+    tarefaService.excluir(tarefa.id());
+
+    EventoBoardDTO eventoCliente1 = filaCliente1.poll(2, TimeUnit.SECONDS);
+    EventoBoardDTO eventoCliente2 = filaCliente2.poll(2, TimeUnit.SECONDS);
+
+    assertThat(eventoCliente1).isNotNull();
+    assertThat(eventoCliente2).isNotNull();
+    assertThat(eventoCliente1.tipo()).isEqualTo(TipoEventoBoard.TAREFA_EXCLUIDA);
+  }
+
   private StompSession conectar() throws Exception {
     WebSocketStompClient client = new WebSocketStompClient(new StandardWebSocketClient());
     client.setMessageConverter(new MappingJackson2MessageConverter());

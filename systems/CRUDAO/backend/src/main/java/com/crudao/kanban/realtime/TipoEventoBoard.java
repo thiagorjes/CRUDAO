@@ -4,5 +4,6 @@ package com.crudao.kanban.realtime;
 public enum TipoEventoBoard {
   TAREFA_CRIADA,
   TAREFA_MOVIDA,
-  IMPEDIMENTO_ALTERADO
+  IMPEDIMENTO_ALTERADO,
+  TAREFA_EXCLUIDA
 }

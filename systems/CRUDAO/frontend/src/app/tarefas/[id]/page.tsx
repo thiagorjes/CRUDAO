@@ -13,6 +13,7 @@ import {
   UsuarioMe,
 } from '@/lib/api/types';
 import { duracaoEntre, formatarDuracao } from '@/lib/board/tempo';
+import { ehDevTier, permissoesDoProjeto } from '@/lib/rbac';
 import { ModalErro } from '@/components/ui/ModalErro';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { mostrarToast } from '@/components/ui/toast';
@@ -77,19 +78,15 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
   }, [carregar]);
 
   // Gating de UX (backend é a fonte real de autorização — RNF-003) — mesmo padrão do AdminApp.
-  const permissoesProjeto = useMemo(() => {
-    if (!usuarioMe || !tarefa) return new Set<string>();
-    if (usuarioMe.admin) return new Set(['tarefa:gerenciar', 'tarefa:atribuir', 'tarefa:finalizar']);
-    const vinculo = usuarioMe.projetos.find((p) => p.projetoId === tarefa.projetoId);
-    return new Set(vinculo?.permissoes ?? []);
-  }, [usuarioMe, tarefa]);
+  const permissoesProjeto = useMemo(
+    () => permissoesDoProjeto(usuarioMe, tarefa?.projetoId ?? null),
+    [usuarioMe, tarefa],
+  );
 
   const podeAtribuirOutro = permissoesProjeto.has('tarefa:atribuir');
-  // "dev-tier": tem tarefa:gerenciar mas não tarefa:atribuir (mesma heurística do backend —
-  // único papel seedado com essa combinação, ver nota técnica da TASK-02.3).
-  const ehDevTier = permissoesProjeto.has('tarefa:gerenciar') && !podeAtribuirOutro;
+  const devTier = ehDevTier(permissoesProjeto);
   const edicaoTravada =
-    Boolean(tarefa?.iniciada) && ehDevTier && !(configuracao?.devPodeEditarTarefaIniciada ?? false);
+    Boolean(tarefa?.iniciada) && devTier && !(configuracao?.devPodeEditarTarefaIniciada ?? false);
 
   function iniciarEdicao() {
     if (!tarefa) return;

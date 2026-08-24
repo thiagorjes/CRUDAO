@@ -72,4 +72,10 @@ public class Tarefa {
   private Instant criadoEm = Instant.now();
 
   private Instant atualizadoEm = Instant.now();
+
+  /**
+   * Soft-delete (RF-002, TASK-01.1) — preenchido quando a tarefa é excluída pelo board. A linha
+   * continua no banco (histórico/auditoria intactos); {@code null} significa tarefa ativa.
+   */
+  private Instant excluidaEm;
 }

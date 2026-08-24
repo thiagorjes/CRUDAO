@@ -17,6 +17,7 @@ function tarefa(parcial: Partial<Tarefa>): Tarefa {
     responsavelId: null,
     impedida: false,
     iniciada: false,
+    criadoEm: '2026-01-01T00:00:00Z',
     ...parcial,
   };
 }

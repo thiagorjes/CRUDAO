@@ -16,14 +16,19 @@ export function CardTarefa({
   tarefa,
   responsavel,
   acoes,
+  podeExcluirTarefa,
   onExecutarAcao,
+  onExcluir,
   onArrastarInicio,
   onArrastarFim,
 }: {
   tarefa: Tarefa;
   responsavel: Usuario | undefined;
   acoes: AcaoTransicao[];
+  /** RBAC gating (TASK-02.1) — controla a exibição do ícone de lixeira (RF-002). */
+  podeExcluirTarefa: boolean;
   onExecutarAcao: (acao: AcaoTransicao) => void;
+  onExcluir: () => void;
   onArrastarInicio: (tarefaId: string) => void;
   onArrastarFim: () => void;
 }) {
@@ -38,6 +43,7 @@ export function CardTarefa({
       className={styles.card}
       data-testid="card-tarefa"
       data-etapa-atual-id={tarefa.etapaAtualId}
+      data-pode-excluir={podeExcluirTarefa}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('text/plain', tarefa.id);
@@ -61,6 +67,20 @@ export function CardTarefa({
         <span className={styles.tipo}>{tarefa.tipo}</span>
         {tarefa.impedida && <span className={styles.impedida} title="Impedida" />}
         <span style={{ flex: 1 }} />
+        {podeExcluirTarefa && (
+          <button
+            className={styles.botaoExcluir}
+            data-testid="botao-excluir-tarefa"
+            aria-label="Excluir tarefa"
+            title="Excluir tarefa"
+            onClick={(e) => {
+              e.stopPropagation();
+              onExcluir();
+            }}
+          >
+            🗑
+          </button>
+        )}
         <button
           className={styles.menuBotao}
           aria-label="Menu de ações da tarefa"

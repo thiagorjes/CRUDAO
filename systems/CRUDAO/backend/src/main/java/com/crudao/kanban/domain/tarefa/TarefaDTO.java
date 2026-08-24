@@ -1,5 +1,6 @@
 package com.crudao.kanban.domain.tarefa;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record TarefaDTO(
@@ -13,4 +14,5 @@ public record TarefaDTO(
     String descricao,
     UUID responsavelId,
     boolean impedida,
-    boolean iniciada) {}
+    boolean iniciada,
+    Instant criadoEm) {}

@@ -91,6 +91,7 @@ export type Tarefa = {
   impedida: boolean;
   /** Marcada na primeira vez que a tarefa sai da etapa inicial do workflow — RN-009/RN-010. */
   iniciada: boolean;
+  criadoEm: string;
 };
 
 export type CampoAuditoria = 'RESPONSAVEL' | 'TITULO' | 'DESCRICAO' | 'ETAPA';
@@ -129,7 +130,7 @@ export type DashboardResultado = {
   tempoMedioImpedimentoPorEtapaSegundos: Record<string, number>;
 };
 
-export type TipoEventoBoard = 'TAREFA_CRIADA' | 'TAREFA_MOVIDA' | 'IMPEDIMENTO_ALTERADO';
+export type TipoEventoBoard = 'TAREFA_CRIADA' | 'TAREFA_MOVIDA' | 'IMPEDIMENTO_ALTERADO' | 'TAREFA_EXCLUIDA';
 
 export type EventoBoard = {
   tipo: TipoEventoBoard;

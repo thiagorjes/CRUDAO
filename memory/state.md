@@ -26,6 +26,7 @@ _Atualizado em: 2026-08-22_
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
 | kanban-configuravel | CRUDAO | 1.3 | 1.3 | 1.1 | Implementação completa (16/16 tasks, 00.1 a 06.1) — E2E cobrindo fluxos críticos e RBAC por projeto; code review ainda não executado |
+| criacao-card-board | CRUDAO | 1.0 | 1.0 | 1.0 | Pronto para implementação — 5 tasks em 3 epics (TASK-01.1 backend + TASK-02.1/02.2/02.3 frontend + TASK-03.1 E2E) |
 
 ---
 
@@ -204,6 +205,67 @@ _Atualizado em: 2026-08-22_
 - **Nota técnica:** este bug não tinha sido pego pela suíte de TASK-05.3/06.1 porque todos os specs criam o cenário (projeto) via API antes de abrir a UI — nenhum teste exercitava o estado "admin, zero projetos, só UI"
 - **Feature kanban-configuravel:** todas as 16 tasks do plano (00.1 a 06.1) concluídas e revisadas
 
+## criacao-card-board
+
+- **Etapa concluída:** /prd (v1.0) — 2026-08-24
+- **Artefato:** docs/prd/criacao-card-board-prd.md
+- **RFs Must Have:** RF-001 (criar card pelo board), RF-002 (excluir card pelo board)
+- **Achado técnico:** backend já expõe `POST`/`DELETE /api/tarefas` completos com RBAC (`tarefa:gerenciar`) e toggle `devPodeExcluirTarefa` (TASK-02.1/02.3) — feature é escopo **só frontend**
+- **Nota adiada para /techspec:** não existe evento `TAREFA_EXCLUIDA` (broadcast tempo real) — só `TAREFA_CRIADA` existe hoje; decidir se cria o evento
+- **Questões em aberto:** nenhuma
+- **Interface visual detectada:** sim — recomendado `/designer` antes do `/techspec`
+
+- **Etapa concluída:** /designer (v1.0) — 2026-08-24
+- **Artefato:** docs/design/criacao-card-board-design-brief.md
+- **Screen map:** docs/design/criacao-card-board/screen-map.md
+- **Design tokens:** docs/design/criacao-card-board/design-tokens.json (reaproveitados integralmente de kanban-configuravel, nenhum valor novo)
+- **Protótipos:** docs/design/criacao-card-board/prototypes/CriacaoExclusaoCard.html (protótipo único cobrindo as 4 telas: board+botão, modal criação com 4 estados, card+lixeira, modal confirmação exclusão com loading)
+- **DDRs criados:** nenhum — composição de componentes já existentes do design system kanban-configuravel
+
+- **Etapa concluída:** /techspec (v1.1 — ajustada após comitê) — 2026-08-24
+- **Artefatos:** docs/techspec/criacao-card-board-techspec.md + criacao-card-board/data-model.md + criacao-card-board/contracts/evento-tarefa-excluida.md + criacao-card-board/quickstart.md
+- **Sistemas afetados:** CRUDAO (único)
+- **Mock contracts:** nenhum
+- **Decisões técnicas (D-01 a D-05):** D-01 reuso de `POST`/`DELETE /api/tarefas` sem novo endpoint, com achado crítico do comitê — `excluir()` precisa migrar de hard-delete para **soft-delete** (`Tarefa.excluidaEm`), pois `RegistroEtapa`/`Impedimento`/`AuditoriaTarefa` têm FK `optional=false` sem cascade e o hard-delete quebraria em qualquer tarefa com histórico; D-02 evento `TAREFA_EXCLUIDA` via LISTEN/NOTIFY existente (ADR-004), simplificado pelo soft-delete (sem campo nullable no DTO, sem caso especial no listener); D-04 etapa/raia padrão calculadas no frontend; D-05 gating de UI via `GET /usuarios/me` + `GET /projetos/{id}/configuracao`, só estético (RNF-003/ADR-006)
+- **Comitê de análise assíncrono executado:** architect + security + database — 2026-08-24 (sobre a v1.0 da TechSpec)
+- **Achado crítico (database, confirmado por architect):** hard-delete em `TarefaService.excluir` quebraria com violação de FK (`registro_etapa`/`impedimento`/`auditoria_tarefa` sem cascade) — bug pré-existente exposto pela primeira vez por esta feature (RF-002 é a primeira a exercitar o DELETE de ponta a ponta pela UI). Usuário decidiu **soft-delete** (não cascade-delete) — preserva RN-016/auditoria, tarefa só some do board.
+- **Achado importante (security):** evento `TAREFA_EXCLUIDA` amplia o escopo do débito G-RT-01 (subscription STOMP sem checagem de membro do projeto, já registrado desde TASK-04.2/05.1) — não corrigido nesta feature, registrado explicitamente na TechSpec §8/§10 para não ser tratado como "fora de escopo" de novo no próximo `/code-review`.
+- **Achado importante (architect):** versão anterior de D-02/D-03 (DTO de evento com campos condicionalmente nullable) foi descartada — o soft-delete torna essa complexidade desnecessária, `EventoBoardDTO` permanece igual para os 4 tipos de evento.
+- **Cobertura de RF:** completa (verificação direta do script, exit 0 — aviso do `validate.py` é o mesmo bug de argumentos já documentado, não relacionado ao conteúdo)
+- **Canvas:** `docs/spdd/criacao-card-board-canvas.md` — dimensões A e S preenchidas (E já vinha do /designer); ainda DRAFT (falta N formal de /guidelines — preenchida via /techspec — e O, que aguarda /tasks)
+- **Próximo comando:** `/tasks criacao-card-board` — task de backend deve cobrir soft-delete + evento `TAREFA_EXCLUIDA` antes/junto das tasks de frontend (criação/exclusão pela UI dependem do endpoint de exclusão não quebrar mais)
+
+- **Etapa concluída:** /tasks (v1.0) — 2026-08-24
+- **Artefato:** docs/tasks/criacao-card-board-tasks.md
+- **Tasks:** TASK-01.1 (backend: soft-delete + evento `TAREFA_EXCLUIDA`), TASK-02.1 [P] (frontend: RBAC gating no BoardApp), TASK-02.2 [P] (frontend: criar card, RF-001), TASK-02.3 [P] (frontend: excluir card, RF-002), TASK-03.1 (testes E2E) — 5 tasks em 3 epics
+- **Grafo de dependências:** TASK-01.1 e TASK-02.1 sem dependência entre si (paralelas); TASK-02.2 depende só de TASK-02.1; TASK-02.3 depende de TASK-01.1 e TASK-02.1; TASK-03.1 depende de TASK-02.2 e TASK-02.3
+- **Canvas:** permanece DRAFT — dimensão O preenchida; falta Safeguards (preenchida pelo /code-review)
+- **Comitê de análise assíncrono executado:** architect + QA (general-purpose) — 2026-08-24, sobre as 5 tasks
+- **Achados:** 0 críticos que bloqueassem o início; ajustes aplicados nas 5 tasks: TASK-01.1 ganhou AC de "escrita sobre tarefa excluída retorna 404" (mover/impedimento/atribuir/editar), teste de integração do controller (não só Service) para o filtro de soft-delete, e gate de revalidação da suíte E2E de `board.spec.ts` (kanban-configuravel) antes de liberar TASK-02.3; TASK-02.1 ganhou AC de recálculo ao trocar de projeto e fallback seguro (`false`) em falha de fetch da configuração; TASK-02.2 ganhou AC de ordenação do card novo por `criadoEm`; TASK-02.3 ganhou tratamento de erro 403/404 e AC de no-op seguro para evento tardio; TASK-03.1 ganhou 2 cenários (workflow sem etapas, fluxo combinado criar+excluir) — de 6 para 8 cenários E2E
+- **Próximo comando:** `/implement TASK-01.1` e `/implement TASK-02.1` podem começar em paralelo
+
+- **Task implementada:** TASK-01.1 — Backend: migrar exclusão de tarefa para soft-delete e publicar evento `TAREFA_EXCLUIDA` — 2026-08-24
+- **Arquivos:** `backend/.../domain/tarefa/{Tarefa,TarefaRepository,TarefaService}.java` (+ `excluidaEm`, método filtrado, `excluir` faz soft-delete + publica evento, `buscarEntidade` vira guard único de 404 para soft-deleted herdado por todos os métodos de escrita/leitura); `backend/.../realtime/TipoEventoBoard.java` (+ `TAREFA_EXCLUIDA`); testes `TarefaServiceTest` (+7 casos), `RealtimeBoardIT` (+1 cenário STOMP), `TarefaControllerIT` (novo — MockMvc real com usuário admin autenticado)
+- **Testes:** TDD (unit `TarefaServiceTest` 100% verde via `mvn test` em container Docker); `RealtimeBoardIT`/`TarefaControllerIT` (Testcontainers) não executados nesta sessão — mesma limitação de rede Docker-in-Docker já registrada em TASK-04.1/04.2/03.1, não relacionada ao código
+- **Nota técnica:** limpeza de `Observador` antes da exclusão (necessária no hard-delete para evitar FK) foi removida — soft-delete preserva a linha, então observadores continuam vinculados como histórico; `spotless:check` não passa por CRLF pré-existente em ~140 arquivos do repo, não relacionado a esta task
+- **Code review:** agent QA (general-purpose) — aprovado com ressalvas; 2 findings 🟡/🟢 corrigidos nesta sessão (`listarObservadores`/`removerObservador` não passavam pelo guard de soft-delete — corrigido; `TarefaRepository.findByProjetoIdOrderByCriadoEmAsc` órfão — removido)
+- **Próxima task:** TASK-02.1 (frontend RBAC gating) — TASK-02.3 (excluir card) já desbloqueada
+
+- **Task implementada:** TASK-02.1 — Frontend: RBAC gating no BoardApp (permissão e toggle) — 2026-08-24
+- **Arquivos:** `frontend/src/lib/rbac.ts` (novo — `permissoesDoProjeto`/`ehDevTier`, extraído para reuso); `frontend/src/components/board/BoardApp.tsx` (busca `GET /usuarios/me` + `GET /projetos/{id}/configuracao`, calcula `podeGerenciarTarefa`/`podeExcluirTarefa`, expõe via `data-*` no header e prop em `CardTarefa`); `frontend/src/components/board/CardTarefa.tsx` (+ prop `podeExcluirTarefa`, só o dado — ícone vem na TASK-02.3); `frontend/src/app/tarefas/[id]/page.tsx` (refatorado para reusar `lib/rbac.ts` em vez de lógica local duplicada)
+- **Testes:** sem TDD (task de gating consumindo endpoints já cobertos por testes de backend, mesma decisão de tasks de UI anteriores); `tsc --noEmit`, `eslint` e `next build` limpos; suíte `vitest` (43/43) revalidada sem regressão
+- **Code review:** agent QA (general-purpose) — aprovado com ressalvas; 1 finding 🟡 corrigido nesta sessão (`configuracao` não era resetado ao trocar de projeto — janela do fetch podia calcular `podeExcluirTarefa` com o toggle do projeto anterior; corrigido guardando `{projetoId, dados}` e filtrando por `projetoId` atual em vez de `setState` síncrono no efeito, que violaria `react-hooks/set-state-in-effect`)
+- **Próxima task:** TASK-02.2 (criar card, RF-001) — pode rodar em paralelo com TASK-02.3 (excluir card, RF-002), ambas já desbloqueadas
+
+- **Task implementada:** TASK-02.2 — Frontend: criar card pelo board (RF-001) — 2026-08-24
+- **Arquivos:** `frontend/src/lib/board/{defaults,defaults.test}.ts` (novos — `resolverDefaults`, TechSpec D-04); `frontend/src/components/board/{ModalNovoCard,ModalNovoCard.module}.tsx/css` (novos); `frontend/src/components/board/{BoardApp,BoardApp.module}.tsx/css` (botão "Novo card", `criarCard()`, integração do modal); `frontend/src/lib/api/types.ts` (+ `Tarefa.criadoEm`); `frontend/src/lib/board/agrupar.test.ts` (fixture ajustada); `backend/.../domain/tarefa/TarefaDTO.java` (+ campo `criadoEm`, auto-mapeado por MapStruct — mesmo padrão do `iniciada` da TASK-05.4)
+- **Testes:** 49 testes unitários (vitest, +6 desta task) verdes; `tsc --noEmit`, `eslint`, `next build` limpos; backend compila (`mvn compile` via container Docker)
+- **Achado técnico:** `TarefaDTO` não expunha `criadoEm` — necessário para o AC de "card inserido ordenado por `criadoEm` ascendente"; extensão seva confirmada em code review (MapStruct por nome, nenhum consumidor quebrado, não vaza no `EventoBoardDTO`)
+- **Code review:** agent QA (general-purpose) — aprovado sem findings 🔴/🟡
+- **Próxima task:** TASK-02.3 (excluir card, RF-002) — já desbloqueada; TASK-03.1 (E2E) depende de TASK-02.2 + TASK-02.3
+
+---
+
 ## Reorganização — código movido para systems/CRUDAO/
 
 - **Mudança:** `backend/` e `frontend/` movidos da raiz do workspace para `systems/CRUDAO/backend/` e `systems/CRUDAO/frontend/` — 2026-08-22
@@ -244,6 +306,19 @@ _Atualizado em: 2026-08-22_
 | systems/CRUDAO/guidelines/git-workflow.md | 1.0 | ok |
 | systems/CRUDAO/guidelines/skill-conventions.md | 1.0 | ok |
 | systems/CRUDAO/guidelines/spdd-integration.md | 1.0 | ok |
+| docs/discovery/criacao-card-board-discovery.md | 1.0 | ok |
+| docs/prd/criacao-card-board-prd.md | 1.0 | ok |
+| docs/design/criacao-card-board-design-brief.md | 1.0 | ok |
+| docs/design/criacao-card-board/screen-map.md | 1.0 | ok |
+| docs/design/criacao-card-board/design-tokens.json | 1.0 | ok (reaproveitado de kanban-configuravel) |
+| docs/design/criacao-card-board/prototypes/CriacaoExclusaoCard.html | 1.0 | ok |
+| docs/techspec/criacao-card-board-techspec.md | 1.1 | ok |
+| docs/techspec/criacao-card-board/data-model.md | 1.1 | ok |
+| docs/techspec/criacao-card-board/contracts/evento-tarefa-excluida.md | 1.1 | ok |
+| docs/techspec/criacao-card-board/quickstart.md | 1.0 | ok |
+| docs/spdd/criacao-card-board-canvas.md | — | draft (R, E, A, S, N, O preenchidas — falta Safeguards, aguarda /code-review) |
+| docs/tasks/criacao-card-board-tasks.md | 1.0 | ok |
+| docs/tasks/criacao-card-board/ (5 arquivos TASK-*.md) | 1.0 | ok |
 
 ---
 

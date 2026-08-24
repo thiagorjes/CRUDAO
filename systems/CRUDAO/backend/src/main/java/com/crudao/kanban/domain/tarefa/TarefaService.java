@@ -59,7 +59,7 @@ public class TarefaService {
 
   @Transactional(readOnly = true)
   public List<TarefaDTO> listarPorProjeto(UUID projetoId) {
-    return tarefaRepository.findByProjetoIdOrderByCriadoEmAsc(projetoId).stream()
+    return tarefaRepository.findByProjetoIdAndExcluidaEmIsNullOrderByCriadoEmAsc(projetoId).stream()
         .map(tarefaMapper::paraDTO)
         .toList();
   }
@@ -123,8 +123,9 @@ public class TarefaService {
       throw new AcessoNegadoException(
           "Dev sem permissão para excluir tarefas neste projeto (toggle desabilitado).");
     }
-    observadorRepository.deleteAll(observadorRepository.findByTarefaId(id));
-    tarefaRepository.delete(tarefa);
+    tarefa.setExcluidaEm(java.time.Instant.now());
+    Tarefa salva = tarefaRepository.save(tarefa);
+    publicarAposCommit(TipoEventoBoard.TAREFA_EXCLUIDA, salva);
   }
 
   /**
@@ -271,6 +272,7 @@ public class TarefaService {
   /** Observadores da tarefa (RN-007) — usuários notificados a cada transição de etapa (RF-005). */
   @Transactional(readOnly = true)
   public List<UUID> listarObservadores(UUID tarefaId) {
+    buscarEntidade(tarefaId);
     return observadorRepository.findByTarefaId(tarefaId).stream()
         .map(Observador::getUsuarioId)
         .toList();
@@ -290,6 +292,7 @@ public class TarefaService {
 
   @Transactional
   public void removerObservador(UUID tarefaId, UUID usuarioId) {
+    buscarEntidade(tarefaId);
     observadorRepository.deleteByTarefaIdAndUsuarioId(tarefaId, usuarioId);
   }
 
@@ -356,10 +359,16 @@ public class TarefaService {
         .orElseThrow(() -> new RecursoNaoEncontradoException("Raia não encontrada: " + raiaId));
   }
 
+  /** Trata tarefa soft-deleted como inexistente (RF-002) — guard único para leitura e escrita. */
   private Tarefa buscarEntidade(UUID id) {
-    return tarefaRepository
-        .findById(id)
-        .orElseThrow(() -> new RecursoNaoEncontradoException("Tarefa não encontrada: " + id));
+    Tarefa tarefa =
+        tarefaRepository
+            .findById(id)
+            .orElseThrow(() -> new RecursoNaoEncontradoException("Tarefa não encontrada: " + id));
+    if (tarefa.getExcluidaEm() != null) {
+      throw new RecursoNaoEncontradoException("Tarefa não encontrada: " + id);
+    }
+    return tarefa;
   }
 
   private void exigirPermissao(UUID projetoId, String permissao) {

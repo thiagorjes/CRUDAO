@@ -81,6 +81,21 @@
   border-color: var(--color-primary);
 }
 
+.botaoNovoCard {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  font: var(--font-body);
+  cursor: pointer;
+}
+
+.botaoNovoCard:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .vazio {
   padding: var(--spacing-xl);
   text-align: center;

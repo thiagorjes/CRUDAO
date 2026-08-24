@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TarefaRepository extends JpaRepository<Tarefa, UUID> {
 
-  List<Tarefa> findByProjetoIdOrderByCriadoEmAsc(UUID projetoId);
+  List<Tarefa> findByProjetoIdAndExcluidaEmIsNullOrderByCriadoEmAsc(UUID projetoId);
 
   boolean existsByEtapaAtualId(UUID etapaId);
 

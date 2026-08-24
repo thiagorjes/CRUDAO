@@ -3,14 +3,29 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api/client';
-import { Etapa, EventoBoard, Projeto, Raia, Tarefa, Transicao, Usuario } from '@/lib/api/types';
+import {
+  ConfiguracaoProjeto,
+  Etapa,
+  EventoBoard,
+  Projeto,
+  Raia,
+  Tarefa,
+  Transicao,
+  Usuario,
+  UsuarioMe,
+} from '@/lib/api/types';
 import { agruparPorRaiaEEtapa, RAIA_SEM_RAIA_ID } from '@/lib/board/agrupar';
+import { resolverDefaults } from '@/lib/board/defaults';
+import { aplicarTarefaExcluida } from '@/lib/board/eventos';
 import { conectarBoard } from '@/lib/board/realtime';
 import { acoesDoMenu, AcaoTransicao, etapasAlvoValidas } from '@/lib/board/transicoes';
+import { ehDevTier, permissoesDoProjeto } from '@/lib/rbac';
 import { ModalErro } from '@/components/ui/ModalErro';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { mostrarToast } from '@/components/ui/toast';
 import { CardTarefa } from './CardTarefa';
+import { ModalConfirmacao } from './ModalConfirmacao';
+import { ModalNovoCard, NovoCardValores } from './ModalNovoCard';
 import styles from './BoardApp.module.css';
 
 type EstadoBoard = {
@@ -26,9 +41,15 @@ export function BoardApp() {
   const [projetoId, setProjetoId] = useState<string | null>(null);
   const [estado, setEstado] = useState<EstadoBoard | null>(null);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [usuarioMe, setUsuarioMe] = useState<UsuarioMe | null>(null);
+  const [configuracao, setConfiguracao] = useState<{ projetoId: string; dados: ConfiguracaoProjeto | null } | null>(
+    null,
+  );
   const [erro, setErro] = useState<string | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [celulaSobre, setCelulaSobre] = useState<string | null>(null);
+  const [modalNovoCardAberto, setModalNovoCardAberto] = useState(false);
+  const [tarefaParaExcluir, setTarefaParaExcluir] = useState<Tarefa | null>(null);
 
   useEffect(() => {
     api
@@ -41,7 +62,41 @@ export function BoardApp() {
       })
       .catch(() => setErro('Não foi possível carregar os projetos.'));
     api.get<Usuario[]>('/usuarios').then(setUsuarios).catch(() => setUsuarios([]));
+    api.get<UsuarioMe>('/usuarios/me').then(setUsuarioMe).catch(() => setUsuarioMe(null));
   }, []);
+
+  // RBAC gating (RF-001/RF-002, TASK-02.1) — recalculado a cada troca de projeto; backend revalida
+  // tudo (RNF-003/ADR-006). Falha ao buscar a configuração é fallback seguro: nunca expõe a lixeira.
+  useEffect(() => {
+    if (!projetoId) return;
+    let cancelado = false;
+    api
+      .get<ConfiguracaoProjeto>(`/projetos/${projetoId}/configuracao`)
+      .then((config) => {
+        if (!cancelado) setConfiguracao({ projetoId, dados: config });
+      })
+      .catch(() => {
+        // Falha de rede/erro: fallback seguro — nunca expõe a exclusão por erro de fetch.
+        if (!cancelado) setConfiguracao({ projetoId, dados: null });
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [projetoId]);
+
+  // Só usa `configuracao` se pertencer ao projeto atual — evita, na janela entre trocar de
+  // projeto e a resposta do fetch chegar, calcular podeExcluirTarefa com o toggle do projeto
+  // anterior (finding do code review da TASK-02.1).
+  const configuracaoAtual = configuracao?.projetoId === projetoId ? configuracao.dados : null;
+
+  const permissoesProjeto = useMemo(
+    () => permissoesDoProjeto(usuarioMe, projetoId),
+    [usuarioMe, projetoId],
+  );
+  const podeGerenciarTarefa = permissoesProjeto.has('tarefa:gerenciar');
+  const podeExcluirTarefa =
+    podeGerenciarTarefa &&
+    (!ehDevTier(permissoesProjeto) || (configuracaoAtual?.devPodeExcluirTarefa ?? false));
 
   const carregarBoard = useCallback(async (id: string) => {
     const projeto = await api.get<Projeto>(`/projetos/${id}`);
@@ -81,6 +136,16 @@ export function BoardApp() {
   }, [projetoId, carregarBoard]);
 
   const atualizarTarefaLocal = useCallback((evento: EventoBoard) => {
+    if (evento.tipo === 'TAREFA_EXCLUIDA') {
+      setEstado((atual) => {
+        if (!atual) return atual;
+        const resultado = aplicarTarefaExcluida({ projetoId: atual.projeto.id, tarefas: atual.tarefas }, evento);
+        return resultado === null || resultado.tarefas === atual.tarefas
+          ? atual
+          : { ...atual, tarefas: resultado.tarefas };
+      });
+      return;
+    }
     setEstado((atual) => {
       if (!atual || atual.projeto.id !== evento.projetoId) return atual;
       const existe = atual.tarefas.some((t) => t.id === evento.tarefaId);
@@ -154,6 +219,52 @@ export function BoardApp() {
     }
   }
 
+  async function criarCard(valores: NovoCardValores) {
+    if (!estado || !projetoId) return;
+    const { etapaInicialId, raiaId } = resolverDefaults(estado.etapas, estado.raias);
+    if (!etapaInicialId) return; // botão fica desabilitado nesse estado — guard defensivo
+    try {
+      const tarefa = await api.post<Tarefa>('/tarefas', {
+        projetoId,
+        etapaInicialId,
+        raiaId,
+        tipo: valores.tipo,
+        titulo: valores.titulo,
+        descricao: valores.descricao || null,
+        responsavelId: null,
+      });
+      // Atualização direta (sem esperar o próprio evento STOMP) — mesmo padrão de `mover()`;
+      // inserida ordenada por `criadoEm`, consistente com o que um refetch produziria.
+      setEstado((a) =>
+        a ? { ...a, tarefas: [...a.tarefas, tarefa].sort((x, y) => x.criadoEm.localeCompare(y.criadoEm)) } : a,
+      );
+      setModalNovoCardAberto(false);
+      mostrarToast('Card criado.');
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível criar o card.');
+    }
+  }
+
+  async function excluirCard() {
+    if (!tarefaParaExcluir) return;
+    const tarefaId = tarefaParaExcluir.id;
+    try {
+      await api.delete(`/tarefas/${tarefaId}`);
+      // Atualização direta (sem esperar o próprio evento STOMP) — mesmo padrão de `criarCard()`.
+      setEstado((a) => (a ? { ...a, tarefas: a.tarefas.filter((t) => t.id !== tarefaId) } : a));
+      setTarefaParaExcluir(null);
+      mostrarToast('Card excluído.');
+    } catch (e) {
+      setTarefaParaExcluir(null);
+      // 404 = card já excluído por outro cliente — remove localmente também, senão fica órfão
+      // no estado até o evento STOMP tardio ou reload (finding do code review da TASK-02.3).
+      if (e instanceof ApiError && e.status === 404) {
+        setEstado((a) => (a ? { ...a, tarefas: a.tarefas.filter((t) => t.id !== tarefaId) } : a));
+      }
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível excluir o card.');
+    }
+  }
+
   if (erro && !estado) {
     return (
       <div className={styles.pagina}>
@@ -189,7 +300,7 @@ export function BoardApp() {
 
   return (
     <div className={styles.pagina}>
-      <div className={styles.cabecalho}>
+      <div className={styles.cabecalho} data-pode-gerenciar-tarefa={podeGerenciarTarefa}>
         <h1 className={styles.titulo}>{estado?.projeto.nome}</h1>
         <select
           className={styles.seletorProjeto}
@@ -202,7 +313,22 @@ export function BoardApp() {
             </option>
           ))}
         </select>
-        <Link href="/dashboard" style={{ marginLeft: 'auto', font: 'var(--font-body)' }}>
+        {podeGerenciarTarefa && (
+          <button
+            className={styles.botaoNovoCard}
+            data-testid="botao-novo-card"
+            style={{ marginLeft: 'auto' }}
+            disabled={!estado || estado.etapas.length === 0}
+            title={estado && estado.etapas.length === 0 ? 'O workflow ativo ainda não tem etapas configuradas.' : undefined}
+            onClick={() => setModalNovoCardAberto(true)}
+          >
+            + Novo card
+          </button>
+        )}
+        <Link
+          href="/dashboard"
+          style={{ marginLeft: podeGerenciarTarefa ? undefined : 'auto', font: 'var(--font-body)' }}
+        >
           Dashboard →
         </Link>
         <Link href="/admin" style={{ font: 'var(--font-body)' }}>
@@ -221,6 +347,7 @@ export function BoardApp() {
           tarefas={estado.tarefas}
           transicoes={estado.transicoes}
           usuariosPorId={usuariosPorId}
+          podeExcluirTarefa={podeExcluirTarefa}
           alvosValidos={alvosValidos}
           arrastando={arrastando}
           celulaSobre={celulaSobre}
@@ -236,6 +363,21 @@ export function BoardApp() {
             setCelulaSobre(null);
           }}
           onExecutarAcao={(tarefaId, acao: AcaoTransicao) => mover(tarefaId, acao.etapaDestinoId)}
+          onExcluir={(tarefa) => setTarefaParaExcluir(tarefa)}
+        />
+      )}
+
+      {modalNovoCardAberto && (
+        <ModalNovoCard onSalvar={criarCard} onFechar={() => setModalNovoCardAberto(false)} />
+      )}
+
+      {tarefaParaExcluir && (
+        <ModalConfirmacao
+          titulo="Excluir card"
+          mensagem={`Tem certeza que deseja excluir o card "${tarefaParaExcluir.titulo}"? Esta ação não pode ser desfeita.`}
+          rotuloConfirmar="Excluir"
+          onConfirmar={excluirCard}
+          onFechar={() => setTarefaParaExcluir(null)}
         />
       )}
 
@@ -250,6 +392,7 @@ function BoardGrid({
   tarefas,
   transicoes,
   usuariosPorId,
+  podeExcluirTarefa,
   alvosValidos,
   arrastando,
   celulaSobre,
@@ -258,12 +401,14 @@ function BoardGrid({
   onCelulaSobre,
   onSoltar,
   onExecutarAcao,
+  onExcluir,
 }: {
   etapas: Etapa[];
   raias: Raia[];
   tarefas: Tarefa[];
   transicoes: Transicao[];
   usuariosPorId: Map<string, Usuario>;
+  podeExcluirTarefa: boolean;
   alvosValidos: Set<string>;
   arrastando: string | null;
   celulaSobre: string | null;
@@ -272,6 +417,7 @@ function BoardGrid({
   onCelulaSobre: (chave: string | null) => void;
   onSoltar: (etapaId: string) => void;
   onExecutarAcao: (tarefaId: string, acao: AcaoTransicao) => void;
+  onExcluir: (tarefa: Tarefa) => void;
 }) {
   const grade = useMemo(() => agruparPorRaiaEEtapa(tarefas, raias), [tarefas, raias]);
   const linhasRaia = raias.length > 0 ? raias : [{ id: RAIA_SEM_RAIA_ID, projetoId: null, nome: 'Tarefas', ordem: 0 }];
@@ -332,9 +478,11 @@ function BoardGrid({
                     tarefa={tarefa}
                     responsavel={tarefa.responsavelId ? usuariosPorId.get(tarefa.responsavelId) : undefined}
                     acoes={acoesDoMenu(tarefa.etapaAtualId, transicoes, etapas)}
+                    podeExcluirTarefa={podeExcluirTarefa}
                     onArrastarInicio={onArrastarInicio}
                     onArrastarFim={onArrastarFim}
                     onExecutarAcao={(acao) => onExecutarAcao(tarefa.id, acao)}
+                    onExcluir={() => onExcluir(tarefa)}
                   />
                 ))}
               </div>

@@ -27,8 +27,10 @@ import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.realtime.EventoBoardPublisher;
+import com.crudao.kanban.realtime.TipoEventoBoard;
 import com.crudao.kanban.security.AutorizacaoProjetoService;
 import com.crudao.kanban.security.UsuarioContexto;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -431,6 +433,66 @@ class TarefaServiceTest {
     when(auditoriaTarefaRepository.historicoPorTarefa(tarefa.getId())).thenReturn(List.of());
 
     assertThat(tarefaService.historico(tarefa.getId())).isEmpty();
+  }
+
+  @Test
+  void excluirFazSoftDeletePreservandoALinhaEmVezDeApagarFisicamente() {
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+    tarefaService.excluir(tarefa.getId());
+
+    assertThat(tarefa.getExcluidaEm()).isNotNull();
+    verify(tarefaRepository).save(tarefa);
+    verify(tarefaRepository, never()).delete(any(Tarefa.class));
+  }
+
+  @Test
+  void excluirPublicaEventoTarefaExcluida() {
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+    tarefaService.excluir(tarefa.getId());
+
+    verify(eventoBoardPublisher)
+        .publicar(TipoEventoBoard.TAREFA_EXCLUIDA, tarefa.getId(), tarefa.getProjeto().getId());
+  }
+
+  @Test
+  void buscarTarefaSoftDeletedLancaRecursoNaoEncontrado() {
+    tarefa.setExcluidaEm(Instant.now());
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+    assertThatThrownBy(() -> tarefaService.buscar(tarefa.getId()))
+        .isInstanceOf(RecursoNaoEncontradoException.class);
+  }
+
+  @Test
+  void moverTarefaSoftDeletedLancaRecursoNaoEncontrado() {
+    tarefa.setExcluidaEm(Instant.now());
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+    assertThatThrownBy(
+            () ->
+                tarefaService.mover(tarefa.getId(), new TarefaMoverRequest(etapaDestino.getId())))
+        .isInstanceOf(RecursoNaoEncontradoException.class);
+  }
+
+  @Test
+  void listarObservadoresDeTarefaSoftDeletedLancaRecursoNaoEncontrado() {
+    tarefa.setExcluidaEm(Instant.now());
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+    assertThatThrownBy(() -> tarefaService.listarObservadores(tarefa.getId()))
+        .isInstanceOf(RecursoNaoEncontradoException.class);
+  }
+
+  @Test
+  void removerObservadorDeTarefaSoftDeletedLancaRecursoNaoEncontrado() {
+    tarefa.setExcluidaEm(Instant.now());
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+    assertThatThrownBy(
+            () -> tarefaService.removerObservador(tarefa.getId(), UUID.randomUUID()))
+        .isInstanceOf(RecursoNaoEncontradoException.class);
   }
 
   @Test
