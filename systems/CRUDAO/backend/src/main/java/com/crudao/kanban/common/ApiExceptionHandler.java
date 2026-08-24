@@ -23,4 +23,10 @@ public class ApiExceptionHandler {
   public ResponseEntity<Map<String, String>> tratarAcessoNegado(AcessoNegadoException ex) {
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("erro", ex.getMessage()));
   }
+
+  @ExceptionHandler(EntradaInvalidaException.class)
+  public ResponseEntity<Map<String, String>> tratarEntradaInvalida(EntradaInvalidaException ex) {
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+        .body(Map.of("erro", ex.getMessage()));
+  }
 }

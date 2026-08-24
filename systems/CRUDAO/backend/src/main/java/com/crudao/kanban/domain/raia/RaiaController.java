@@ -1,6 +1,5 @@
 package com.crudao.kanban.domain.raia;
 
-import com.crudao.kanban.security.ExigePermissao;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -33,19 +32,16 @@ public class RaiaController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @ExigePermissao("projeto:gerenciar")
   public RaiaDTO criar(@Valid @RequestBody RaiaRequest request) {
     return raiaService.criar(request);
   }
 
   @PutMapping("/{id}")
-  @ExigePermissao("projeto:gerenciar")
   public RaiaDTO editar(@PathVariable UUID id, @Valid @RequestBody RaiaRequest request) {
     return raiaService.editar(id, request);
   }
 
   @DeleteMapping("/{id}")
-  @ExigePermissao("projeto:gerenciar")
   public ResponseEntity<Void> excluir(@PathVariable UUID id) {
     raiaService.excluir(id);
     return ResponseEntity.noContent().build();

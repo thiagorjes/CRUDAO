@@ -30,6 +30,9 @@ public class Projeto {
   /** Workflow atualmente em uso pelo projeto (RF-009 — pode ser trocado/editado). */
   private UUID workflowAtivoId;
 
+  /** Preenchida = projeto somente leitura para todos os papéis (RN-015, RF-008). */
+  private Instant dataFinalizacao;
+
   private Instant criadoEm = Instant.now();
 
   private Instant atualizadoEm = Instant.now();

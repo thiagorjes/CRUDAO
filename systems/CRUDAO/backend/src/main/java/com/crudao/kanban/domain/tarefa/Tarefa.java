@@ -61,6 +61,14 @@ public class Tarefa {
   /** Estado atual de impedimento — RF-004. Não interfere na movimentação entre etapas. */
   private boolean impedida;
 
+  /**
+   * {@code true} assim que a tarefa sai da etapa inicial do workflow (menor {@code ordem}) pela
+   * primeira vez — permanece {@code true} mesmo que retorne à etapa inicial depois (RN-009,
+   * RN-010). Usado para a trava de edição de {@code dev} sem o toggle {@code
+   * devPodeEditarTarefaIniciada}.
+   */
+  private boolean iniciada;
+
   private Instant criadoEm = Instant.now();
 
   private Instant atualizadoEm = Instant.now();

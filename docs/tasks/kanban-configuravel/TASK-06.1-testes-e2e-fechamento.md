@@ -1,7 +1,7 @@
 # TASK-06.1 — Testes E2E dos fluxos principais e revisão de cobertura [M]
 
 **Epic:** EPIC-06 — Testes E2E e Fechamento | **User Story:** US-06.1 — Validação final
-**Sistema:** CRUDAO | **RF:** todos (validação cruzada) | **Dependências:** TASK-05.1, TASK-05.2, TASK-05.3
+**Sistema:** CRUDAO | **RF:** todos (validação cruzada) | **Dependências:** TASK-05.1, TASK-05.2, TASK-05.3, TASK-05.4
 
 ---
 
@@ -13,6 +13,7 @@ Fechar a primeira entrega com testes de ponta a ponta dos fluxos críticos e con
 
 - [ ] Escolher e configurar ferramenta de E2E (Q-005 da techspec, ex. Playwright)
 - [ ] Cobrir fluxos: mover tarefa (drag e menu), marcar/desmarcar impedimento, desfinalizar, dashboard assíncrono, RBAC (bloqueio de ação sem permissão)
+- [ ] Cobrir fluxos novos (PRD v1.2/v1.3): RBAC por projeto (permissão em um projeto não vaza para outro), autoatribuição de tarefa, `tarefa:finalizar`, projeto finalizado bloqueando escrita, toggles de projeto, painel de Papéis visível só a admin global
 - [ ] Revisar cobertura de testes unitários/integração contra a meta de guidelines/testing.md
 - [ ] Revisar `docs/spdd/kanban-configuravel-canvas.md` — confirmar se todas as dimensões estão preenchidas para transição a `READY`
 

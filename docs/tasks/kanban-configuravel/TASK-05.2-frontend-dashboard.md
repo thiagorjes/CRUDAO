@@ -1,5 +1,7 @@
 # TASK-05.2 — Frontend: Dashboard de gestão [M]
 
+**Status:** Concluída — 2026-08-23
+
 **Epic:** EPIC-05 — Frontend Next.js | **User Story:** US-05.1 — Interfaces do sistema
 **Sistema:** CRUDAO | **RF:** RF-007 | **Dependências:** TASK-03.1
 
@@ -11,10 +13,10 @@ Implementar a tela de dashboard conforme o design brief e o protótipo aprovado 
 
 ## O que deve ser feito
 
-- [ ] Implementar seletor de período (data início/fim) fixo no topo
-- [ ] Disparar job assíncrono e tratar loading com skeleton screen (DDR-003)
-- [ ] Renderizar gráfico de barras + tabela de lead-time médio por etapa e tempo médio em impedimento
-- [ ] Aplicar fallback de polling caso WebSocket não esteja disponível
+- [x] Implementar seletor de período (data início/fim) fixo no topo
+- [x] Disparar job assíncrono e tratar loading com skeleton screen (DDR-003)
+- [x] Renderizar gráfico de barras + tabela de lead-time médio por etapa e tempo médio em impedimento
+- [x] Aplicar fallback de polling caso WebSocket não esteja disponível
 
 ## Guia técnico
 

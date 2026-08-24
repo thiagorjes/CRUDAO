@@ -4,14 +4,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.crudao.kanban.common.AcessoNegadoException;
 import com.crudao.kanban.common.RecursoNaoEncontradoException;
 import com.crudao.kanban.common.RegraDeNegocioException;
 import com.crudao.kanban.domain.leadtime.RegistroEtapaService;
+import com.crudao.kanban.domain.projeto.ConfiguracaoProjeto;
+import com.crudao.kanban.domain.projeto.ConfiguracaoProjetoRepository;
 import com.crudao.kanban.domain.projeto.Projeto;
 import com.crudao.kanban.domain.projeto.ProjetoRepository;
 import com.crudao.kanban.domain.raia.RaiaRepository;
+import com.crudao.kanban.domain.rbac.Usuario;
 import com.crudao.kanban.domain.workflow.Etapa;
 import com.crudao.kanban.domain.workflow.EtapaRepository;
 import com.crudao.kanban.domain.workflow.TipoTransicao;
@@ -21,6 +27,8 @@ import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.realtime.EventoBoardPublisher;
+import com.crudao.kanban.security.AutorizacaoProjetoService;
+import com.crudao.kanban.security.UsuarioContexto;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +51,10 @@ class TarefaServiceTest {
   @Mock private TransicaoRepository transicaoRepository;
   @Mock private EventoBoardPublisher eventoBoardPublisher;
   @Mock private RegistroEtapaService registroEtapaService;
+  @Mock private AutorizacaoProjetoService autorizacaoProjetoService;
+  @Mock private UsuarioContexto usuarioContexto;
+  @Mock private AuditoriaTarefaRepository auditoriaTarefaRepository;
+  @Mock private ConfiguracaoProjetoRepository configuracaoProjetoRepository;
 
   private TarefaService tarefaService;
   private Workflow workflow;
@@ -50,6 +62,7 @@ class TarefaServiceTest {
   private Etapa etapaDestino;
   private Etapa etapaSemTransicao;
   private Tarefa tarefa;
+  private Usuario usuarioAtual;
 
   @BeforeEach
   void setUp() {
@@ -65,7 +78,11 @@ class TarefaServiceTest {
             new TransicaoEngine(),
             Mappers.getMapper(TarefaMapper.class),
             eventoBoardPublisher,
-            registroEtapaService);
+            registroEtapaService,
+            autorizacaoProjetoService,
+            usuarioContexto,
+            auditoriaTarefaRepository,
+            configuracaoProjetoRepository);
 
     workflow = new Workflow();
     workflow.setId(UUID.randomUUID());
@@ -73,6 +90,9 @@ class TarefaServiceTest {
     etapaOrigem = etapaComId(workflow);
     etapaDestino = etapaComId(workflow);
     etapaSemTransicao = etapaComId(workflow);
+    etapaOrigem.setOrdem(0);
+    etapaDestino.setOrdem(1);
+    etapaSemTransicao.setOrdem(2);
 
     Projeto projeto = new Projeto();
     projeto.setId(UUID.randomUUID());
@@ -83,7 +103,15 @@ class TarefaServiceTest {
     tarefa.setWorkflow(workflow);
     tarefa.setEtapaAtual(etapaOrigem);
 
+    usuarioAtual = new Usuario();
+    usuarioAtual.setId(UUID.randomUUID());
+
     lenient().when(tarefaRepository.save(any(Tarefa.class))).thenAnswer(inv -> inv.getArgument(0));
+    lenient().when(usuarioContexto.usuarioAtual()).thenReturn(usuarioAtual);
+    lenient()
+        .when(etapaRepository.findByWorkflowIdOrderByOrdemAsc(workflow.getId()))
+        .thenReturn(List.of(etapaOrigem, etapaDestino, etapaSemTransicao));
+    lenient().when(autorizacaoProjetoService.temPermissao(any(), any(), any())).thenReturn(true);
   }
 
   private Etapa etapaComId(Workflow workflow) {
@@ -225,5 +253,194 @@ class TarefaServiceTest {
                     tarefa.getId(),
                     new TarefaMoverProjetoRequest(projetoInexistenteId, UUID.randomUUID())))
         .isInstanceOf(RecursoNaoEncontradoException.class);
+  }
+
+  @Test
+  void deveMarcarIniciadaAoSairDaEtapaInicialEGravarAuditoriaDeEtapa() {
+    Transicao transicao = new Transicao();
+    transicao.setEtapaOrigem(etapaOrigem);
+    transicao.setEtapaDestino(etapaDestino);
+
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(etapaRepository.findById(etapaDestino.getId())).thenReturn(Optional.of(etapaDestino));
+    when(transicaoRepository.findByWorkflowId(workflow.getId())).thenReturn(List.of(transicao));
+
+    tarefaService.mover(tarefa.getId(), new TarefaMoverRequest(etapaDestino.getId()));
+
+    assertThat(tarefa.isIniciada()).isTrue();
+    verify(auditoriaTarefaRepository).save(any(AuditoriaTarefa.class));
+  }
+
+  @Test
+  void deveExigirPermissaoFinalizarAoMoverParaEtapaFinal() {
+    etapaDestino.setEtapaFinal(true);
+    Transicao transicao = new Transicao();
+    transicao.setEtapaOrigem(etapaOrigem);
+    transicao.setEtapaDestino(etapaDestino);
+
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(etapaRepository.findById(etapaDestino.getId())).thenReturn(Optional.of(etapaDestino));
+    when(transicaoRepository.findByWorkflowId(workflow.getId())).thenReturn(List.of(transicao));
+
+    tarefaService.mover(tarefa.getId(), new TarefaMoverRequest(etapaDestino.getId()));
+
+    verify(autorizacaoProjetoService)
+        .exigirPermissao(usuarioAtual, tarefa.getProjeto().getId(), "tarefa:finalizar");
+  }
+
+  @Test
+  void devSemToggleNaoEditaTituloDeTarefaIniciada() {
+    tarefa.setIniciada(true);
+    tarefa.setTitulo("Original");
+    ConfiguracaoProjeto configuracao = new ConfiguracaoProjeto();
+    configuracao.setDevPodeEditarTarefaIniciada(false);
+
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(autorizacaoProjetoService.temPermissao(
+            usuarioAtual, tarefa.getProjeto().getId(), "tarefa:atribuir"))
+        .thenReturn(false);
+    when(configuracaoProjetoRepository.findById(tarefa.getProjeto().getId()))
+        .thenReturn(Optional.of(configuracao));
+
+    assertThatThrownBy(
+            () ->
+                tarefaService.editar(
+                    tarefa.getId(),
+                    new TarefaRequest(
+                        tarefa.getProjeto().getId(),
+                        null,
+                        null,
+                        TipoTarefa.FEATURE,
+                        "Novo",
+                        null,
+                        null)))
+        .isInstanceOf(AcessoNegadoException.class);
+  }
+
+  @Test
+  void devComToggleEditaTituloDeTarefaIniciada() {
+    tarefa.setIniciada(true);
+    tarefa.setTitulo("Original");
+    ConfiguracaoProjeto configuracao = new ConfiguracaoProjeto();
+    configuracao.setDevPodeEditarTarefaIniciada(true);
+
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(autorizacaoProjetoService.temPermissao(
+            usuarioAtual, tarefa.getProjeto().getId(), "tarefa:atribuir"))
+        .thenReturn(false);
+    when(configuracaoProjetoRepository.findById(tarefa.getProjeto().getId()))
+        .thenReturn(Optional.of(configuracao));
+
+    TarefaDTO resultado =
+        tarefaService.editar(
+            tarefa.getId(),
+            new TarefaRequest(
+                tarefa.getProjeto().getId(), null, null, TipoTarefa.FEATURE, "Novo", null, null));
+
+    assertThat(resultado.titulo()).isEqualTo("Novo");
+    verify(auditoriaTarefaRepository).save(any(AuditoriaTarefa.class));
+  }
+
+  @Test
+  void productOwnerEditaTituloDeTarefaIniciadaSemToggle() {
+    tarefa.setIniciada(true);
+    tarefa.setTitulo("Original");
+
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(autorizacaoProjetoService.temPermissao(
+            usuarioAtual, tarefa.getProjeto().getId(), "tarefa:atribuir"))
+        .thenReturn(true);
+
+    TarefaDTO resultado =
+        tarefaService.editar(
+            tarefa.getId(),
+            new TarefaRequest(
+                tarefa.getProjeto().getId(), null, null, TipoTarefa.FEATURE, "Novo", null, null));
+
+    assertThat(resultado.titulo()).isEqualTo("Novo");
+  }
+
+  @Test
+  void devSemToggleNaoExcluiTarefa() {
+    ConfiguracaoProjeto configuracao = new ConfiguracaoProjeto();
+    configuracao.setDevPodeExcluirTarefa(false);
+
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(autorizacaoProjetoService.temPermissao(
+            usuarioAtual, tarefa.getProjeto().getId(), "tarefa:atribuir"))
+        .thenReturn(false);
+    when(configuracaoProjetoRepository.findById(tarefa.getProjeto().getId()))
+        .thenReturn(Optional.of(configuracao));
+
+    assertThatThrownBy(() -> tarefaService.excluir(tarefa.getId()))
+        .isInstanceOf(AcessoNegadoException.class);
+  }
+
+  @Test
+  void devPuxaTarefaJaAtribuidaAOutroSemAprovacao() {
+    tarefa.setResponsavelId(UUID.randomUUID());
+
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(autorizacaoProjetoService.usuarioTemAcessoAoProjeto(
+            usuarioAtual, tarefa.getProjeto().getId()))
+        .thenReturn(true);
+
+    TarefaDTO resultado =
+        tarefaService.atribuir(
+            tarefa.getId(), new AtribuirResponsavelRequest(usuarioAtual.getId()));
+
+    assertThat(resultado.responsavelId()).isEqualTo(usuarioAtual.getId());
+    verify(auditoriaTarefaRepository).save(any(AuditoriaTarefa.class));
+  }
+
+  @Test
+  void naoPuxaTarefaDeProjetoFinalizado() {
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    org.mockito.Mockito.doThrow(new RegraDeNegocioException("Projeto finalizado"))
+        .when(autorizacaoProjetoService)
+        .exigirProjetoNaoFinalizado(tarefa.getProjeto().getId());
+
+    assertThatThrownBy(
+            () ->
+                tarefaService.atribuir(
+                    tarefa.getId(), new AtribuirResponsavelRequest(usuarioAtual.getId())))
+        .isInstanceOf(RegraDeNegocioException.class);
+    verify(auditoriaTarefaRepository, never()).save(any());
+  }
+
+  @Test
+  void devNaoAtribuiTarefaATerceiroSemPermissao() {
+    UUID terceiro = UUID.randomUUID();
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    org.mockito.Mockito.doThrow(new AcessoNegadoException("sem permissão"))
+        .when(autorizacaoProjetoService)
+        .exigirPermissao(usuarioAtual, tarefa.getProjeto().getId(), "tarefa:atribuir");
+
+    assertThatThrownBy(
+            () -> tarefaService.atribuir(tarefa.getId(), new AtribuirResponsavelRequest(terceiro)))
+        .isInstanceOf(AcessoNegadoException.class);
+    verify(auditoriaTarefaRepository, never()).save(any());
+  }
+
+  @Test
+  void historicoRetornaListaQuandoUsuarioTemAcessoAoProjeto() {
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(autorizacaoProjetoService.usuarioTemAcessoAoProjeto(
+            usuarioAtual, tarefa.getProjeto().getId()))
+        .thenReturn(true);
+    when(auditoriaTarefaRepository.historicoPorTarefa(tarefa.getId())).thenReturn(List.of());
+
+    assertThat(tarefaService.historico(tarefa.getId())).isEmpty();
+  }
+
+  @Test
+  void historicoNegaAcessoSemVinculoAoProjeto() {
+    when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+    when(autorizacaoProjetoService.usuarioTemAcessoAoProjeto(
+            usuarioAtual, tarefa.getProjeto().getId()))
+        .thenReturn(false);
+
+    assertThatThrownBy(() -> tarefaService.historico(tarefa.getId()))
+        .isInstanceOf(AcessoNegadoException.class);
   }
 }

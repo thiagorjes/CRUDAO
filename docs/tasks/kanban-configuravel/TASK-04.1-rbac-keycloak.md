@@ -2,6 +2,8 @@
 
 **Status:** Concluída — 2026-08-22
 
+> ⚠️ **Retrabalho necessário — ver [TASK-04.2](TASK-04.2-rbac-por-projeto.md).** O modelo desta task (papel único global por usuário) foi substituído por RBAC escopado por projeto (PRD v1.3, BDR-001, ADR-006) — o gap que motivou o retrabalho: "usuário edita apenas o projeto de origem" (TASK-05.3) não era enforçável com este modelo. Esta task permanece como registro histórico do que foi implementado e revisado em code review; não editar in-place.
+
 **Epic:** EPIC-04 — RBAC e Autenticação | **User Story:** US-04.1 — Controle de acesso configurável
 **Sistema:** CRUDAO | **RF:** RF-013, RF-014, RNF-003 | **Dependências:** TASK-00.2
 

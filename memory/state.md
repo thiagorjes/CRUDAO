@@ -25,7 +25,7 @@ _Atualizado em: 2026-08-22_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-configuravel | CRUDAO | 1.1 | 1.0 | 1.0 | Em implementação — EPIC-00/01/02 concluídos (até TASK-02.2), próxima: TASK-04.1 ou TASK-03.1 |
+| kanban-configuravel | CRUDAO | 1.3 | 1.2 | 1.1 | Em implementação — RBAC redesenhado por projeto (BDR-001); canvas READY; próxima: TASK-04.2 |
 
 ---
 
@@ -84,6 +84,102 @@ _Atualizado em: 2026-08-22_
 - **Nota técnica:** escopo consciente — RF-003 (criação de tarefa) fora do RF desta task, sem UI de criação; Painel de Administração (TASK-05.3) e Dashboard (TASK-05.2) ficam para tasks seguintes
 - **Code review:** agent QA — 1 finding 🔴 corrigido (STOMP CONNECT sem autenticação — `StompAuthChannelInterceptor` no backend valida JWT no frame CONNECT; `GET /api/ws-token` no frontend expõe o access_token ao client só para esse fim, exceção documentada à regra geral de token-nunca-no-JS) e 5 🟡 corrigidos (email removido do `UsuarioDTO`, guard de projeto em evento tardio, `onDragEnd` para limpar drag cancelado, fetch redundante removido, feedback de falha de conexão STOMP); guardrails G-RT-01, G-RBAC-05, G-FE-01 registrados no canvas
 
+- **Task implementada:** TASK-05.2 — Frontend: Dashboard de gestão — 2026-08-23
+- **Arquivos:** `frontend/src/components/dashboard/{DashboardApp,DashboardApp.module.css}.tsx`; `frontend/src/app/dashboard/page.tsx`; `frontend/src/lib/board/realtime.ts` (+ `conectarDashboard`); `frontend/src/lib/api/types.ts` (+ `DashboardResultado`, `StatusJobDashboard`); `frontend/src/components/board/BoardApp.tsx` (+ link para `/dashboard`)
+- **Testes:** sem TDD (task de UI declarativa consumindo endpoints já cobertos por testes de backend, decisão da Fase 1 do `/implement`); `tsc --noEmit`, `eslint` e `next build` limpos; fluxo REST completo validado via `docker compose` real (`POST .../dashboard/calcular` → 202 → polling `GET .../dashboard/jobs/{jobId}` → `CONCLUIDO` com mapas por etapa batendo com `GET /etapas`)
+- **Nota técnica:** `DashboardResultadoDTO` do backend não expõe contagem de tarefas por etapa nem "tarefas concluídas no período" — campos do protótipo aprovado (`qtdTarefas`, `tarefasConcluidas`) foram omitidos por não terem dado de origem; renderizado apenas lead-time médio e tempo médio em impedimento por etapa (gráfico de barras + tabela), fiel ao que a API retorna. Fallback de polling ativa somente quando a conexão STOMP falha (`aoFalhar` de `conectarDashboard`), consistente com o padrão de `conectarBoard`.
+- **Nota de ambiente:** mesma colisão de `usuario.email` remanescente já registrada na TASK-03.1 reapareceu (dado residual do volume Postgres local, não do código) — removida com autorização do usuário para validar o fluxo limpo via `docker compose`.
+- **Code review:** agent QA — 1 finding 🔴 corrigido (corrida entre o cálculo assíncrono, rápido para poucos registros, e o handshake STOMP: `pg_notify` podia publicar antes da subscription se estabelecer e o fallback de polling só disparava em falha de conexão, não nesse caso — `conectarDashboard` ganhou callback `aoConectar`, usado para uma consulta de "catch-up" ao job assim que a subscription é confirmada) e 1 🟡 corrigido (seletor de projeto do dashboard não persistia `crudao_projeto_id` no localStorage, divergindo do Board); demais achados 🟢 confirmados sem ação (ausência de testes de componente é decisão consistente com `BoardApp`/`TarefaDetalhePage`; omissão de `qtdTarefas`/`tarefasConcluidas` do protótipo já documentada como nota técnica por falta de dado de origem no backend)
+- **Próxima task:** TASK-05.3 — Frontend: Painel de Administração
+
+- **Sincronização executada:** /spdd-sync — 2026-08-23
+- **Divergências encontradas:** 1
+- **Resolvidas:** 0 | **Pendentes:** 0 | **Aceitas:** 1
+- **Artefato:** docs/spdd/kanban-configuravel-deviations.md
+
+- **Clarificação executada:** /clarify — 2026-08-23
+- **Motivo:** implementação da TASK-05.3 (painel de administração) interrompida — AC pedia restrição "usuário edita apenas o projeto de origem", mas o RBAC da TASK-04.1 é só por papel global, sem vínculo usuário↔projeto (nenhum enforcement possível no backend, achado bypassável até por chamada direta à API). Usuário trouxe o modelo de negócio completo de papéis/projeto para resolver a lacuna.
+- **Ambiguidades resolvidas:** 13 (Projeto×Board, modelo RBAC por projeto, escopo do project_admin, significado de "finalizar" tarefa, permissão de reabertura, CRUD de tarefa por papel, definição de "tarefa iniciada", configurabilidade via toggles, escopo do log de auditoria, acesso do gestor, finalização de projeto, provisionamento de usuário, permissão de impedimento, papel `user` legado)
+- **PRD:** v1.2 — novos RF-015, RF-016, RF-017; RF-003/RF-008/RF-012/RF-013 revisados; RN-008 a RN-016 adicionadas; RNF-003 reforçada
+- **Decisão registrada:** BDR-001 (RBAC por projeto com papéis acumuláveis)
+- **Artefatos marcados stale:** techspec, data-model, tasks (índice + arquivos), canvas (dimensões A/S/N/O ainda refletem o modelo antigo — só R foi atualizada)
+- **Próximo passo:** `/techspec` para redesenhar o modelo de RBAC (Usuario↔Projeto↔Papel, toggles por projeto, permissão `tarefa:finalizar`, auditoria de tarefa) antes de retomar TASK-04.1 (retrabalho) e TASK-05.3
+
+- **Etapa concluída:** /techspec (v1.1) — 2026-08-23
+- **Artefatos:** docs/techspec/kanban-configuravel-techspec.md (v1.1) + data-model.md (v1.1) + quickstart.md (v1.0, gerado pela primeira vez) + docs/decisions/ADR-006-rbac-por-projeto-enforcement.md
+- **Sistemas afetados:** CRUDAO (único)
+- **Mock contracts:** nenhum novo (Keycloak já validado desde a TASK-00.1)
+- **Mudanças principais:** novo `ADR-006` (autorização por projeto via `AutorizacaoProjetoService` chamado explicitamente no Service, não mais só `@ExigePermissao`/AOP genérico — `PermissaoAspect` fica restrito a ações globais); data model com `UsuarioProjetoPapel`, `ConfiguracaoProjeto` (toggles), `AuditoriaTarefa`, `Usuario.admin`, `Projeto.data_finalizacao`; novos endpoints (`GET /api/usuarios/me`, membros de projeto, configuração/toggles, finalizar/reabrir projeto, histórico de auditoria, atribuir tarefa); novas permissões `tarefa:atribuir`/`tarefa:finalizar`; matriz de rastreabilidade cobre RF-001 a RF-017 (verificado via `check_rf_coverage.py`, exit 0)
+- **Cobertura de RF:** completa (verificação direta do script — o aviso do `validate.py` é bug de argumentos no `validate-rules.json` do skill `techspec`, não relacionado ao conteúdo)
+- **Próximo comando:** `/tasks kanban-configuravel` — vai precisar gerar uma task de retrabalho da TASK-04.1 (RBAC) antes de a TASK-05.3 (painel de administração) poder ser reimplementada
+
+- **Comitê de análise assíncrono executado:** security + database + architect — 2026-08-23 (sobre TechSpec v1.1)
+- **Achado crítico (security):** contrato de `PapelController` estava implícito e deixava aberto um vetor de escalação de privilégio (`project_admin` manipulando permissões de um papel existente, dado que `papel:gerenciar` era uma das 6 chaves candidatas a `UsuarioProjetoPapel`). **Corrigido:** `papel:gerenciar` nunca é atribuível via papel de projeto — checada só contra `Usuario.admin`; RN-006 do PRD marcada como superseded em parte (PRD v1.3, G-RBAC-07 no canvas)
+- **Achado convergente (security + architect):** troca do AOP genérico por chamada explícita (ADR-006) perde garantia "por construção" — mitigado com teste estrutural de CI verificando a chamada em todo Service de escrita escopado a projeto (G-RBAC-06)
+- **Achado (architect):** checagem de projeto finalizado (RN-015) deve ser unificada dentro de `AutorizacaoProjetoService`, não duplicada por Service (G-RBAC-08); recomendado TASK-04.2 nova (não reabrir TASK-04.1 in-place) para o retrabalho, quebrada em 5 subtarefas (Q-009)
+- **Achados (database):** estratégia de migração de `Usuario.papel_id` resolvida (Q-006 — reatribuição manual, sem herdar escopo implícito); seed padrão de `project_admin` resolvido (Q-007 — todas as chaves exceto `papel:gerenciar`); índices `idx_upp_projeto` e `idx_auditoria_tarefa` adicionados; PK de `UsuarioProjetoPapel` com ordem explícita; retenção de `AuditoriaTarefa` registrada como Q-008 (não bloqueante); risco de N+1 em `GET /usuarios/me` documentado
+- **Artefatos atualizados:** PRD v1.3, TechSpec v1.2, data-model v1.2, ADR-006 revisado, canvas (guardrails G-RBAC-06/07/08)
+- **Próximo comando:** `/tasks kanban-configuravel`
+
+- **Etapa concluída:** /tasks (v1.1 — atualização, não regeneração) — 2026-08-23
+- **Artefato:** docs/tasks/kanban-configuravel-tasks.md
+- **Tasks novas:** TASK-04.2 (RBAC por projeto — retrabalho, EPIC-04), TASK-01.3 (toggles + finalização de projeto, EPIC-01), TASK-02.3 (regras avançadas de tarefa + auditoria, EPIC-02), TASK-05.4 (ajustes de UI de tarefa, EPIC-05)
+- **Tasks retrabalhadas:** TASK-05.3 (dependências: TASK-04.1→TASK-04.2, TASK-01.2, +TASK-01.3; escopo expandido — membros de projeto, toggles, finalizar, papéis só admin global); TASK-06.1 (+dependência TASK-05.4)
+- **Tasks preservadas sem alteração de conteúdo:** TASK-00.1, 00.2, 01.1, 01.2, 02.1, 02.2, 03.1, 05.0, 05.1, 05.2 (já concluídas) — TASK-04.1 recebeu só nota de retrabalho no topo, apontando para TASK-04.2
+- **Total:** 16 tasks em 7 epics (12 originais + 4 novas)
+- **Canvas:** transitou para **READY** — todas as 7 dimensões preenchidas (R, E, A, Structure, N, Safeguards, O)
+- **Próxima task recomendada:** `/implement TASK-04.2` (RBAC por projeto — bloqueia TASK-01.3, TASK-02.3 e TASK-05.3)
+
+- **Análise executada:** /analyze — 2026-08-23
+- **Findings:** 🔴 2 | 🟡 2 | 🟠 1 | 🔵 1
+- **Veredicto:** ⚠️ Aprovado com ressalvas
+- **Artefato:** docs/analyze/kanban-configuravel-analysis.md
+- **RFs cobertos:** 17/17 (100%)
+
+- **Remediação aplicada:** 2026-08-23 — todos os 4 findings 🔴/🟡 corrigidos
+  - G1: TASK-04.2 ampliada — migração de `@ExigePermissao`→`AutorizacaoProjetoService` agora inclui os 7 endpoints de `TarefaController` (antes só listava Workflow/Etapa/Transição/Raia)
+  - G2: TechSpec → **v1.3** — contrato explícito de `PATCH /api/tarefas/{id}/mover-projeto`, exigindo permissão nos dois projetos (origem e destino); item correspondente adicionado à TASK-04.2
+  - S1/S2: tags RN-008, RN-014, RN-013 adicionadas ao checklist/critérios de aceite da TASK-04.2
+  - `docs/analyze/kanban-configuravel-analysis.md` atualizado — veredicto final **✅ Aprovado para implementação**
+  - M1/B1 (🟠/🔵) não corrigidos — não bloqueantes, decisão registrada no próprio finding
+
+- **Task implementada:** TASK-04.2 — RBAC por projeto: retrabalho do modelo e enforcement — 2026-08-24
+- **Arquivos:** `domain/rbac/{UsuarioProjetoPapel,UsuarioProjetoPapelId,UsuarioProjetoPapelRepository,ProjetoPapeisDTO,UsuarioMeDTO,MembroDTO,AtribuirPapeisRequest,MembroProjetoService,MembroProjetoController,MigracaoAdminRunner}.java` (novos); `domain/rbac/{Usuario,RbacSeeder,UsuarioController}.java`, `domain/projeto/{Projeto,ProjetoService}.java` (+ novo `ConfiguracaoProjeto`/`ConfiguracaoProjetoRepository`), `security/{UsuarioContexto,PermissaoAspect}.java` (+ novo `AutorizacaoProjetoService`), `common/{ApiExceptionHandler,EntradaInvalidaException}.java` (novo, 422); migração de `@ExigePermissao` para chamada explícita em `WorkflowService`, `EtapaService`, `TransicaoService`, `RaiaService`, `TarefaService` (7 métodos, incl. `mover-projeto` com 2 checagens — finding G2) e remoção da anotação dos respectivos Controllers; teste estrutural `architecture/AutorizacaoProjetoEnforcementTest`
+- **Testes:** TDD nos pontos críticos (`AutorizacaoProjetoServiceTest` 7 casos incl. RN-015 e exceção de reabertura, `MembroProjetoServiceTest` 5 casos incl. 422/G-RBAC-07, `RbacSeederTest` 4 casos incl. RN-013); suíte completa 57/57 verde (`mvn test`, unit only — `*IT` não executados nesta sessão, mesma limitação de rede Docker-in-Docker já registrada na TASK-04.1); `spotless:check` limpo
+- **Nota técnica:** reabertura/finalização de projeto (endpoint) fica para TASK-01.3 — `AutorizacaoProjetoService` já implementa a exceção de RN-015 para a permissão `projeto:gerenciar`, pronta para esse endpoint. Raia default global (`projetoId=null`) gerenciada só por `admin` global (sem projeto para escopar). `Usuario.papel`/`papel_id` mantidos como `@Deprecated` (não removidos — migration de schema separada, Q-006)
+- **Débito técnico registrado (não bloqueante):** extensão de `StompAuthChannelInterceptor` para restringir subscription STOMP a membros do projeto (G-RT-01), agora que `UsuarioProjetoPapel` existe
+- **Code review:** agent QA (general-purpose, agente `qa` indisponível no registro desta sessão) — 1 finding 🔴 corrigido: `ProjetoController`/`ProjetoService` haviam ficado fora da migração (decisão original desta task, por não constarem na checklist), mas o `RbacSeeder` desta mesma task passou a dar `projeto:gerenciar` a `project_admin` — como o `@ExigePermissao` legado checa `Usuario.papel` (papel único global, não escopado), isso permitia a um `project_admin` gerenciar **qualquer** projeto do sistema, não só o seu (violação de RF-015/BDR-001 introduzida pela própria mudança de seed). Corrigido: `editar`/`excluir`/`workflow-ativo` migrados para `AutorizacaoProjetoService` (escopados); `criar` (ação global, sem projeto ainda) restrito a `Usuario.admin`, mesmo padrão de `papel:gerenciar`. 2 findings 🟡 confirmados sem ação (exceção de `projeto:gerenciar` ao bloqueio RN-015 é código morto até TASK-01.3 expor o endpoint de reabertura — reavaliar então; teste estrutural G-RBAC-06 verifica presença da chamada por texto, não o efeito — suficiente para o objetivo de "pegar remoção acidental", limitação documentada no próprio teste)
+- **Próxima task:** TASK-01.3 (toggles + finalização de projeto) e TASK-02.3/TASK-05.3, agora desbloqueadas
+
+- **Task implementada:** TASK-01.3 — Configuração de projeto (toggles) e finalização — 2026-08-24
+- **Arquivos:** `domain/projeto/{ConfiguracaoProjetoDTO,ProjetoDTO,ProjetoService,ProjetoController}.java` (novos endpoints `GET/PUT /{id}/configuracao`, `PUT/DELETE /{id}/finalizar`); `security/AutorizacaoProjetoService.java` (novo método `exigirPermissaoParaReabertura`, desacoplado de `exigirPermissao`); testes `domain/projeto/ProjetoServiceTest.java` (novo), `security/AutorizacaoProjetoServiceTest.java` (+3 casos), `architecture/AutorizacaoProjetoEnforcementTest.java` (G-RBAC-06 ampliado)
+- **Testes:** TDD (`ProjetoServiceTest`, 6 casos incl. isolamento de toggle por projeto e reabertura); suíte completa 64+ testes unit verde (`mvn test`, unit only); `spotless:check` limpo
+- **Achado técnico (código pré-existente da TASK-04.2, exposto por esta task):** `AutorizacaoProjetoService.exigirPermissao` usava a própria string de permissão (`"projeto:gerenciar"`) como sinalizador de "pode reabrir projeto finalizado" — como `editar`/`excluir`/`definirWorkflowAtivo` do `ProjetoService` já usavam essa mesma chave, RN-015 nunca bloqueava esses três métodos (bug real, não só dos novos endpoints). Corrigido: `exigirPermissaoParaReabertura` é um método dedicado, chamado só por `ProjetoService.reabrir` — `exigirPermissao` geral agora bloqueia incondicionalmente projeto finalizado, sem exceção por string de permissão
+- **Débito técnico registrado (não bloqueante):** falta teste `*IT` cruzando `ProjetoService` real + `AutorizacaoProjetoService` real (hoje cobertos separadamente por unit tests) — mitigação suficiente para o escopo atual, mas recomendável antes de expandir `AutorizacaoProjetoService`
+- **Code review:** agent QA (general-purpose) — 1 finding 🔴 corrigido (acima), 2 🟡 confirmados sem ação corretiva imediata
+- **Próxima task:** TASK-02.3 (regras avançadas de tarefa + auditoria) ou TASK-05.3 (painel de administração)
+
+- **Task implementada:** TASK-05.3 — Frontend: Painel de Administração — 2026-08-24
+- **Arquivos:** `frontend/src/lib/api/types.ts` (+ `ConfiguracaoProjeto`, `ProjetoPapeis`, `UsuarioMe`, `Membro`, `Papel`; `Projeto.dataFinalizacao`); `frontend/src/components/admin/{AdminApp,AdminApp.module.css}.tsx` (novo — container, gating via `GET /usuarios/me`, seletor de projeto compartilhando `crudao_projeto_id` com o board, abas); `frontend/src/components/admin/abas/{ProjetosAba,WorkflowsAba,RaiasAba,MembrosAba,TogglesAba,PapeisAba}.tsx` (novos); `frontend/src/app/admin/page.tsx` (novo); `frontend/src/components/board/BoardApp.tsx` (+ link "Configurações do projeto →"). Só frontend — todos os endpoints consumidos já existiam (TASK-04.2/01.3/02.3/04.1)
+- **Testes:** sem TDD (UI declarativa consumindo endpoints já cobertos por teste de backend, mesma decisão da TASK-05.2); `tsc --noEmit`, `eslint` e `next build` limpos
+- **Nota técnica:** gating de UI (`admin`/`projetos[].permissoes` de `/usuarios/me`) é só estético — nenhuma escrita depende de dado do cliente para decidir autorização (RNF-003/ADR-006, backend revalida tudo); aba "Papéis e permissões" só renderiza com `admin===true`; `MembrosAba` filtra `papel:gerenciar` por conteúdo de permissão (não por nome do papel), robusto a rename (G-RBAC-07)
+- **Code review:** agent QA (general-purpose) — aprovado sem findings 🔴/🟡; 2 findings 🔵 (não bloqueantes) — S1 (nota de manutenibilidade sobre raias globais, sem ação) e S2 (`AdminApp.permissoesProjeto` sintetizava um Set fixo de chaves para `admin` em vez de checagem direta) **corrigido nesta sessão** — guardrail **G-FE-02** registrado no canvas (dimensão S)
+- **Próxima task:** TASK-05.4 (ajustes de UI de tarefa) ou TASK-06.1 (testes E2E de fechamento)
+
+- **Task implementada:** TASK-02.3 — Regras avançadas de tarefa: edição travada, atribuição, finalização e auditoria — 2026-08-24
+- **Arquivos:** `domain/tarefa/{AuditoriaTarefa,CampoAuditoria,AuditoriaTarefaRepository,AuditoriaTarefaDTO,AtribuirResponsavelRequest,Tarefa,TarefaService,TarefaController}.java`; `security/AutorizacaoProjetoService.java` (+ `temPermissao`, `usuarioTemAcessoAoProjeto`, `exigirProjetoNaoFinalizado`)
+- **Testes:** TDD (`TarefaServiceTest`, 18 casos incl. trava de edição RN-009/010, `tarefa:finalizar` RN-011 na ida/volta, autoatribuição RN-012, auditoria RN-016, projeto finalizado bloqueando "puxar"); suíte completa 74/74 verde (`mvn test`, unit only); `spotless:check` limpo
+- **Nota técnica:** "dev-tier" (papel `dev`) é inferido pela ausência de `tarefa:atribuir` — único papel com `tarefa:gerenciar` que não tem essa permissão entre os seedados (`RbacSeeder`), evita checagem por nome de papel; `iniciada` persistida como boolean em `Tarefa`, marcada ao sair da etapa de menor `ordem` do workflow pela 1ª vez; `PUT /tarefas/{id}` (edição geral, TASK-02.1) continua permitindo alterar `responsavelId` sem passar pela checagem RN-012 do novo `PATCH /responsavel` — decisão consciente de escopo
+- **Code review:** agent QA — aprovado com ressalvas; 2 findings 🟡 corrigidos (checagem de RN-015 duplicada fora do ponto único `AutorizacaoProjetoService` — extraído `exigirProjetoNaoFinalizado` público, G-RBAC-08; teste de cobertura adicionado para RN-015 no fluxo de "puxar" tarefa); 1 finding 🟢 registrado sem ação (atribuir a terceiro não valida se o usuário de destino é membro do projeto — não bloqueante)
+- **Próxima task:** TASK-05.3 (painel de administração) ou TASK-05.4 (ajustes de UI de tarefa)
+
+- **Task implementada:** TASK-05.4 — Frontend: ajustes de tarefa para RBAC por projeto — 2026-08-24
+- **Arquivos:** `backend/.../domain/tarefa/TarefaDTO.java` (+ campo `iniciada`, auto-mapeado por MapStruct); `frontend/src/lib/api/{types,client}.ts` (+ `AuditoriaTarefa`/`CampoAuditoria`, parse do corpo `{erro}` de erros HTTP para mensagem legível em vez do JSON bruto — corrige todos os fluxos de erro do app, não só desta task); `frontend/src/app/tarefas/[id]/page.tsx` (reescrito — edição de título/descrição com trava por papel "dev-tier" + toggle `devPodeEditarTarefaIniciada`, "Atribuir a mim" sempre visível + reatribuir gated por `tarefa:atribuir`, seção de histórico via `GET /historico`); `frontend/src/lib/board/agrupar.test.ts` (fixture + `iniciada`)
+- **Testes:** sem TDD (ajustes de UI consumindo endpoints já cobertos por testes de backend das TASK-02.3/04.2); `tsc --noEmit`, `eslint` e `vitest run` (43/43) limpos; backend não compilado nesta sessão (mesma limitação de rede/Docker já registrada — mudança é campo record auto-mapeado, mesmo padrão de `impedida`)
+- **Nota técnica:** heurística "dev-tier" (tem `tarefa:gerenciar` mas não `tarefa:atribuir`) no frontend é só gating de UX, mesma lógica do backend (`TarefaService.ehDevTier`) — backend é a fonte real de autorização (RNF-003)
+- **Code review:** agent QA (general-purpose) — aprovado sem findings bloqueantes; 2 🟡 não corrigidos (botão "Atribuir a mim" não checa vínculo ao projeto antes de exibir — backend já rejeita corretamente; `key={i}` na tabela de histórico por falta de id no DTO)
+- **Próxima task:** TASK-05.3 (painel de administração — arquivos já presentes no working tree, não commitados/registrados aqui) ou TASK-06.1 (testes E2E)
+
 ## Reorganização — código movido para systems/CRUDAO/
 
 - **Mudança:** `backend/` e `frontend/` movidos da raiz do workspace para `systems/CRUDAO/backend/` e `systems/CRUDAO/frontend/` — 2026-08-22
@@ -100,15 +196,21 @@ _Atualizado em: 2026-08-22_
 | Artefato | v | Status |
 |---|---|---|
 | docs/discovery/kanban-configuravel-discovery.md | 1.0 | ok |
-| docs/prd/kanban-configuravel-prd.md | 1.1 | ok |
-| docs/techspec/kanban-configuravel-techspec.md | 1.0 | ok |
-| docs/techspec/kanban-configuravel/data-model.md | 1.0 | ok |
+| docs/prd/kanban-configuravel-prd.md | 1.3 | ok |
+| docs/techspec/kanban-configuravel-techspec.md | 1.3 | ok |
+| docs/techspec/kanban-configuravel/data-model.md | 1.2 | ok |
+| docs/techspec/kanban-configuravel/quickstart.md | 1.0 | ok (gerado na revisão v1.1 — não existia desde o v1.0) |
+| docs/tasks/kanban-configuravel-tasks.md (índice) | 1.1 | ok |
+| docs/tasks/kanban-configuravel/ (16 arquivos TASK-*.md — 12 originais + TASK-01.3, 02.3, 04.2, 05.4 novas) | 1.1 | ok |
+| docs/spdd/kanban-configuravel-canvas.md | — | **READY** (7/7 dimensões preenchidas) |
+| docs/analyze/kanban-configuravel-analysis.md | 1.0 | ✅ aprovado para implementação — 4 findings 🔴/🟡 corrigidos |
 | docs/contracts/CRUDAO-keycloak-contract.md | 1.0 | ok (validado na TASK-00.1) |
 | docs/design/kanban-configuravel-design-brief.md | 1.0 | ok |
 | docs/design/prototypes/kanban-configuravel/ (fontes + Artifact https://claude.ai/code/artifact/a7612319-88d0-434d-9729-64d3d1604c6c) | — | aprovado pelo usuário em 2026-08-22 |
 | docs/tasks/kanban-configuravel-tasks.md (índice) | 1.0 | ok |
 | docs/tasks/kanban-configuravel/ (12 arquivos TASK-*.md) | 1.0 | ok |
 | docs/spdd/kanban-configuravel-canvas.md | — | draft (R, E, A, S, N, O preenchidas; falta Safeguards — aguarda /code-review) |
+| docs/spdd/kanban-configuravel-deviations.md | 1.0 | ok |
 | systems/CRUDAO/guidelines/stack.md | 1.0 | ok |
 | systems/CRUDAO/guidelines/architecture.md | 1.0 | ok |
 | systems/CRUDAO/guidelines/coding-standards.md | 1.0 | ok |

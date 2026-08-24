@@ -1,5 +1,5 @@
 # PRD — Kanban Configurável
-_Versão: 1.1 | Status: Draft | Data: 2026-08-22 | Autor: Thiago Goncalves Cavalcante_
+_Versão: 1.3 | Status: Draft | Data: 2026-08-23 | Autor: Thiago Goncalves Cavalcante_
 
 ---
 
@@ -62,6 +62,14 @@ _Versão: 1.1 | Status: Draft | Data: 2026-08-22 | Autor: Thiago Goncalves Caval
 **Dado que** o usuário está no board de um projeto
 **Quando** cria, edita ou exclui uma tarefa
 **Então** a alteração é refletida imediatamente no board para todos os usuários conectados.
+
+**Dado que** uma tarefa ainda não saiu da etapa inicial do workflow ("não iniciada")
+**Quando** um dev edita título/descrição/tipo dessa tarefa
+**Então** a edição é permitida; **uma vez que a tarefa saia da etapa inicial pela primeira vez** ("iniciada", RN-013), o dev deixa de poder editar título/descrição/tipo — só movimentação de etapa (avançar/retroceder) continua disponível a ele. Product_owner, project_admin e admin não têm essa restrição em nenhum momento.
+
+**Dado que** o comportamento default de edição/exclusão por papel (RN-013, RN-014) está em vigor num projeto
+**Quando** o project_admin daquele projeto configura os toggles de permissão do projeto (RF-016)
+**Então** o comportamento passa a seguir a configuração definida ali, sobrepondo o default.
 
 **Prioridade:** Must Have
 
@@ -133,6 +141,10 @@ _Versão: 1.1 | Status: Draft | Data: 2026-08-22 | Autor: Thiago Goncalves Caval
 **Quando** o admin tenta excluí-lo
 **Então** a exclusão é permitida; **caso contrário**, o sistema bloqueia a exclusão e exige migração das tarefas antes.
 
+**Dado que** um projeto está ativo
+**Quando** admin global ou project_admin daquele projeto marca o projeto como finalizado (preenche a data de finalização)
+**Então** o projeto (board, tarefas e configurações) passa a somente leitura para todos os papéis, inclusive admin/project_admin; reabrir (limpar a data de finalização) segue a mesma permissão (RN-015).
+
 **Prioridade:** Must Have
 
 ---
@@ -187,21 +199,82 @@ _Versão: 1.1 | Status: Draft | Data: 2026-08-22 | Autor: Thiago Goncalves Caval
 
 **Dado que** uma tarefa está na etapa final (sem transição de saída configurada)
 **Quando** o usuário aciona a opção de "desfinalizar"
-**Então** a tarefa retorna para uma etapa anterior selecionada, reiniciando a contagem de lead-time daquela etapa.
+**Então** a tarefa retorna para uma etapa anterior selecionada, reiniciando a contagem de lead-time daquela etapa. Tanto mover PARA a etapa final quanto "desfinalizar" exigem a permissão `tarefa:finalizar` (RN-011) — dev não tem essa permissão por padrão.
 
 **Prioridade:** Must Have
 
 ---
 
-### RF-013 — Controle de acesso por papéis configuráveis
+### RF-013 — Controle de acesso por papéis configuráveis, escopados por projeto
 
 **Como** admin, **quero** criar/editar/excluir papéis e definir quais permissões cada um possui, **para** adaptar o controle de acesso à estrutura da equipe (dev, gestor etc.).
 
 **Critérios de aceite:**
 
-**Dado que** existem papéis padrão (admin, user)
-**Quando** o admin cria um novo papel e define suas permissões
-**Então** o sistema passa a aplicar essas permissões aos usuários com esse papel, sem permitir que o papel admin seja criado, editado ou excluído por outro papel delegado. O conjunto granular de permissões disponíveis será definido tecnicamente em techspec.
+**Dado que** existem papéis padrão (admin, user, project_admin, dev, product_owner, gestor)
+**Quando** o admin global cria um novo papel e define suas permissões
+**Então** o sistema passa a aplicar essas permissões aos usuários com esse papel, sem permitir que o papel admin seja criado, editado ou excluído por outro papel delegado (RN-006). Criar/editar/excluir papéis e suas permissões é exclusivo do admin global — project_admin não tem essa capacidade (RN-008). O conjunto granular de permissões disponíveis será definido tecnicamente em techspec.
+
+**Dado que** o papel `admin` é global (não vinculado a nenhum projeto)
+**Quando** um usuário tem o papel admin
+**Então** ele tem acesso total a todas as funções em qualquer projeto do sistema, incluindo administrar usuários (RF-015) e o RBAC (papéis/permissões).
+
+**Papéis padrão e suas capacidades default** (granularidade final de permissões em techspec):
+
+| Papel | Escopo | Capacidades default |
+|---|---|---|
+| admin | Global | Acesso total a tudo, em todos os projetos; administra usuários, papéis e permissões |
+| project_admin | Por projeto | Acesso total às funções do(s) projeto(s) associado(s); associa usuários existentes ao projeto e atribui papéis já existentes a eles; configura os toggles de permissão do projeto (RF-016); finaliza/reabre o projeto (RF-008) |
+| product_owner | Por projeto | Gerencia qualquer tarefa do projeto (criar/editar/excluir, mesmo depois de iniciada); atribui/reatribui tarefas a devs; marca/desmarca impedimento; executa transições para/da etapa final (`tarefa:finalizar`, RN-011) |
+| dev | Por projeto | Cria tarefa; edita título/descrição/tipo só enquanto não iniciada (RN-013); movimenta tarefas (avançar/retroceder) respeitando o workflow; marca/desmarca impedimento; autoatribui (puxa) qualquer tarefa do projeto para si, mesmo já atribuída a outro (RN-012); não atribui tarefa a outro usuário; não executa transição para/da etapa final |
+| gestor | Por projeto | Por padrão, só visualiza o dashboard do projeto; sem acesso ao board (configurável pelo project_admin via RF-016) |
+| user | Global (legado) | Sem permissões — papel padrão herdado, mantido por compatibilidade (RN-014) |
+
+**Prioridade:** Must Have
+
+---
+
+### RF-015 — Associação de usuário a projeto(s) com papel(is)
+
+**Como** admin global ou project_admin, **quero** associar um usuário a um ou mais projetos, atribuindo um ou mais papéis por projeto, **para** que ele acumule as permissões correspondentes naquele contexto.
+
+**Critérios de aceite:**
+
+**Dado que** um usuário já existe no sistema (autoprovisionado no 1º login via Keycloak — RF-014)
+**Quando** admin global ou project_admin do projeto o associa a um projeto com um ou mais papéis (ex.: dev + product_owner)
+**Então** o usuário passa a acumular as permissões de todos os papéis atribuídos a ele naquele projeto; o mesmo usuário pode ter papéis diferentes em projetos diferentes (ex.: project_admin no Projeto A, dev no Projeto B).
+
+**Dado que** um usuário já existe no sistema
+**Quando** admin global edita seus dados (nome, papel global admin/user, projetos associados)
+**Então** a alteração é aplicada; não há tela de pré-cadastro de usuário antes do 1º login (autoprovisionamento via Keycloak continua sendo a única forma de criar a conta).
+
+**Prioridade:** Must Have
+
+---
+
+### RF-016 — Configuração de permissões por projeto (toggles)
+
+**Como** project_admin, **quero** ligar/desligar regras pré-definidas de permissão específicas do meu projeto, **para** adaptar o comportamento default dos papéis às necessidades do meu contexto, sem precisar mexer em RBAC granular.
+
+**Critérios de aceite:**
+
+**Dado que** existe um conjunto fechado de toggles pré-definidos pelo sistema (ex.: "dev pode excluir tarefa", "dev pode editar tarefa já iniciada", "gestor pode ver o board em modo leitura")
+**Quando** o project_admin liga ou desliga um toggle do seu projeto
+**Então** o comportamento default daquele papel no projeto passa a respeitar a configuração definida, sem afetar outros projetos nem criar novas permissões RBAC.
+
+**Prioridade:** Must Have
+
+---
+
+### RF-017 — Histórico de auditoria da tarefa
+
+**Como** membro da equipe, **quero** ver um histórico de alterações relevantes de uma tarefa (responsável, título, descrição, etapa), **para** entender quem fez o quê e quando.
+
+**Critérios de aceite:**
+
+**Dado que** uma tarefa sofre uma alteração relevante (troca de responsável, edição de título/descrição, mudança de etapa)
+**Quando** o usuário consulta o histórico da tarefa
+**Então** o sistema exibe cada alteração com quem a fez, o que mudou (de/para), e quando (ex.: "JOAO alterou o responsável da tarefa de PEDRO para JOAO em 23/08/2026 14:32").
 
 **Prioridade:** Must Have
 
@@ -247,9 +320,9 @@ _Versão: 1.1 | Status: Draft | Data: 2026-08-22 | Autor: Thiago Goncalves Caval
 
 **Categoria:** Segurança
 
-**Métrica:** Cobertura de ações restritas por permissão de papel.
+**Métrica:** Cobertura de ações restritas por permissão de papel, validadas no backend.
 
-**Critério:** Toda ação de criação/edição/exclusão de entidades administrativas (projetos, workflows, colunas, raias, papéis) deve respeitar as permissões do papel do usuário autenticado.
+**Critério:** Toda ação de criação/edição/exclusão de entidades administrativas (projetos, workflows, colunas, raias, papéis, associações usuário-projeto) deve respeitar as permissões do(s) papel(is) do usuário autenticado no projeto em questão. Toda validação de permissão exibida/aplicada no frontend (esconder botão, desabilitar ação) deve ser re-validada de forma independente no backend — o frontend nunca é a única salvaguarda; nenhuma ação de escrita pode depender apenas de dado enviado pelo cliente para decidir autorização.
 
 ---
 
@@ -282,8 +355,17 @@ _Versão: 1.1 | Status: Draft | Data: 2026-08-22 | Autor: Thiago Goncalves Caval
 | RN-003 | Toda etapa deve ter ao menos uma transição de saída configurada, exceto a etapa final. Uma coluna pode ou não ter transição de entrada/saída conforme o workflow (atributo opcional, detalhado em techspec). | Entrevista PRD |
 | RN-004 | A etapa final não possui transição de saída padrão, mas permite "desfinalizar" a tarefa, retornando-a para outra etapa do workflow. | Entrevista PRD |
 | RN-005 | Não é permitido excluir um projeto, workflow, coluna ou raia que possua tarefas ativas vinculadas — é necessário migrar as tarefas antes. | Entrevista PRD |
-| RN-006 | O admin pode delegar a outros papéis a permissão de criar/editar/excluir papéis e permissões, exceto a permissão de criar, editar ou excluir o papel admin. | Entrevista PRD |
+| RN-006 | O admin pode delegar a outros papéis a permissão de criar/editar/excluir papéis e permissões, exceto a permissão de criar, editar ou excluir o papel admin. **Superseded em parte por RN-008 (v1.3, achado do comitê de análise técnica da TechSpec v1.1):** com RBAC por projeto (BDR-001), não existe mais um "papel delegado" com alcance global — `papel:gerenciar` deixa de ser uma permissão atribuível via `UsuarioProjetoPapel` (nenhum papel de projeto, incluindo `project_admin`, pode gerenciar papéis/permissões) e passa a ser checada exclusivamente contra `Usuario.admin`. Na prática, a delegação descrita nesta regra não tem mais um portador possível além do próprio admin global — mantida como registro histórico da intenção original, sem efeito prático distinto de "só admin gerencia papéis" (RN-008). | Entrevista PRD; revisão v1.3 |
 | RN-007 | Observadores de uma tarefa são exclusivamente usuários cadastrados no sistema. | Entrevista PRD |
+| RN-008 | O papel `admin` é global, sem vínculo de projeto — quem o possui tem acesso total ao sistema. Os demais papéis (`project_admin`, `product_owner`, `dev`, `gestor`, `user`) são atribuídos por par (usuário, projeto); um usuário pode ter mais de um papel no mesmo projeto (permissões acumuladas) e papéis diferentes em projetos diferentes. Criar/editar/excluir papéis e suas permissões (RF-013) é exclusivo do admin global; `project_admin` só associa usuários existentes a papéis já existentes, dentro do seu projeto (RF-015). | /clarify v1.2 |
+| RN-009 | Por padrão, `dev` cria tarefas e edita título/descrição/tipo livremente enquanto a tarefa não tiver saído da etapa inicial do workflow pela primeira vez ("não iniciada"); uma vez "iniciada" (RN-010), o dev só movimenta a tarefa entre etapas (não edita mais título/descrição/tipo). `product_owner`, `project_admin` e `admin` não têm essa restrição. Excluir tarefa é restrito por padrão a `product_owner`/`project_admin`/`admin`. Esse comportamento default é configurável por projeto via toggles (RF-016). | /clarify v1.2 |
+| RN-010 | Uma tarefa é considerada "iniciada" assim que sai da etapa inicial do workflow pela primeira vez — mesmo que retorne a ela depois, permanece "iniciada" permanentemente. | /clarify v1.2 |
+| RN-011 | Executar a transição que move uma tarefa PARA uma etapa marcada como final (`etapaFinal=true`), assim como "desfinalizar" (RF-012), exige a permissão `tarefa:finalizar` — concedida por padrão a `product_owner`, `project_admin` e `admin`; `dev` não a possui por padrão. | /clarify v1.2 |
+| RN-012 | Qualquer `dev` do projeto pode autoatribuir ("puxar") para si uma tarefa a qualquer momento, mesmo que já esteja atribuída a outro usuário, sem necessidade de aprovação; `dev` não pode atribuir uma tarefa a outro usuário — só a si mesmo. `product_owner` (e `project_admin`/`admin`) pode atribuir/reatribuir qualquer tarefa a qualquer `dev` do projeto a qualquer momento. Toda troca de responsável é registrada no histórico de auditoria da tarefa (RF-017). | /clarify v1.2 |
+| RN-013 | Marcar/desmarcar impedimento (RF-004) é permitido por padrão a `dev` e `product_owner` (além de `project_admin`/`admin`); `gestor` não marca impedimento — só visualiza o dashboard por padrão (RF-013), configurável por projeto (RF-016). | /clarify v1.2 |
+| RN-014 | O papel `user` (legado, sem permissões) permanece coexistindo com os novos papéis como fallback: um usuário autoprovisionado via Keycloak sem nenhuma role correspondente a um papel configurado recebe `user`. | /clarify v1.2 |
+| RN-015 | Um projeto marcado como finalizado (data de finalização preenchida) fica somente leitura para todos os papéis, inclusive `admin`/`project_admin` — nenhuma escrita (tarefas, workflow, colunas, raias) é permitida até ser reaberto. Finalizar/reabrir um projeto usa a mesma permissão de gerenciar o projeto (`projeto:gerenciar`), disponível a `admin` global e ao `project_admin` daquele projeto. | /clarify v1.2 |
+| RN-016 | Toda alteração relevante de uma tarefa (troca de responsável, edição de título/descrição, mudança de etapa) é registrada em um log de auditoria genérico da tarefa (RF-017), com autor, valor anterior, valor novo e data/hora. | /clarify v1.2 |
 
 ---
 
@@ -366,3 +448,5 @@ _Versão: 1.1 | Status: Draft | Data: 2026-08-22 | Autor: Thiago Goncalves Caval
 |--------|------|-------|-----------|
 | 1.0 | 2026-08-22 | Thiago Goncalves Cavalcante | Versão inicial |
 | 1.1 | 2026-08-22 | Thiago Goncalves Cavalcante | Clarificações: RNF-001 (limiar 2s), RNF-002 (escala de usuários/pods), RF-011 (coexistência de raias default), RF-013 (permissões deferidas ao techspec), RF-004 (impedimento não bloqueia movimentação), RF-007 (dashboard com período configurável) |
+| 1.2 | 2026-08-23 | Thiago Goncalves Cavalcante | RBAC por projeto: papel `admin` global vs. papéis por projeto acumuláveis (RF-013, RN-008); novos RF-015 (associação usuário-projeto-papel), RF-016 (toggles de permissão por projeto), RF-017 (histórico de auditoria da tarefa); RF-003 com regra de edição travada após tarefa "iniciada" (RN-009, RN-010); RF-012 com permissão `tarefa:finalizar` (RN-011); RF-008 com finalização de projeto somente-leitura (RN-015); RN-012 (autoatribuição de tarefa) e RN-016 (auditoria); RNF-003 reforçando backend como única fonte de verdade de autorização. "Board" confirmado como sinônimo de projeto (sem entidade nova) |
+| 1.3 | 2026-08-23 | Thiago Goncalves Cavalcante | Achado do comitê de análise técnica (security) sobre a TechSpec v1.1: RN-006 (delegação de `papel:gerenciar`) entrava em conflito com RN-008 (BDR-001) e deixava aberto um vetor de escalação de privilégio (project_admin manipulando permissões de um papel existente). RN-006 marcada como superseded em parte — `papel:gerenciar` passa a ser checada exclusivamente contra `Usuario.admin`, nunca atribuível via papel de projeto |

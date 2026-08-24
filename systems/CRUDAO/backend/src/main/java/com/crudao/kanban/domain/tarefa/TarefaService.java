@@ -1,12 +1,16 @@
 package com.crudao.kanban.domain.tarefa;
 
+import com.crudao.kanban.common.AcessoNegadoException;
 import com.crudao.kanban.common.RecursoNaoEncontradoException;
 import com.crudao.kanban.common.RegraDeNegocioException;
 import com.crudao.kanban.domain.leadtime.RegistroEtapaService;
+import com.crudao.kanban.domain.projeto.ConfiguracaoProjeto;
+import com.crudao.kanban.domain.projeto.ConfiguracaoProjetoRepository;
 import com.crudao.kanban.domain.projeto.Projeto;
 import com.crudao.kanban.domain.projeto.ProjetoRepository;
 import com.crudao.kanban.domain.raia.Raia;
 import com.crudao.kanban.domain.raia.RaiaRepository;
+import com.crudao.kanban.domain.rbac.Usuario;
 import com.crudao.kanban.domain.workflow.Etapa;
 import com.crudao.kanban.domain.workflow.EtapaRepository;
 import com.crudao.kanban.domain.workflow.Transicao;
@@ -16,7 +20,10 @@ import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.realtime.EventoBoardPublisher;
 import com.crudao.kanban.realtime.TipoEventoBoard;
+import com.crudao.kanban.security.AutorizacaoProjetoService;
+import com.crudao.kanban.security.UsuarioContexto;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +36,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @RequiredArgsConstructor
 public class TarefaService {
 
+  private static final String PERMISSAO_TAREFA = "tarefa:gerenciar";
+  private static final String PERMISSAO_IMPEDIMENTO = "impedimento:marcar";
+  private static final String PERMISSAO_ATRIBUIR = "tarefa:atribuir";
+  private static final String PERMISSAO_FINALIZAR = "tarefa:finalizar";
+
   private final TarefaRepository tarefaRepository;
   private final ProjetoRepository projetoRepository;
   private final WorkflowRepository workflowRepository;
@@ -40,6 +52,10 @@ public class TarefaService {
   private final TarefaMapper tarefaMapper;
   private final EventoBoardPublisher eventoBoardPublisher;
   private final RegistroEtapaService registroEtapaService;
+  private final AutorizacaoProjetoService autorizacaoProjetoService;
+  private final UsuarioContexto usuarioContexto;
+  private final AuditoriaTarefaRepository auditoriaTarefaRepository;
+  private final ConfiguracaoProjetoRepository configuracaoProjetoRepository;
 
   @Transactional(readOnly = true)
   public List<TarefaDTO> listarPorProjeto(UUID projetoId) {
@@ -55,6 +71,7 @@ public class TarefaService {
 
   @Transactional
   public TarefaDTO criar(TarefaRequest request) {
+    exigirPermissao(request.projetoId(), PERMISSAO_TAREFA);
     Projeto projeto = buscarProjeto(request.projetoId());
     Workflow workflow = buscarWorkflowAtivo(projeto);
     Etapa etapaInicial = buscarEtapaDoWorkflow(request.etapaInicialId(), workflow);
@@ -77,20 +94,81 @@ public class TarefaService {
   @Transactional
   public TarefaDTO editar(UUID id, TarefaRequest request) {
     Tarefa tarefa = buscarEntidade(id);
+    UUID projetoId = tarefa.getProjeto().getId();
+    exigirPermissao(projetoId, PERMISSAO_TAREFA);
+    exigirEdicaoLiberada(tarefa, projetoId);
+
+    String tituloAnterior = tarefa.getTitulo();
+    String descricaoAnterior = tarefa.getDescricao();
+
     tarefa.setRaia(buscarRaiaOuNula(request.raiaId()));
     tarefa.setTipo(request.tipo());
     tarefa.setTitulo(request.titulo());
     tarefa.setDescricao(request.descricao());
     tarefa.setResponsavelId(request.responsavelId());
     tarefa.setAtualizadoEm(java.time.Instant.now());
-    return tarefaMapper.paraDTO(tarefaRepository.save(tarefa));
+    Tarefa salva = tarefaRepository.save(tarefa);
+
+    registrarAuditoria(salva, CampoAuditoria.TITULO, tituloAnterior, request.titulo());
+    registrarAuditoria(salva, CampoAuditoria.DESCRICAO, descricaoAnterior, request.descricao());
+    return tarefaMapper.paraDTO(salva);
   }
 
   @Transactional
   public void excluir(UUID id) {
     Tarefa tarefa = buscarEntidade(id);
+    UUID projetoId = tarefa.getProjeto().getId();
+    exigirPermissao(projetoId, PERMISSAO_TAREFA);
+    if (ehDevTier(projetoId) && !buscarConfiguracao(projetoId).isDevPodeExcluirTarefa()) {
+      throw new AcessoNegadoException(
+          "Dev sem permissão para excluir tarefas neste projeto (toggle desabilitado).");
+    }
     observadorRepository.deleteAll(observadorRepository.findByTarefaId(id));
     tarefaRepository.delete(tarefa);
+  }
+
+  /**
+   * Atribui/"puxa" a responsabilidade pela tarefa — RN-012. "Puxar" ({@code usuarioId} igual ao
+   * autenticado) é livre para qualquer membro do projeto, mesmo já atribuída a outro; atribuir a um
+   * terceiro exige {@code tarefa:atribuir}.
+   */
+  @Transactional
+  public TarefaDTO atribuir(UUID id, AtribuirResponsavelRequest request) {
+    Tarefa tarefa = buscarEntidade(id);
+    UUID projetoId = tarefa.getProjeto().getId();
+    Usuario usuario = usuarioContexto.usuarioAtual();
+    autorizacaoProjetoService.exigirProjetoNaoFinalizado(projetoId);
+
+    if (request.usuarioId().equals(usuario.getId())) {
+      if (!autorizacaoProjetoService.usuarioTemAcessoAoProjeto(usuario, projetoId)) {
+        throw new AcessoNegadoException("Usuário não é membro do projeto '" + projetoId + "'.");
+      }
+    } else {
+      exigirPermissao(projetoId, PERMISSAO_ATRIBUIR);
+    }
+
+    UUID responsavelAnterior = tarefa.getResponsavelId();
+    tarefa.setResponsavelId(request.usuarioId());
+    tarefa.setAtualizadoEm(java.time.Instant.now());
+    Tarefa salva = tarefaRepository.save(tarefa);
+    registrarAuditoria(
+        salva,
+        CampoAuditoria.RESPONSAVEL,
+        responsavelAnterior != null ? responsavelAnterior.toString() : null,
+        request.usuarioId().toString());
+    return tarefaMapper.paraDTO(salva);
+  }
+
+  /** RF-017: histórico de auditoria da tarefa, ordenado do mais recente para o mais antigo. */
+  @Transactional(readOnly = true)
+  public List<AuditoriaTarefaDTO> historico(UUID id) {
+    Tarefa tarefa = buscarEntidade(id);
+    UUID projetoId = tarefa.getProjeto().getId();
+    Usuario usuario = usuarioContexto.usuarioAtual();
+    if (!autorizacaoProjetoService.usuarioTemAcessoAoProjeto(usuario, projetoId)) {
+      throw new AcessoNegadoException("Usuário sem acesso ao projeto da tarefa.");
+    }
+    return auditoriaTarefaRepository.historicoPorTarefa(id);
   }
 
   /**
@@ -101,37 +179,53 @@ public class TarefaService {
   @Transactional
   public TarefaDTO mover(UUID id, TarefaMoverRequest request) {
     Tarefa tarefa = buscarEntidade(id);
+    UUID projetoId = tarefa.getProjeto().getId();
+    exigirPermissao(projetoId, PERMISSAO_TAREFA);
+    Etapa etapaOrigem = tarefa.getEtapaAtual();
     Etapa etapaDestino = buscarEtapaDoWorkflow(request.etapaDestinoId(), tarefa.getWorkflow());
 
     List<Transicao> transicoes = transicaoRepository.findByWorkflowId(tarefa.getWorkflow().getId());
-    if (!transicaoEngine.transicaoPermitida(tarefa.getEtapaAtual(), etapaDestino, transicoes)) {
+    if (!transicaoEngine.transicaoPermitida(etapaOrigem, etapaDestino, transicoes)) {
       throw new RegraDeNegocioException(
           "Transição não permitida pelo workflow: '%s' -> '%s'"
-              .formatted(tarefa.getEtapaAtual().getNome(), etapaDestino.getNome()));
+              .formatted(etapaOrigem.getNome(), etapaDestino.getNome()));
     }
+    exigirPermissaoFinalizarSeNecessario(projetoId, etapaOrigem, etapaDestino);
+    marcarIniciadaSeSaiuDaInicial(tarefa, etapaOrigem);
 
     registroEtapaService.fecharRegistroAtual(tarefa);
     tarefa.setEtapaAtual(etapaDestino);
     tarefa.setAtualizadoEm(java.time.Instant.now());
     Tarefa salva = tarefaRepository.save(tarefa);
     registroEtapaService.abrirRegistro(salva, etapaDestino);
+    registrarAuditoria(salva, CampoAuditoria.ETAPA, etapaOrigem.getNome(), etapaDestino.getNome());
     publicarAposCommit(TipoEventoBoard.TAREFA_MOVIDA, salva);
     return tarefaMapper.paraDTO(salva);
   }
 
   /**
    * Move a tarefa para outro projeto, herdando o workflow ativo do destino — confirmado na
-   * entrevista de techspec.
-   *
-   * <p><b>TODO(TASK-04.1):</b> validar que o usuário é admin com permissão em ambos os projetos
-   * (RBAC ainda não implementado nesta task).
+   * entrevista de techspec. Exige {@code tarefa:gerenciar} nos DOIS projetos (origem e destino) —
+   * achado do /analyze, finding G2: contrato explicitado na TechSpec v1.3.
    */
   @Transactional
   public TarefaDTO moverParaProjeto(UUID id, TarefaMoverProjetoRequest request) {
     Tarefa tarefa = buscarEntidade(id);
+    UUID projetoOrigemId = tarefa.getProjeto().getId();
+    exigirPermissao(projetoOrigemId, PERMISSAO_TAREFA);
+    exigirPermissao(request.projetoDestinoId(), PERMISSAO_TAREFA);
     Projeto projetoDestino = buscarProjeto(request.projetoDestinoId());
     Workflow workflowDestino = buscarWorkflowAtivo(projetoDestino);
+    Etapa etapaOrigem = tarefa.getEtapaAtual();
     Etapa etapaDestino = buscarEtapaDoWorkflow(request.etapaDestinoId(), workflowDestino);
+
+    if (etapaOrigem.isEtapaFinal()) {
+      exigirPermissao(projetoOrigemId, PERMISSAO_FINALIZAR);
+    }
+    if (etapaDestino.isEtapaFinal()) {
+      exigirPermissao(request.projetoDestinoId(), PERMISSAO_FINALIZAR);
+    }
+    marcarIniciadaSeSaiuDaInicial(tarefa, etapaOrigem);
 
     registroEtapaService.fecharRegistroAtual(tarefa);
     tarefa.setProjeto(projetoDestino);
@@ -140,6 +234,7 @@ public class TarefaService {
     tarefa.setAtualizadoEm(java.time.Instant.now());
     Tarefa salva = tarefaRepository.save(tarefa);
     registroEtapaService.abrirRegistro(salva, etapaDestino);
+    registrarAuditoria(salva, CampoAuditoria.ETAPA, etapaOrigem.getNome(), etapaDestino.getNome());
     publicarAposCommit(TipoEventoBoard.TAREFA_MOVIDA, salva);
     return tarefaMapper.paraDTO(salva);
   }
@@ -152,6 +247,7 @@ public class TarefaService {
   @Transactional
   public TarefaDTO marcarImpedimento(UUID id, TarefaImpedimentoRequest request) {
     Tarefa tarefa = buscarEntidade(id);
+    exigirPermissao(tarefa.getProjeto().getId(), PERMISSAO_IMPEDIMENTO);
     tarefa.setImpedida(true);
     tarefa.setAtualizadoEm(java.time.Instant.now());
     Tarefa salva = tarefaRepository.save(tarefa);
@@ -163,6 +259,7 @@ public class TarefaService {
   @Transactional
   public TarefaDTO desmarcarImpedimento(UUID id) {
     Tarefa tarefa = buscarEntidade(id);
+    exigirPermissao(tarefa.getProjeto().getId(), PERMISSAO_IMPEDIMENTO);
     tarefa.setImpedida(false);
     tarefa.setAtualizadoEm(java.time.Instant.now());
     Tarefa salva = tarefaRepository.save(tarefa);
@@ -263,5 +360,86 @@ public class TarefaService {
     return tarefaRepository
         .findById(id)
         .orElseThrow(() -> new RecursoNaoEncontradoException("Tarefa não encontrada: " + id));
+  }
+
+  private void exigirPermissao(UUID projetoId, String permissao) {
+    Usuario usuario = usuarioContexto.usuarioAtual();
+    autorizacaoProjetoService.exigirPermissao(usuario, projetoId, permissao);
+  }
+
+  /** RN-011: transição de/para etapa final exige {@code tarefa:finalizar}, na ida e na volta. */
+  private void exigirPermissaoFinalizarSeNecessario(
+      UUID projetoId, Etapa etapaOrigem, Etapa etapaDestino) {
+    if (etapaDestino.isEtapaFinal() || etapaOrigem.isEtapaFinal()) {
+      exigirPermissao(projetoId, PERMISSAO_FINALIZAR);
+    }
+  }
+
+  /**
+   * RN-009/RN-010: marca {@code iniciada=true} na primeira vez que a tarefa sai da etapa inicial do
+   * workflow (menor {@code ordem}) — idempotente, nunca desmarca.
+   */
+  private void marcarIniciadaSeSaiuDaInicial(Tarefa tarefa, Etapa etapaOrigem) {
+    if (tarefa.isIniciada()) {
+      return;
+    }
+    Etapa etapaInicial = buscarEtapaInicial(tarefa.getWorkflow());
+    if (etapaInicial != null && etapaOrigem.getId().equals(etapaInicial.getId())) {
+      tarefa.setIniciada(true);
+    }
+  }
+
+  private Etapa buscarEtapaInicial(Workflow workflow) {
+    List<Etapa> etapas = etapaRepository.findByWorkflowIdOrderByOrdemAsc(workflow.getId());
+    return etapas.isEmpty() ? null : etapas.get(0);
+  }
+
+  /**
+   * RN-009/RN-010: {@code dev} (papel com {@code tarefa:gerenciar} mas sem {@code tarefa:atribuir})
+   * só edita título/descrição/tipo de tarefa já iniciada se o toggle {@code
+   * devPodeEditarTarefaIniciada} estiver ligado. Demais papéis com {@code tarefa:gerenciar} não têm
+   * essa restrição.
+   */
+  private void exigirEdicaoLiberada(Tarefa tarefa, UUID projetoId) {
+    if (!tarefa.isIniciada() || !ehDevTier(projetoId)) {
+      return;
+    }
+    if (!buscarConfiguracao(projetoId).isDevPodeEditarTarefaIniciada()) {
+      throw new AcessoNegadoException(
+          "Tarefa já iniciada: dev não pode editar título/descrição/tipo sem o toggle habilitado.");
+    }
+  }
+
+  /**
+   * Diferencia {@code dev} dos demais papéis com {@code tarefa:gerenciar} (product_owner,
+   * project_admin, admin) — todos eles também têm {@code tarefa:atribuir}, que {@code dev} nunca
+   * tem (RN-011/RN-012).
+   */
+  private boolean ehDevTier(UUID projetoId) {
+    Usuario usuario = usuarioContexto.usuarioAtual();
+    return !autorizacaoProjetoService.temPermissao(usuario, projetoId, PERMISSAO_ATRIBUIR);
+  }
+
+  private ConfiguracaoProjeto buscarConfiguracao(UUID projetoId) {
+    return configuracaoProjetoRepository
+        .findById(projetoId)
+        .orElseThrow(
+            () -> new RecursoNaoEncontradoException("Configuração não encontrada: " + projetoId));
+  }
+
+  /** RF-017: grava a linha de auditoria só quando o valor de fato mudou. */
+  private void registrarAuditoria(
+      Tarefa tarefa, CampoAuditoria campo, String valorAnterior, String valorNovo) {
+    if (Objects.equals(valorAnterior, valorNovo)) {
+      return;
+    }
+    Usuario usuario = usuarioContexto.usuarioAtual();
+    AuditoriaTarefa registro = new AuditoriaTarefa();
+    registro.setTarefa(tarefa);
+    registro.setUsuarioId(usuario.getId());
+    registro.setCampo(campo);
+    registro.setValorAnterior(valorAnterior);
+    registro.setValorNovo(valorNovo);
+    auditoriaTarefaRepository.save(registro);
   }
 }

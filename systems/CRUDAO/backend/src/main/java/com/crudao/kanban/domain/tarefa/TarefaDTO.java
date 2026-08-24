@@ -12,4 +12,5 @@ public record TarefaDTO(
     String titulo,
     String descricao,
     UUID responsavelId,
-    boolean impedida) {}
+    boolean impedida,
+    boolean iniciada) {}

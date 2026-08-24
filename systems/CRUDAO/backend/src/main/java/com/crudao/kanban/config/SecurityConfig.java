@@ -37,18 +37,17 @@ public class SecurityConfig {
   }
 
   /**
-   * Busca as chaves de assinatura (JWKS) pela URL interna, alcançável de dentro do container
-   * (ex.: {@code http://keycloak:8080}), mas valida o claim {@code iss} contra a URL pública usada
-   * pelo browser no {@code /authorize} — é essa que o Keycloak estampa no token em fluxos
-   * Authorization Code (TASK-05.0). As duas coincidem fora do Docker (dev local sem compose).
+   * Busca as chaves de assinatura (JWKS) pela URL interna, alcançável de dentro do container (ex.:
+   * {@code http://keycloak:8080}), mas valida o claim {@code iss} contra a URL pública usada pelo
+   * browser no {@code /authorize} — é essa que o Keycloak estampa no token em fluxos Authorization
+   * Code (TASK-05.0). As duas coincidem fora do Docker (dev local sem compose).
    */
   @Bean
   public JwtDecoder jwtDecoder(
       @Value("${crudao.keycloak.issuer-uri-interno}") String issuerUriInterno,
       @Value("${crudao.keycloak.issuer-uri-publico}") String issuerUriPublico) {
     NimbusJwtDecoder decoder =
-        NimbusJwtDecoder.withJwkSetUri(issuerUriInterno + "/protocol/openid-connect/certs")
-            .build();
+        NimbusJwtDecoder.withJwkSetUri(issuerUriInterno + "/protocol/openid-connect/certs").build();
     OAuth2TokenValidator<Jwt> validator = JwtValidators.createDefaultWithIssuer(issuerUriPublico);
     decoder.setJwtValidator(validator);
     return decoder;

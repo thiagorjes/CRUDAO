@@ -1,13 +1,28 @@
 'use client';
 
-import { use, useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api/client';
-import { Etapa, RegistroEtapa, Tarefa, Usuario } from '@/lib/api/types';
+import {
+  AuditoriaTarefa,
+  ConfiguracaoProjeto,
+  Etapa,
+  RegistroEtapa,
+  Tarefa,
+  Usuario,
+  UsuarioMe,
+} from '@/lib/api/types';
 import { duracaoEntre, formatarDuracao } from '@/lib/board/tempo';
 import { ModalErro } from '@/components/ui/ModalErro';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { mostrarToast } from '@/components/ui/toast';
+
+const ROTULO_CAMPO: Record<AuditoriaTarefa['campo'], string> = {
+  RESPONSAVEL: 'Responsável',
+  TITULO: 'Título',
+  DESCRICAO: 'Descrição',
+  ETAPA: 'Etapa',
+};
 
 export default function TarefaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -16,25 +31,40 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
   const [registros, setRegistros] = useState<RegistroEtapa[] | null>(null);
   const [observadores, setObservadores] = useState<string[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [usuarioMe, setUsuarioMe] = useState<UsuarioMe | null>(null);
+  const [configuracao, setConfiguracao] = useState<ConfiguracaoProjeto | null>(null);
+  const [historico, setHistorico] = useState<AuditoriaTarefa[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+
+  const [editando, setEditando] = useState(false);
+  const [tituloEdicao, setTituloEdicao] = useState('');
+  const [descricaoEdicao, setDescricaoEdicao] = useState('');
 
   const carregar = useCallback(async () => {
     try {
-      const [t, regs, obs, usrs] = await Promise.all([
+      const [t, regs, obs, usrs, me, hist] = await Promise.all([
         api.get<Tarefa>(`/tarefas/${id}`),
         api.get<RegistroEtapa[]>(`/tarefas/${id}/registros-etapa`),
         api.get<string[]>(`/tarefas/${id}/observadores`),
         api.get<Usuario[]>('/usuarios'),
+        api.get<UsuarioMe>('/usuarios/me'),
+        api.get<AuditoriaTarefa[]>(`/tarefas/${id}/historico`),
       ]);
       setTarefa(t);
       setRegistros(regs);
       setObservadores(obs);
       setUsuarios(usrs);
+      setUsuarioMe(me);
+      setHistorico(hist);
       // Sem GET /etapas/{id} no backend — lista por workflow e filtra localmente.
       const etapasDoWorkflow = await api
         .get<Etapa[]>(`/etapas?workflowId=${t.workflowId}`)
         .catch(() => []);
       setEtapa(etapasDoWorkflow.find((e) => e.id === t.etapaAtualId) ?? null);
+      const config = await api
+        .get<ConfiguracaoProjeto>(`/projetos/${t.projetoId}/configuracao`)
+        .catch(() => null);
+      setConfiguracao(config);
     } catch {
       setErro('Não foi possível carregar a tarefa.');
     }
@@ -45,6 +75,65 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
       await carregar();
     })();
   }, [carregar]);
+
+  // Gating de UX (backend é a fonte real de autorização — RNF-003) — mesmo padrão do AdminApp.
+  const permissoesProjeto = useMemo(() => {
+    if (!usuarioMe || !tarefa) return new Set<string>();
+    if (usuarioMe.admin) return new Set(['tarefa:gerenciar', 'tarefa:atribuir', 'tarefa:finalizar']);
+    const vinculo = usuarioMe.projetos.find((p) => p.projetoId === tarefa.projetoId);
+    return new Set(vinculo?.permissoes ?? []);
+  }, [usuarioMe, tarefa]);
+
+  const podeAtribuirOutro = permissoesProjeto.has('tarefa:atribuir');
+  // "dev-tier": tem tarefa:gerenciar mas não tarefa:atribuir (mesma heurística do backend —
+  // único papel seedado com essa combinação, ver nota técnica da TASK-02.3).
+  const ehDevTier = permissoesProjeto.has('tarefa:gerenciar') && !podeAtribuirOutro;
+  const edicaoTravada =
+    Boolean(tarefa?.iniciada) && ehDevTier && !(configuracao?.devPodeEditarTarefaIniciada ?? false);
+
+  function iniciarEdicao() {
+    if (!tarefa) return;
+    setTituloEdicao(tarefa.titulo);
+    setDescricaoEdicao(tarefa.descricao ?? '');
+    setEditando(true);
+  }
+
+  async function salvarEdicao() {
+    if (!tarefa) return;
+    try {
+      const atualizada = await api.put<Tarefa>(`/tarefas/${id}`, {
+        projetoId: tarefa.projetoId,
+        raiaId: tarefa.raiaId,
+        tipo: tarefa.tipo,
+        titulo: tituloEdicao,
+        descricao: descricaoEdicao || null,
+        responsavelId: tarefa.responsavelId,
+      });
+      setTarefa(atualizada);
+      setEditando(false);
+      mostrarToast('Tarefa atualizada.');
+      api
+        .get<AuditoriaTarefa[]>(`/tarefas/${id}/historico`)
+        .then(setHistorico)
+        .catch(() => undefined);
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível salvar as alterações.');
+    }
+  }
+
+  async function atribuir(usuarioId: string) {
+    try {
+      const atualizada = await api.patch<Tarefa>(`/tarefas/${id}/responsavel`, { usuarioId });
+      setTarefa(atualizada);
+      mostrarToast('Responsável atualizado.');
+      api
+        .get<AuditoriaTarefa[]>(`/tarefas/${id}/historico`)
+        .then(setHistorico)
+        .catch(() => undefined);
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível atribuir a tarefa.');
+    }
+  }
 
   async function alternarImpedimento() {
     if (!tarefa) return;
@@ -97,6 +186,7 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
   }
 
   const responsavel = usuarios.find((u) => u.id === tarefa.responsavelId);
+  const meuId = usuarioMe?.id;
 
   return (
     <div style={{ padding: 'var(--spacing-xl)', maxWidth: 640, margin: '0 auto' }}>
@@ -123,16 +213,57 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
             ● Impedida
           </span>
         )}
+        {tarefa.iniciada && (
+          <span style={{ font: 'var(--font-caption)', color: 'var(--color-text-secondary)' }}>Iniciada</span>
+        )}
       </div>
 
-      <h1 style={{ font: 'var(--font-heading-1)', marginBottom: 'var(--spacing-sm)' }}>{tarefa.titulo}</h1>
-      {tarefa.descricao && (
-        <p style={{ font: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-md)' }}>
-          {tarefa.descricao}
-        </p>
+      {editando ? (
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
+          <input
+            value={tituloEdicao}
+            onChange={(e) => setTituloEdicao(e.target.value)}
+            readOnly={edicaoTravada}
+            style={{ font: 'var(--font-heading-1)', width: '100%', marginBottom: 'var(--spacing-sm)' }}
+          />
+          <textarea
+            value={descricaoEdicao}
+            onChange={(e) => setDescricaoEdicao(e.target.value)}
+            readOnly={edicaoTravada}
+            rows={3}
+            style={{ font: 'var(--font-body)', width: '100%', marginBottom: 'var(--spacing-sm)' }}
+          />
+          {edicaoTravada && (
+            <p style={{ font: 'var(--font-caption)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-sm)' }}>
+              Tarefa já iniciada — edição travada para o seu papel neste projeto.
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+            {!edicaoTravada && <button onClick={salvarEdicao}>Salvar</button>}
+            <button onClick={() => setEditando(false)}>Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--spacing-sm)' }}>
+            <h1 style={{ font: 'var(--font-heading-1)', marginBottom: 'var(--spacing-sm)' }}>{tarefa.titulo}</h1>
+            <button
+              onClick={iniciarEdicao}
+              title={edicaoTravada ? 'Tarefa já iniciada — edição travada para este papel' : 'Editar'}
+              style={{ font: 'var(--font-caption)', color: 'var(--color-text-secondary)' }}
+            >
+              {edicaoTravada ? '🔒 Editar' : '✎ Editar'}
+            </button>
+          </div>
+          {tarefa.descricao && (
+            <p style={{ font: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+              {tarefa.descricao}
+            </p>
+          )}
+        </>
       )}
 
-      <dl style={{ font: 'var(--font-body)', marginBottom: 'var(--spacing-lg)' }}>
+      <dl style={{ font: 'var(--font-body)', marginBottom: 'var(--spacing-md)' }}>
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
           <dt style={{ color: 'var(--color-text-secondary)' }}>Etapa atual:</dt>
           <dd>{etapa?.nome ?? '—'}</dd>
@@ -142,6 +273,28 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
           <dd>{responsavel?.nome ?? 'Sem responsável'}</dd>
         </div>
       </dl>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-lg)' }}>
+        {meuId && meuId !== tarefa.responsavelId && (
+          <button onClick={() => atribuir(meuId)} style={{ font: 'var(--font-body)' }}>
+            Atribuir a mim
+          </button>
+        )}
+        {podeAtribuirOutro && (
+          <select
+            value={tarefa.responsavelId ?? ''}
+            onChange={(e) => e.target.value && atribuir(e.target.value)}
+            style={{ font: 'var(--font-body)' }}
+          >
+            <option value="">Reatribuir a…</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
       <button
         onClick={alternarImpedimento}
@@ -193,7 +346,7 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
       <h2 style={{ font: 'var(--font-heading-2)', marginBottom: 'var(--spacing-sm)' }}>
         Observadores (RF-005)
       </h2>
-      <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+      <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)', marginBottom: 'var(--spacing-xl)' }}>
         {usuarios.map((u) => {
           const ehObservador = observadores.includes(u.id);
           return (
@@ -211,6 +364,38 @@ export default function TarefaDetalhePage({ params }: { params: Promise<{ id: st
           );
         })}
       </ul>
+
+      <h2 style={{ font: 'var(--font-heading-2)', marginBottom: 'var(--spacing-sm)' }}>
+        Histórico (RF-017)
+      </h2>
+      {historico === null ? (
+        <Skeleton altura={80} />
+      ) : historico.length === 0 ? (
+        <p style={{ color: 'var(--color-text-secondary)', font: 'var(--font-body)' }}>Sem alterações registradas.</p>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', font: 'var(--font-body)' }}>
+          <thead>
+            <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
+              <th style={{ padding: '6px 4px' }}>Quando</th>
+              <th style={{ padding: '6px 4px' }}>Quem</th>
+              <th style={{ padding: '6px 4px' }}>Campo</th>
+              <th style={{ padding: '6px 4px' }}>De</th>
+              <th style={{ padding: '6px 4px' }}>Para</th>
+            </tr>
+          </thead>
+          <tbody>
+            {historico.map((h, i) => (
+              <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '6px 4px' }}>{new Date(h.criadoEm).toLocaleString('pt-BR')}</td>
+                <td style={{ padding: '6px 4px' }}>{h.usuarioNome}</td>
+                <td style={{ padding: '6px 4px' }}>{ROTULO_CAMPO[h.campo]}</td>
+                <td style={{ padding: '6px 4px', color: 'var(--color-text-secondary)' }}>{h.valorAnterior ?? '—'}</td>
+                <td style={{ padding: '6px 4px' }}>{h.valorNovo ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       {erro && <ModalErro mensagem={erro} onFechar={() => setErro(null)} />}
     </div>

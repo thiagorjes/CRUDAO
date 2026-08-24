@@ -60,6 +60,10 @@ public class UsuarioContexto {
     usuario.setEmail(jwt.getClaimAsString("email"));
     usuario.setNome(jwt.getClaimAsString("name"));
     usuario.setPapel(papel);
+    // BDR-001: role 'admin' do Keycloak vira o papel global Usuario.admin. Demais papéis não geram
+    // nenhum UsuarioProjetoPapel automático — associação a projeto é sempre manual (RF-015,
+    // RN-014).
+    usuario.setAdmin("admin".equalsIgnoreCase(papel.getNome()));
     return usuarioRepository.save(usuario);
   }
 

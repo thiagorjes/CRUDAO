@@ -16,6 +16,7 @@ function tarefa(parcial: Partial<Tarefa>): Tarefa {
     descricao: null,
     responsavelId: null,
     impedida: false,
+    iniciada: false,
     ...parcial,
   };
 }

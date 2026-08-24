@@ -1,0 +1,191 @@
+.pagina {
+  padding: var(--spacing-xl) var(--spacing-xl);
+  min-height: 100vh;
+}
+
+.voltar {
+  font: var(--font-caption);
+  display: inline-block;
+  margin-bottom: var(--spacing-md);
+}
+
+.cabecalho {
+  margin-bottom: var(--spacing-xs);
+}
+
+.titulo {
+  font: var(--font-heading-1);
+}
+
+.subtitulo {
+  font: var(--font-caption);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.seletores {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  padding: 14px var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-bottom: var(--spacing-lg);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campoLabel {
+  font: var(--font-caption);
+  color: var(--color-text-secondary);
+}
+
+.campo input,
+.seletorProjeto {
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: var(--font-body);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.botaoAtualizar {
+  padding: 9px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font: var(--font-body);
+  font-weight: 500;
+}
+
+.botaoAtualizar:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.avisoAssincrono {
+  margin-left: auto;
+  font: var(--font-caption);
+  color: var(--color-text-secondary);
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.painel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--spacing-md);
+}
+
+.painelTitulo {
+  font: var(--font-body);
+  font-weight: 500;
+  margin-bottom: var(--spacing-md);
+}
+
+.grafico {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-lg);
+  height: 200px;
+  padding: 0 var(--spacing-sm);
+}
+
+.barraColuna {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.barraValor {
+  font: var(--font-caption);
+  font-weight: 500;
+}
+
+.barra {
+  width: 100%;
+  max-width: 56px;
+  background: var(--color-primary);
+  border-radius: 4px 4px 0 0;
+}
+
+.barraNome {
+  font: var(--font-caption);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.impedimentoResumo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  height: 100%;
+}
+
+.impedimentoLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-secondary);
+  font: var(--font-caption);
+}
+
+.bolinhaErro {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-error);
+}
+
+.impedimentoValor {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-error);
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--font-body);
+}
+
+.tabela th {
+  padding: 10px var(--spacing-md);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-background);
+  text-align: left;
+}
+
+.tabela td {
+  padding: 10px var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.vazio {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font: var(--font-body);
+}

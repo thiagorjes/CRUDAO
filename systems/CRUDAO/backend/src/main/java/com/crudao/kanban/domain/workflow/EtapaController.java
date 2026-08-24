@@ -1,6 +1,5 @@
 package com.crudao.kanban.domain.workflow;
 
-import com.crudao.kanban.security.ExigePermissao;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -33,19 +32,16 @@ public class EtapaController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @ExigePermissao("workflow:gerenciar")
   public EtapaDTO criar(@Valid @RequestBody EtapaRequest request) {
     return etapaService.criar(request);
   }
 
   @PutMapping("/{id}")
-  @ExigePermissao("workflow:gerenciar")
   public EtapaDTO editar(@PathVariable UUID id, @Valid @RequestBody EtapaRequest request) {
     return etapaService.editar(id, request);
   }
 
   @DeleteMapping("/{id}")
-  @ExigePermissao("workflow:gerenciar")
   public ResponseEntity<Void> excluir(@PathVariable UUID id) {
     etapaService.excluir(id);
     return ResponseEntity.noContent().build();

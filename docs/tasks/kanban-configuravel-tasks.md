@@ -1,7 +1,9 @@
 # Tasks — Kanban Configurável
-_Versão: 1.0 | Data: 2026-08-22 | Autor: Thiago Goncalves Cavalcante_
-_PRD: docs/prd/kanban-configuravel-prd.md v1.1_
-_TechSpec: docs/techspec/kanban-configuravel-techspec.md v1.0_
+_Versão: 1.1 | Data: 2026-08-23 | Autor: Thiago Goncalves Cavalcante_
+_PRD: docs/prd/kanban-configuravel-prd.md v1.3_
+_TechSpec: docs/techspec/kanban-configuravel-techspec.md v1.2_
+
+> **v1.1 — atualização, não regeneração:** TASK-04.2, TASK-01.3, TASK-02.3 e TASK-05.4 são novas (RBAC por projeto, PRD v1.2/v1.3, BDR-001); TASK-05.3 foi retrabalhada (dependências e escopo); TASK-06.1 ganhou dependência de TASK-05.4. Tasks já concluídas (00.1 a 03.1, 04.1, 05.0 a 05.2) preservadas sem alteração de conteúdo — TASK-04.1 recebeu só uma nota de retrabalho apontando para TASK-04.2.
 
 > Planejamento sequencial, sem paralelismo (decisão do usuário) — cada task depende da conclusão da anterior, na ordem do Backlog Priorizado.
 > Este documento é o **índice**: sumário, grafo de dependências e backlog priorizado. Cada task tem um arquivo próprio, auto-contido, em `docs/tasks/kanban-configuravel/`.
@@ -13,11 +15,11 @@ _TechSpec: docs/techspec/kanban-configuravel-techspec.md v1.0_
 | ID | Epic | Tasks | Estimativa total | Pode iniciar |
 |----|------|-------|-----------------|-------------|
 | EPIC-00 | Infraestrutura Base | 2 | ~1.5 dia | Imediatamente |
-| EPIC-01 | Domínio: Projeto, Workflow, Etapas e Raias | 2 | ~2 dias | Após EPIC-00 |
-| EPIC-02 | Tarefas, Board e Tempo Real | 2 | ~2.5 dias | Após EPIC-01 |
+| EPIC-01 | Domínio: Projeto, Workflow, Etapas e Raias | 3 | ~2.5 dias | Após EPIC-00 (TASK-01.3 após TASK-04.2) |
+| EPIC-02 | Tarefas, Board e Tempo Real | 3 | ~3.5 dias | Após EPIC-01 (TASK-02.3 após TASK-04.2) |
 | EPIC-03 | Lead-time e Dashboard | 1 | ~1.5 dia | Após EPIC-02 |
-| EPIC-04 | RBAC e Autenticação (SSO Should Have) | 1 | ~1.5 dia | Após EPIC-00 (paralelo funcional, mas executado em sequência) |
-| EPIC-05 | Frontend Next.js | 4 | ~4 dias | Após cada backend correspondente |
+| EPIC-04 | RBAC e Autenticação (SSO Should Have) | 2 | ~2.5 dias | Após EPIC-00 (TASK-04.2 após TASK-04.1) |
+| EPIC-05 | Frontend Next.js | 5 | ~4.5 dias | Após cada backend correspondente |
 | EPIC-06 | Testes E2E e Fechamento | 1 | ~1 dia | Após EPIC-05 |
 
 **Legenda:** P ≤ 4h | M 4–8h | G 1–2 dias
@@ -33,11 +35,15 @@ EPIC-00
               └── TASK-02.1 (Tarefa CRUD + engine de movimentação) → TASK-02.2 (Tempo real + notificações)
                     └── TASK-03.1 (Lead-time + Dashboard assíncrono)
         └── TASK-04.1 (RBAC + integração Keycloak) [após TASK-00.2, antes ou junto de EPIC-01+]
+              └── TASK-04.2 (RBAC por projeto — retrabalho, PRD v1.3)
+                    └── TASK-01.3 (Configuração + finalização de projeto)
+                          └── TASK-02.3 (Tarefa: edição travada, atribuição, finalizar, auditoria)
   └── TASK-05.0 (Frontend: Login Keycloak) [lacuna, criada em 2026-08-22] → depende de TASK-00.2, TASK-04.1
         └── TASK-05.1 (Frontend: Board) → depende de TASK-02.2 e TASK-05.0
+              └── TASK-05.4 (Frontend: ajustes de tarefa p/ RBAC por projeto) → depende de TASK-02.3, TASK-05.1
   └── TASK-05.2 (Frontend: Dashboard) → depende de TASK-03.1
-  └── TASK-05.3 (Frontend: Painel de Administração) → depende de TASK-04.1 e TASK-01.2
-        └── TASK-06.1 (Testes E2E e fechamento)
+  └── TASK-05.3 (Frontend: Painel de Administração) → depende de TASK-04.2, TASK-01.2, TASK-01.3
+        └── TASK-06.1 (Testes E2E e fechamento) → depende de TASK-05.1, 05.2, 05.3, 05.4
 ```
 
 ---
@@ -144,6 +150,13 @@ Suportar múltiplos desenvolvedores no mesmo board via raias horizontais, espec�
 
 ---
 
+#### TASK-01.3 — Configuração de projeto (toggles) e finalização [M] _(nova, v1.1 — PRD v1.2/v1.3)_
+**Sistema:** CRUDAO | **RF:** RF-008, RF-016 | **Dependências:** TASK-04.2, TASK-01.1
+
+Conteúdo completo em [kanban-configuravel/TASK-01.3-configuracao-finalizacao-projeto.md](kanban-configuravel/TASK-01.3-configuracao-finalizacao-projeto.md).
+
+---
+
 ## EPIC-02 — Tarefas, Board e Tempo Real
 
 ### US-02.1 — Gestão de tarefas e movimentação no board
@@ -196,6 +209,13 @@ Entregar atualizações em tempo real (<2s) a todos os usuários conectados, inc
 
 ---
 
+#### TASK-02.3 — Regras avançadas de tarefa: edição travada, atribuição, finalização e auditoria [M] _(nova, v1.1 — PRD v1.2/v1.3)_
+**Sistema:** CRUDAO | **RF:** RF-003, RF-012, RF-017 | **Dependências:** TASK-04.2, TASK-02.1, TASK-01.3
+
+Conteúdo completo em [kanban-configuravel/TASK-02.3-tarefa-regras-avancadas-auditoria.md](kanban-configuravel/TASK-02.3-tarefa-regras-avancadas-auditoria.md).
+
+---
+
 ## EPIC-03 — Lead-time e Dashboard
 
 ### US-03.1 — Métricas de andamento para gestão
@@ -231,6 +251,8 @@ Dar visibilidade de lead-time por etapa e tempo em impedimento, com dashboard ag
 #### TASK-04.1 — RBAC híbrido: papéis, permissões e integração Keycloak [G]
 **Sistema:** CRUDAO | **RF:** RF-013, RF-014, RNF-003 | **Dependências:** TASK-00.2
 
+> ⚠️ Retrabalhada por TASK-04.2 (PRD v1.3, BDR-001) — ver nota no arquivo individual. Conteúdo abaixo preservado como registro histórico.
+
 **Contexto:**
 Keycloak autentica; a aplicação modela papéis/permissões configuráveis pelo admin em runtime (ADR-003), com o papel `admin` protegido (RN-006).
 
@@ -251,6 +273,13 @@ Keycloak autentica; a aplicação modela papéis/permissões configuráveis pelo
 - Usuário autenticado via Keycloak tem seu papel/permissões aplicados corretamente
 - Tentativa de alterar o papel `admin` por um papel delegado é bloqueada (teste unitário, RN-006)
 - Todo endpoint de escrita rejeita requisição sem a permissão necessária
+
+---
+
+#### TASK-04.2 — RBAC por projeto: retrabalho do modelo e enforcement [G] _(nova, v1.1 — PRD v1.3, BDR-001, ADR-006; escopo ampliado em v1.1 pós-/analyze — inclui migração de Tarefa)_
+**Sistema:** CRUDAO | **RF:** RF-013, RF-015, RF-003 | **Dependências:** TASK-04.1 (retrabalha), TASK-00.2
+
+Conteúdo completo em [kanban-configuravel/TASK-04.2-rbac-por-projeto.md](kanban-configuravel/TASK-04.2-rbac-por-projeto.md).
 
 ---
 
@@ -303,25 +332,17 @@ Implementar a tela de dashboard conforme o design brief e o protótipo aprovado 
 
 ---
 
-#### TASK-05.3 — Frontend: Painel de Administração [G]
-**Sistema:** CRUDAO | **RF:** RF-008, RF-009, RF-010, RF-011, RF-013 | **Dependências:** TASK-04.1, TASK-01.2
+#### TASK-05.3 — Frontend: Painel de Administração [G] _(retrabalhada, v1.1 — PRD v1.3, BDR-001)_
+**Sistema:** CRUDAO | **RF:** RF-008, RF-009, RF-010, RF-011, RF-013, RF-015, RF-016 | **Dependências:** TASK-04.2, TASK-01.2, TASK-01.3
 
-**Contexto:**
-Painel único separado do board, com seletor de projeto, para gerenciar Projetos, Workflows, Colunas, Raias e Papéis/Permissões; também acessível em modo restrito a partir do board ("Configurações do projeto").
+> Implementação original interrompida — AC "usuário edita apenas o projeto de origem" não era enforçável com o RBAC da TASK-04.1 (só papel global). Retrabalhada após TASK-04.2. Conteúdo completo em [kanban-configuravel/TASK-05.3-frontend-painel-administracao.md](kanban-configuravel/TASK-05.3-frontend-painel-administracao.md).
 
-**O que deve ser feito:**
-- [ ] Implementar painel administrativo com seletor de projeto (troca de contexto)
-- [ ] Telas de CRUD de Projeto, Workflow, Etapa, Transição, Raia
-- [ ] Tela de CRUD de Papéis/Permissões (visível apenas a quem tem a permissão correspondente)
-- [ ] Acesso restrito ao projeto corrente via "Configurações do projeto" a partir do board
-- [ ] Feedback de erro (modal de confirmação) e sucesso (toast) conforme DDR-003
+---
 
-**Guia técnico:**
-- Referência: `docs/design/kanban-configuravel-design-brief.md`
+#### TASK-05.4 — Frontend: ajustes de tarefa para RBAC por projeto [M] _(nova, v1.1 — PRD v1.2/v1.3)_
+**Sistema:** CRUDAO | **RF:** RF-003, RF-012, RF-017 | **Dependências:** TASK-02.3, TASK-05.1
 
-**Critérios de aceite:**
-- Admin global alterna entre projetos no painel; usuário com permissão restrita edita apenas o projeto de origem
-- Exclusões bloqueadas (RN-005) exibem modal de erro claro, orientando migração
+Conteúdo completo em [kanban-configuravel/TASK-05.4-frontend-tarefa-rbac-projeto.md](kanban-configuravel/TASK-05.4-frontend-tarefa-rbac-projeto.md).
 
 ---
 
@@ -330,7 +351,7 @@ Painel único separado do board, com seletor de projeto, para gerenciar Projetos
 ### US-06.1 — Validação final
 
 #### TASK-06.1 — Testes E2E dos fluxos principais e revisão de cobertura [M]
-**Sistema:** CRUDAO | **RF:** todos (validação cruzada) | **Dependências:** TASK-05.1, TASK-05.2, TASK-05.3
+**Sistema:** CRUDAO | **RF:** todos (validação cruzada) | **Dependências:** TASK-05.1, TASK-05.2, TASK-05.3, TASK-05.4
 
 **Contexto:**
 Fechar a primeira entrega com testes de ponta a ponta dos fluxos críticos e confirmar a cobertura exigida pelas guidelines (80% TDD / 100% BDD).
@@ -359,16 +380,20 @@ _Ordem de início — sequencial, sem paralelismo._
 | 1 | ~~TASK-00.1~~ ✅ | [kanban-configuravel/TASK-00.1-provisionar-keycloak-docker.md](kanban-configuravel/TASK-00.1-provisionar-keycloak-docker.md) | Concluída 2026-08-22 — Diretriz explícita: Keycloak deve ser uma das primeiras tasks, antes de qualquer dependência de autenticação |
 | 2 | ~~TASK-00.2~~ ✅ | [kanban-configuravel/TASK-00.2-setup-projeto-base.md](kanban-configuravel/TASK-00.2-setup-projeto-base.md) | Concluída 2026-08-22 — Base de infraestrutura para todo o restante |
 | 3 | ~~TASK-01.1~~ ✅ | [kanban-configuravel/TASK-01.1-dominio-projeto-workflow-etapa-transicao.md](kanban-configuravel/TASK-01.1-dominio-projeto-workflow-etapa-transicao.md) | Concluída 2026-08-22 — Núcleo de domínio (projeto/workflow/etapas/transições) do qual tudo depende |
-| 4 | TASK-01.2 | [kanban-configuravel/TASK-01.2-raias-swimlanes.md](kanban-configuravel/TASK-01.2-raias-swimlanes.md) | Completa o domínio de board (raias) |
-| 5 | TASK-02.1 | [kanban-configuravel/TASK-02.1-crud-tarefa-movimentacao.md](kanban-configuravel/TASK-02.1-crud-tarefa-movimentacao.md) | CRUD de tarefa e movimentação — funcionalidade central |
-| 6 | TASK-02.2 | [kanban-configuravel/TASK-02.2-tempo-real-broadcast-observadores.md](kanban-configuravel/TASK-02.2-tempo-real-broadcast-observadores.md) | Tempo real e observadores, sobre a movimentação já implementada |
-| 7 | TASK-04.1 | [kanban-configuravel/TASK-04.1-rbac-keycloak.md](kanban-configuravel/TASK-04.1-rbac-keycloak.md) | RBAC completo, necessário antes do painel de administração e antes de expor o sistema |
-| 8 | TASK-03.1 | [kanban-configuravel/TASK-03.1-leadtime-dashboard-assincrono.md](kanban-configuravel/TASK-03.1-leadtime-dashboard-assincrono.md) | Lead-time e dashboard, sobre o histórico de movimentação já existente |
-| 9a | TASK-05.0 | [kanban-configuravel/TASK-05.0-frontend-login-keycloak.md](kanban-configuravel/TASK-05.0-frontend-login-keycloak.md) | Lacuna identificada em 2026-08-22: login/OIDC no frontend, pré-requisito para qualquer chamada autenticada à API |
-| 9 | TASK-05.1 | [kanban-configuravel/TASK-05.1-frontend-board.md](kanban-configuravel/TASK-05.1-frontend-board.md) | Frontend do Board, após o backend de tempo real estar pronto e o login (TASK-05.0) |
-| 10 | TASK-05.2 | [kanban-configuravel/TASK-05.2-frontend-dashboard.md](kanban-configuravel/TASK-05.2-frontend-dashboard.md) | Frontend do Dashboard, após o backend de lead-time estar pronto |
-| 11 | TASK-05.3 | [kanban-configuravel/TASK-05.3-frontend-painel-administracao.md](kanban-configuravel/TASK-05.3-frontend-painel-administracao.md) | Frontend do Painel Admin, após RBAC e domínio completos |
-| 12 | TASK-06.1 | [kanban-configuravel/TASK-06.1-testes-e2e-fechamento.md](kanban-configuravel/TASK-06.1-testes-e2e-fechamento.md) | Fechamento com testes E2E, ao final de tudo |
+| 4 | ~~TASK-01.2~~ ✅ | [kanban-configuravel/TASK-01.2-raias-swimlanes.md](kanban-configuravel/TASK-01.2-raias-swimlanes.md) | Concluída 2026-08-22 — Completa o domínio de board (raias) |
+| 5 | ~~TASK-02.1~~ ✅ | [kanban-configuravel/TASK-02.1-crud-tarefa-movimentacao.md](kanban-configuravel/TASK-02.1-crud-tarefa-movimentacao.md) | Concluída 2026-08-22 — CRUD de tarefa e movimentação — funcionalidade central |
+| 6 | ~~TASK-02.2~~ ✅ | [kanban-configuravel/TASK-02.2-tempo-real-broadcast-observadores.md](kanban-configuravel/TASK-02.2-tempo-real-broadcast-observadores.md) | Concluída 2026-08-22 — Tempo real e observadores |
+| 7 | ~~TASK-04.1~~ ✅ | [kanban-configuravel/TASK-04.1-rbac-keycloak.md](kanban-configuravel/TASK-04.1-rbac-keycloak.md) | Concluída 2026-08-22 — RBAC completo (modelo v1.0, ver retrabalho na TASK-04.2) |
+| 8 | ~~TASK-03.1~~ ✅ | [kanban-configuravel/TASK-03.1-leadtime-dashboard-assincrono.md](kanban-configuravel/TASK-03.1-leadtime-dashboard-assincrono.md) | Concluída 2026-08-22 — Lead-time e dashboard, sobre o histórico de movimentação já existente |
+| 8a | TASK-04.2 | [kanban-configuravel/TASK-04.2-rbac-por-projeto.md](kanban-configuravel/TASK-04.2-rbac-por-projeto.md) | **Nova.** Retrabalho de RBAC por projeto (PRD v1.3) — bloqueia TASK-01.3, TASK-02.3 e TASK-05.3 |
+| 8b | TASK-01.3 | [kanban-configuravel/TASK-01.3-configuracao-finalizacao-projeto.md](kanban-configuravel/TASK-01.3-configuracao-finalizacao-projeto.md) | **Nova.** Toggles e finalização de projeto — depende de TASK-04.2 |
+| 8c | TASK-02.3 | [kanban-configuravel/TASK-02.3-tarefa-regras-avancadas-auditoria.md](kanban-configuravel/TASK-02.3-tarefa-regras-avancadas-auditoria.md) | **Nova.** Edição travada, atribuição, `tarefa:finalizar`, auditoria — depende de TASK-04.2 e TASK-01.3 |
+| 9a | ~~TASK-05.0~~ ✅ | [kanban-configuravel/TASK-05.0-frontend-login-keycloak.md](kanban-configuravel/TASK-05.0-frontend-login-keycloak.md) | Concluída 2026-08-22 — login/OIDC no frontend, pré-requisito para qualquer chamada autenticada à API |
+| 9 | ~~TASK-05.1~~ ✅ | [kanban-configuravel/TASK-05.1-frontend-board.md](kanban-configuravel/TASK-05.1-frontend-board.md) | Concluída 2026-08-23 — Frontend do Board |
+| 9d | TASK-05.4 | [kanban-configuravel/TASK-05.4-frontend-tarefa-rbac-projeto.md](kanban-configuravel/TASK-05.4-frontend-tarefa-rbac-projeto.md) | **Nova.** Ajustes de tarefa (histórico, atribuição, finalizar) — depende de TASK-02.3 |
+| 10 | ~~TASK-05.2~~ ✅ | [kanban-configuravel/TASK-05.2-frontend-dashboard.md](kanban-configuravel/TASK-05.2-frontend-dashboard.md) | Concluída 2026-08-23 — Frontend do Dashboard |
+| 11 | TASK-05.3 | [kanban-configuravel/TASK-05.3-frontend-painel-administracao.md](kanban-configuravel/TASK-05.3-frontend-painel-administracao.md) | **Retrabalhada.** Frontend do Painel Admin — depende de TASK-04.2, TASK-01.2, TASK-01.3 |
+| 12 | TASK-06.1 | [kanban-configuravel/TASK-06.1-testes-e2e-fechamento.md](kanban-configuravel/TASK-06.1-testes-e2e-fechamento.md) | Fechamento com testes E2E — depende de TASK-05.1 a 05.4 |
 
 ---
 

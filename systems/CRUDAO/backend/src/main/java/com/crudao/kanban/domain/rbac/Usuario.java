@@ -44,7 +44,19 @@ public class Usuario {
   /** Hash BCrypt — presente apenas em usuários habilitados para o login local de fallback. */
   private String senhaHash;
 
+  /**
+   * @deprecated (BDR-001/ADR-006) vínculo único global de papel, substituído por {@code
+   *     UsuarioProjetoPapel}. Mantido apenas até a migration de remoção de coluna (data-model.md,
+   *     nota de migração Q-006) — não é mais consultado pelo enforcement de autorização.
+   */
+  @Deprecated
   @ManyToOne(optional = false)
   @JoinColumn(name = "papel_id")
   private Papel papel;
+
+  /**
+   * Papel {@code admin} global (BDR-001) — autorizado em qualquer projeto sem depender de {@code
+   * UsuarioProjetoPapel}. Default {@code false}.
+   */
+  private boolean admin;
 }

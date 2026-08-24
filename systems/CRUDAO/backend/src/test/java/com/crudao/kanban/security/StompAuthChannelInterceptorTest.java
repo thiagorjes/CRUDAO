@@ -46,7 +46,8 @@ class StompAuthChannelInterceptorTest {
 
   @Test
   void deveRejeitarConnectComTokenInvalido() {
-    when(jwtDecoder.decode("token-invalido")).thenThrow(new RuntimeException("assinatura inválida"));
+    when(jwtDecoder.decode("token-invalido"))
+        .thenThrow(new RuntimeException("assinatura inválida"));
     Message<byte[]> mensagem = connectCom("Bearer token-invalido");
 
     assertThatThrownBy(() -> interceptor.preSend(mensagem, channel))
@@ -68,8 +69,9 @@ class StompAuthChannelInterceptorTest {
   @Test
   void naoInterfereEmFramesQueNaoSaoConnect() {
     StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.SEND);
-    Message<byte[]> mensagem = org.springframework.messaging.support.MessageBuilder
-        .createMessage(new byte[0], accessor.getMessageHeaders());
+    Message<byte[]> mensagem =
+        org.springframework.messaging.support.MessageBuilder.createMessage(
+            new byte[0], accessor.getMessageHeaders());
 
     Message<?> resultado = interceptor.preSend(mensagem, channel);
 
@@ -88,5 +90,4 @@ class StompAuthChannelInterceptorTest {
     return org.springframework.messaging.support.MessageBuilder.createMessage(
         new byte[0], accessor.getMessageHeaders());
   }
-
 }

@@ -35,6 +35,7 @@ _Criada em: 2026-08-22_
 
 | ID | Título | Status |
 |----|--------|--------|
+| [BDR-001](../docs/decisions/BDR-001-rbac-por-projeto.md) | RBAC por projeto com papéis acumuláveis | accepted |
 
 ### SDR
 

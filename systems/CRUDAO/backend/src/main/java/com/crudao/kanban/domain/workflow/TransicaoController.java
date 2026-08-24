@@ -1,6 +1,5 @@
 package com.crudao.kanban.domain.workflow;
 
-import com.crudao.kanban.security.ExigePermissao;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -32,13 +31,11 @@ public class TransicaoController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @ExigePermissao("workflow:gerenciar")
   public TransicaoDTO criar(@Valid @RequestBody TransicaoRequest request) {
     return transicaoService.criar(request);
   }
 
   @DeleteMapping("/{id}")
-  @ExigePermissao("workflow:gerenciar")
   public ResponseEntity<Void> excluir(@PathVariable UUID id) {
     transicaoService.excluir(id);
     return ResponseEntity.noContent().build();

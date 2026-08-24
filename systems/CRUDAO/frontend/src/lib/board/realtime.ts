@@ -64,6 +64,58 @@ export function conectarBoard(
   };
 }
 
+/**
+ * Conecta ao tópico de resultado de um job de dashboard (RF-007, ADR-005) e entrega o payload
+ * assim que chegar via STOMP — canal dedicado por job, um único resultado esperado. Se a conexão
+ * falhar (ex.: sessão expirada, WebSocket indisponível), avisa via `aoFalhar` para que o chamador
+ * caia no fallback de polling em `GET .../dashboard/jobs/{jobId}` (critério de aceite da TASK-05.2).
+ */
+export function conectarDashboard<T>(
+  projetoId: string,
+  jobId: string,
+  aoReceberResultado: (resultado: T) => void,
+  aoFalhar?: FalhaConexao,
+  aoConectar?: () => void,
+): () => void {
+  let ativo = true;
+  const client = new Client({
+    reconnectDelay: 2000,
+    heartbeatIncoming: 4000,
+    heartbeatOutgoing: 4000,
+    beforeConnect: async () => {
+      const token = await buscarTokenParaConexao();
+      client.connectHeaders = { Authorization: `Bearer ${token}` };
+    },
+  });
+  client.webSocketFactory = () => new WebSocket(urlWebSocket());
+
+  client.onConnect = () => {
+    client.subscribe(`/topic/projetos/${projetoId}/dashboard/${jobId}`, (mensagem: IMessage) => {
+      try {
+        aoReceberResultado(JSON.parse(mensagem.body) as T);
+      } catch {
+        // Payload inesperado — ignora.
+      }
+    });
+    // Corrida entre o cálculo (rápido, achado de code review da TASK-05.2) e o handshake STOMP: o
+    // resultado pode ter sido publicado via pg_notify antes da subscription se estabelecer. Avisa
+    // o chamador para fazer uma consulta de "catch-up" ao job assim que a conexão é confirmada.
+    if (ativo) aoConectar?.();
+  };
+  client.onStompError = (frame) => {
+    if (ativo) aoFalhar?.(frame.headers.message ?? 'Erro STOMP');
+  };
+  client.onWebSocketError = () => {
+    if (ativo) aoFalhar?.('Falha na conexão WebSocket');
+  };
+
+  client.activate();
+  return () => {
+    ativo = false;
+    client.deactivate();
+  };
+}
+
 async function buscarTokenParaConexao(): Promise<string> {
   const resposta = await fetch('/api/ws-token');
   if (!resposta.ok) {

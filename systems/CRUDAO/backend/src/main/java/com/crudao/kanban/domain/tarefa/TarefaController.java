@@ -1,6 +1,5 @@
 package com.crudao.kanban.domain.tarefa;
 
-import com.crudao.kanban.security.ExigePermissao;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -39,39 +38,33 @@ public class TarefaController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @ExigePermissao("tarefa:gerenciar")
   public TarefaDTO criar(@Valid @RequestBody TarefaRequest request) {
     return tarefaService.criar(request);
   }
 
   @PutMapping("/{id}")
-  @ExigePermissao("tarefa:gerenciar")
   public TarefaDTO editar(@PathVariable UUID id, @Valid @RequestBody TarefaRequest request) {
     return tarefaService.editar(id, request);
   }
 
   @DeleteMapping("/{id}")
-  @ExigePermissao("tarefa:gerenciar")
   public ResponseEntity<Void> excluir(@PathVariable UUID id) {
     tarefaService.excluir(id);
     return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/{id}/mover")
-  @ExigePermissao("tarefa:gerenciar")
   public TarefaDTO mover(@PathVariable UUID id, @Valid @RequestBody TarefaMoverRequest request) {
     return tarefaService.mover(id, request);
   }
 
   @PatchMapping("/{id}/mover-projeto")
-  @ExigePermissao("tarefa:gerenciar")
   public TarefaDTO moverParaProjeto(
       @PathVariable UUID id, @Valid @RequestBody TarefaMoverProjetoRequest request) {
     return tarefaService.moverParaProjeto(id, request);
   }
 
   @PostMapping("/{id}/impedimento")
-  @ExigePermissao("impedimento:marcar")
   public TarefaDTO marcarImpedimento(
       @PathVariable UUID id, @RequestBody(required = false) TarefaImpedimentoRequest request) {
     return tarefaService.marcarImpedimento(
@@ -79,9 +72,19 @@ public class TarefaController {
   }
 
   @DeleteMapping("/{id}/impedimento")
-  @ExigePermissao("impedimento:marcar")
   public TarefaDTO desmarcarImpedimento(@PathVariable UUID id) {
     return tarefaService.desmarcarImpedimento(id);
+  }
+
+  @PatchMapping("/{id}/responsavel")
+  public TarefaDTO atribuir(
+      @PathVariable UUID id, @Valid @RequestBody AtribuirResponsavelRequest request) {
+    return tarefaService.atribuir(id, request);
+  }
+
+  @GetMapping("/{id}/historico")
+  public List<AuditoriaTarefaDTO> historico(@PathVariable UUID id) {
+    return tarefaService.historico(id);
   }
 
   @GetMapping("/{id}/observadores")

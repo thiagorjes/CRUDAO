@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { api, ApiError } from '@/lib/api/client';
 import { Etapa, EventoBoard, Projeto, Raia, Tarefa, Transicao, Usuario } from '@/lib/api/types';
 import { agruparPorRaiaEEtapa, RAIA_SEM_RAIA_ID } from '@/lib/board/agrupar';
@@ -196,6 +197,12 @@ export function BoardApp() {
             </option>
           ))}
         </select>
+        <Link href="/dashboard" style={{ marginLeft: 'auto', font: 'var(--font-body)' }}>
+          Dashboard →
+        </Link>
+        <Link href="/admin" style={{ font: 'var(--font-body)' }}>
+          Configurações do projeto →
+        </Link>
       </div>
 
       {estado && !estado.projeto.workflowAtivoId && (

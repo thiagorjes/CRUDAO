@@ -18,7 +18,18 @@ async function requisicao<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!resposta.ok) {
     const corpo = await resposta.text();
-    throw new ApiError(corpo || `Erro HTTP ${resposta.status}`, resposta.status);
+    // Erros do backend vêm como JSON `{ "erro": "mensagem" }` (ApiExceptionHandler) — extrai a
+    // mensagem para exibir texto legível em vez do JSON bruto (TASK-05.4).
+    let mensagem = corpo;
+    if (corpo) {
+      try {
+        const json = JSON.parse(corpo);
+        if (typeof json?.erro === 'string') mensagem = json.erro;
+      } catch {
+        // corpo não é JSON — usa o texto bruto mesmo
+      }
+    }
+    throw new ApiError(mensagem || `Erro HTTP ${resposta.status}`, resposta.status);
   }
   if (resposta.status === 204) {
     return undefined as T;
