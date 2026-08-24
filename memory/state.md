@@ -196,6 +196,12 @@ _Atualizado em: 2026-08-22_
 - **Artefato:** `docs/checklists/kanban-configuravel-TASK-06.1-review.md`
 - **Canvas:** dimensão S atualizada (guardrails G-RBAC-09, G-TEST-01) — permanece `READY`
 - **Próximo passo:** abrir task de bug-fix para I2 (race condition em `UsuarioContexto.provisionar`) quando conveniente; feature pronta para merge
+
+- **Bug-fix (achado em teste manual do usuário):** admin não conseguia criar o primeiro projeto pela UI — 2026-08-24
+- **Causa:** `AdminApp.tsx` só renderizava `ProjetosAba` (onde vive o formulário "Novo projeto") quando `projetoAtual` já existia; sem nenhum projeto cadastrado, `projetoAtual` é sempre `null`, então a aba "Projeto" ficava em branco — nenhum caminho de UI para criar o primeiro projeto (só via API direta)
+- **Arquivos:** `frontend/src/components/admin/AdminApp.tsx` (renderiza `ProjetosAba` também quando `projetos.length === 0 && admin`), `frontend/src/components/admin/abas/ProjetosAba.tsx` (`projeto` agora `Projeto | null` — seção "Dados do projeto" só aparece com projeto existente; "Novo projeto" sempre visível para admin); `frontend/src/components/board/BoardApp.tsx` (link "Ir para Configurações →" no estado vazio "Nenhum projeto cadastrado ainda.", achado numa interação anterior do mesmo teste manual)
+- **Validação:** `tsc`/`eslint` limpos; smoke test Playwright confirmou o fluxo completo (login admin → `/admin` sem projetos → "Novo projeto" visível → criar → toast de sucesso); suíte E2E completa (14/14) revalidada sem regressão após a mudança
+- **Nota técnica:** este bug não tinha sido pego pela suíte de TASK-05.3/06.1 porque todos os specs criam o cenário (projeto) via API antes de abrir a UI — nenhum teste exercitava o estado "admin, zero projetos, só UI"
 - **Feature kanban-configuravel:** todas as 16 tasks do plano (00.1 a 06.1) concluídas e revisadas
 
 ## Reorganização — código movido para systems/CRUDAO/

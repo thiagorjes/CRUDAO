@@ -153,7 +153,9 @@ export function AdminApp() {
         <p className={styles.vazio}>Você não é membro de nenhum projeto ainda.</p>
       )}
 
-      {projetoAtual && abaAtual === 'projeto' && (
+      {/* Sem projeto algum, `projetoAtual` nunca existe — mas o admin precisa desta aba mesmo
+          assim para poder criar o primeiro projeto (bootstrap, achado de uso real). */}
+      {(projetoAtual || (projetos.length === 0 && admin)) && abaAtual === 'projeto' && (
         <ProjetosAba
           projeto={projetoAtual}
           admin={admin}

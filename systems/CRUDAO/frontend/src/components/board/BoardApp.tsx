@@ -178,6 +178,11 @@ export function BoardApp() {
     return (
       <div className={styles.pagina}>
         <p className={styles.vazio}>Nenhum projeto cadastrado ainda.</p>
+        {/* Sem projeto algum, esta era a única tela sem link para o /admin — quem tem
+            projeto:gerenciar precisa chegar lá para criar o primeiro (achado de uso real). */}
+        <Link href="/admin" style={{ font: 'var(--font-body)' }}>
+          Ir para Configurações →
+        </Link>
       </div>
     );
   }

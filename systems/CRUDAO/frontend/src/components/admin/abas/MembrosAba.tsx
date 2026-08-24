@@ -24,6 +24,7 @@ export function MembrosAba({
   const [papeis, setPapeis] = useState<Papel[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [novoUsuarioId, setNovoUsuarioId] = useState('');
+  const [papeisNovoMembro, setPapeisNovoMembro] = useState<Set<string>>(new Set());
   const [selecaoPorMembro, setSelecaoPorMembro] = useState<Record<string, Set<string>>>({});
 
   const carregar = useCallback(async () => {
@@ -107,13 +108,25 @@ export function MembrosAba({
     }
   }
 
+  function alternarNovoMembro(papelId: string) {
+    setPapeisNovoMembro((s) => {
+      const proximo = new Set(s);
+      if (proximo.has(papelId)) proximo.delete(papelId);
+      else proximo.add(papelId);
+      return proximo;
+    });
+  }
+
   async function adicionar() {
-    if (!novoUsuarioId) return;
+    if (!novoUsuarioId || papeisNovoMembro.size === 0) return;
     try {
-      await api.put(`/projetos/${projeto.id}/membros/${novoUsuarioId}`, { papeis: [] });
+      await api.put(`/projetos/${projeto.id}/membros/${novoUsuarioId}`, {
+        papeis: Array.from(papeisNovoMembro),
+      });
       setNovoUsuarioId('');
+      setPapeisNovoMembro(new Set());
       await carregar();
-      mostrarToast('Membro adicionado — defina os papéis abaixo.');
+      mostrarToast('Membro adicionado.');
     } catch (e) {
       onErro(e, 'Não foi possível adicionar este membro.');
     }
@@ -169,7 +182,21 @@ export function MembrosAba({
               ))}
             </select>
           </div>
-          <button className={styles.botao} disabled={!novoUsuarioId} onClick={adicionar}>
+          {papeisAtribuiveis.map((p) => (
+            <label key={p.id} className={styles.checkboxLinha} style={{ margin: 0 }}>
+              <input
+                type="checkbox"
+                checked={papeisNovoMembro.has(p.id)}
+                onChange={() => alternarNovoMembro(p.id)}
+              />
+              {p.nome}
+            </label>
+          ))}
+          <button
+            className={styles.botao}
+            disabled={!novoUsuarioId || papeisNovoMembro.size === 0}
+            onClick={adicionar}
+          >
             Adicionar
           </button>
         </div>
