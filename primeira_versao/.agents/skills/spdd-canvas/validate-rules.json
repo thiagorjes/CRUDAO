@@ -1,0 +1,42 @@
+{
+  "skill": "spdd-canvas",
+  "artifact_pattern": "docs/spdd/*-canvas.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md",
+        "docs/prd/{{FEATURE}}-prd.md",
+        "docs/techspec/{{FEATURE}}-techspec.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## R — Requirements",
+        "## E — Entities",
+        "## A — Approach",
+        "## S — Structure",
+        "## O — Operations",
+        "## N — Norms",
+        "## S — Safeguards"
+      ],
+      "id_patterns": {},
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": [
+        {
+          "name": "check_canvas_ownership",
+          "script": ".agents/skills/spdd-canvas/scripts/check_canvas_ownership.py",
+          "args": ["--canvas", "{{INPUT_ARTIFACT}}"],
+          "on_failure": "error"
+        },
+        {
+          "name": "check_canvas_decisions_line",
+          "script": ".agents/skills/spdd-canvas/scripts/check_canvas_decisions.py",
+          "args": ["--canvas", "{{INPUT_ARTIFACT}}"],
+          "on_failure": "error"
+        }
+      ]
+    }
+  }
+}

@@ -30,6 +30,27 @@ Gerar e executar a suíte de testes de uma task com base nos critérios de aceit
 - **TDD mode:** cada bloco Gherkin do RF vira um teste que falha (Red) antes de qualquer código de produção — delega a implementação em si para `/tdd` ou `/implement`
 - **Audit mode:** ler o código já implementado, mapear caminhos e branches não cobertos, gerar testes complementares para os critérios de aceite ainda sem teste
 
+### Fase 1.5 — Plano de testes (confirmação antes de gerar)
+
+Antes de escrever qualquer arquivo de teste, apresentar o plano e aguardar confirmação:
+
+```markdown
+## Plano de Testes — [Task/RF]
+
+### Escopo
+- Tipo: [unitário/integração/e2e] | Ferramenta: [conforme testing.md] | Arquivo(s): [caminho esperado]
+
+### Cenários
+- Happy path: [N cenários]
+- Casos de borda: [N cenários]
+- Fluxos de erro: [N cenários]
+
+### Dependências a mockar
+- [dependência] — [motivo]
+```
+
+Perguntar: "O plano cobre o necessário ou há cenário adicional antes de gerar o código?" Só prosseguir para a Fase 2 após confirmação — evita gerar suítes grandes que precisam ser refeitas por escopo mal calibrado.
+
 ### Fase 2 — Geração da suíte
 
 2.1. Para cada critério de aceite da task, gerar pelo menos um caso de teste:

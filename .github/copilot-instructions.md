@@ -5,7 +5,14 @@
 
 ## Objetivo
 
-Verificar a consistência entre PRD, TechSpec, Tasks e o REASONS Canvas de uma feature antes de iniciar (ou prosseguir com) a implementação. Detecta RFs sem task correspondente, tasks sem RF de origem, divergências entre o canvas e a TechSpec, e contradições entre artefatos. Gera relatório agrupado por tipo de achado.
+Verificar a consistência entre PRD, TechSpec, Tasks e o REASONS Canvas de uma feature antes de iniciar (ou prosseguir com) a implementação. Detecta RFs sem task correspondente, tasks sem RF de origem, divergências entre o canvas e a TechSpec, contradições entre artefatos e riscos de segurança não endereçados. Gera relatório agrupado por severidade, com métricas de cobertura e sugestão de remediação assistida.
+
+## Argumentos recebidos
+
+- (sem argumento) — analisa os artefatos mais recentes da feature ativa em `memory/state.md`
+- `"nome-da-feature"` — analisa artefatos de uma feature específica
+- `--security` — ativa a Fase 3.5 (passe de segurança) mesmo sem sinais óbvios no texto
+- `--prd-only` — limita a análise à consistência interna do PRD (sem TechSpec/Tasks/Canvas)
 
 ## Pré-condições
 
@@ -50,28 +57,62 @@ Registrar toda divergência encontrada como **divergência de canvas**.
 
 Verificar se PRD, TechSpec e Tasks se contradizem entre si (ex: RNF de performance no PRD não refletido em nenhuma decisão técnica; critério de aceite de task que conflita com regra de negócio do PRD). Registrar como **contradição**.
 
-### Fase 4 — Geração do relatório
+### Fase 3.5 — Passe de segurança (`--security` ou quando encontrado em passagem normal)
 
-Salvar progressivamente em `docs/analyze/[feature]-analysis.md`, agrupado por tipo de achado:
+Verificar, sem duplicar o trabalho do `/code-review` (que audita código já escrito — aqui a checagem é sobre a **especificação**):
+- RFs com dados sensíveis (PII, financeiro, saúde) sem requisito de proteção declarado no PRD/TechSpec
+- Endpoints do TechSpec sem autenticação/autorização declaradas
+- Ausência de requisito de auditoria/log para operações críticas (criação, exclusão, mudança de permissão)
+- RNFs de segurança sem critério mensurável (ex: "dados criptografados" sem algoritmo/padrão)
+
+Registrar cada achado como **risco de segurança**.
+
+### Fase 4 — Atribuição de severidade
+
+Classificar cada achado das Fases 1-3.5:
+
+| Severidade | Critério |
+|---|---|
+| 🔴 CRÍTICO | RF sem cobertura de tasks; violação de princípio DEVE da `constitution.md`; contradição direta entre documentos; dado sensível sem proteção declarada |
+| 🟡 ALTO | RNF sem métrica mensurável; divergência de canvas em dimensão crítica (E/A/S); endpoint sem contrato ou sem auth |
+| 🟠 MÉDIO | Task órfã (sem RF rastreável); inconsistência terminológica em área não crítica |
+| 🔵 BAIXO | Melhoria de clareza; redundância não problemática |
+
+### Fase 5 — Geração do relatório
+
+Salvar progressivamente em `docs/analyze/[feature]-analysis.md`, agrupado por severidade:
 
 ```markdown
 ## Sumário
-[contagem por tipo: N gaps, N divergências, N contradições]
+- Findings: 🔴 N críticos | 🟡 N altos | 🟠 N médios | 🔵 N baixos
+- RFs com cobertura de tasks: N/N (N%)
+- Veredicto: ✅ Aprovado para implementação | ⚠️ Aprovado com ressalvas | ❌ Requer correções
 
-## Gaps
-- RF-XXX presente no PRD sem task correspondente
-- TASK-XX.X sem RF de origem declarado
+## Findings
 
-## Divergências
-- Dimensão [X] do canvas diverge da TechSpec em [ponto]
+| ID | Tipo | Severidade | Localização | Resumo | Recomendação |
+|----|------|-----------|-------------|--------|-------------|
+| G1 | Gap de cobertura | 🔴 | PRD: RF-005 | RF sem task associada | Criar task para RF-005 em /tasks |
 
-## Contradições
-- [artefato A] afirma [X], [artefato B] afirma [Y]
+## Cobertura RF × Tasks
+
+| RF | Tasks | Status |
+|----|-------|--------|
+| RF-001 | TASK-1.1 | ✅ Coberto |
+| RF-002 | — | ❌ Sem cobertura |
 ```
 
-Salvar o arquivo após concluir cada fase (0 gaps ainda é resultado válido a persistir, não motivo para pular a seção).
+Salvar o arquivo após concluir cada fase (0 findings ainda é resultado válido a persistir, não motivo para pular a seção).
 
-### Fase 5 — Validação e handoff
+### Fase 6 — Remediação assistida
+
+Ao final do relatório, perguntar:
+
+> "Deseja que eu aplique as correções dos findings 🔴/🟡 nos artefatos correspondentes? Informe quais (ex: 'G1, S2') ou 'todos os críticos'. As alterações serão apresentadas para aprovação antes de salvar."
+
+Esta skill **nunca aplica correções sem essa confirmação explícita** — a análise em si é somente leitura.
+
+### Fase 7 — Validação e handoff
 
 ```
 python .agents/scripts/validate.py --mode output \
@@ -79,7 +120,7 @@ python .agents/scripts/validate.py --mode output \
   --artifact docs/analyze/[feature]-analysis.md
 ```
 
-Se houver gaps críticos (RF sem task): alertar o usuário antes de recomendar avançar para `/implement`.
+Se houver findings 🔴: alertar o usuário que `/implement` está bloqueado até resolução.
 
 ## Artefatos
 
@@ -102,7 +143,8 @@ Ao concluir, registrar em `memory/state.md`:
 
 ```markdown
 - **Análise executada:** /analyze — [data]
-- **Gaps:** [N] | **Divergências:** [N] | **Contradições:** [N]
+- **Findings:** 🔴 [N] | 🟡 [N] | 🟠 [N] | 🔵 [N]
+- **Veredicto:** [✅|⚠️|❌]
 - **Artefato:** docs/analyze/[feature]-analysis.md
 ```
 
@@ -118,6 +160,12 @@ Artifact Registry:
 ## Objetivo
 
 Aplicar um checklist de qualidade a um artefato (PRD ou TechSpec), tratando cada requisito como um caso a validar — não a implementação em si, mas a qualidade da especificação. Gera `docs/checklists/[feature]-[tipo].md` diferenciando itens críticos (bloqueiam a próxima etapa do pipeline) de itens não-críticos (melhorias sugeridas).
+
+## Argumentos recebidos
+
+- (sem argumento) — gera/atualiza o checklist do artefato mais recente, perguntando o tipo (PRD/TechSpec) se ambíguo
+- `"nome-da-feature"` — aplica ao artefato de uma feature específica
+- `--audit` — não gera checklist novo; audita todos os checklists existentes em `docs/checklists/` e reporta % de aprovação por arquivo
 
 ## Pré-condições
 
@@ -179,6 +227,30 @@ python .agents/scripts/validate.py --mode output \
 ```
 
 Se houver itens críticos: alertar o usuário que a próxima etapa do pipeline está bloqueada até resolução.
+
+## Modo `--audit`
+
+Quando invocado com `--audit`, pular as Fases 0-4 e executar:
+
+1. Ler todos os arquivos em `docs/checklists/`
+2. Para cada um, contar: total de itens `CHK-NNN` / itens marcados `[x]` (aprovados) / itens críticos ainda abertos
+3. Reportar:
+
+```markdown
+## Auditoria de Checklists — [data]
+
+| Arquivo | Total | Aprovados [x] | % | Críticos abertos |
+|---------|-------|--------------|---|-------------------|
+| [feature]-prd.md | N | N | N% | N |
+
+### Checklists com baixa aprovação (< 80%) ou críticos abertos
+- [arquivo] — [N itens pendentes — resumo do que falta]
+
+### Recomendação
+- [arquivo]: [ação sugerida — ex: "resolver os N críticos antes de /techspec"]
+```
+
+Não persistir a auditoria como artefato — é um relatório de sessão apresentado ao usuário.
 
 ## Artefatos
 
@@ -310,6 +382,13 @@ Artifact Registry:
 
 Revisar o código implementado contra: TechSpec, guidelines do sistema, critérios de aceite da task e padrões de segurança (OWASP Top 10 mínimo). Ao concluir, extrai guardrails descobertos durante a revisão e atualiza a dimensão S do canvas — podendo transitar o canvas para READY se S for a última dimensão faltante.
 
+## Argumentos recebidos
+
+- (sem argumento) — revisa as mudanças staged/unstaged atuais
+- `TASK-2.1` — revisa com foco nos critérios de aceite desta task
+- `--security` — aprofunda a categoria 3 (todas as categorias OWASP Top 10, análise de dependências, verificação de secrets hardcoded)
+- `--full` — revisão completa com todas as categorias em detalhe máximo
+
 ## Pré-condições
 
 - Código implementado disponível (diff ou arquivos)
@@ -320,16 +399,21 @@ Revisar o código implementado contra: TechSpec, guidelines do sistema, critéri
 
 ## Workflow
 
-### Fase 0 — Leitura de contexto
+### Fase 0 — Leitura de contexto e gate de testes
 
-1. Identificar a task sendo revisada (ID e critérios de aceite)
-2. Ler `docs/spdd/[feature]-canvas.md` — dimensão S atual (Safeguards já conhecidos)
-3. Ler `docs/techspec/[feature]-techspec.md` — seção de Segurança e Observabilidade
-4. Ler guidelines relevantes: `security.md`, `coding-standards.md`, `testing.md`
+1. **Resolver o sistema em revisão**: pelo campo `Sistema:` da task, ou o repositório onde estão os arquivos alterados. O diff e os comandos git rodam **dentro de `systems/[sistema]/`** — nunca na raiz do workspace.
+2. Identificar a task sendo revisada (ID e critérios de aceite)
+3. Ler `docs/spdd/[feature]-canvas.md` — dimensão S atual (Safeguards já conhecidos)
+4. Ler `docs/techspec/[feature]-techspec.md` — seção de Segurança e Observabilidade
+5. Ler guidelines relevantes: `security.md`, `coding-standards.md`, `testing.md`
+6. **Gate obrigatório — executar a suíte de testes antes de revisar:**
+   - Se os testes **falharem**: reportar imediatamente como 🔴 CRÍTICO "Testes falhando" e encerrar com veredicto `❌ Requer alterações`. Não prosseguir para a Fase 1 — um código com testes falhando não está pronto para review.
+   - Se os testes **passarem**: prosseguir normalmente.
+   - Se não for possível executar os testes (ambiente sem runtime): sinalizar no relatório e continuar com revisão estática apenas.
 
 ### Fase 1 — Revisão por categoria
 
-Revisar o código em **5 categorias obrigatórias**, documentando findings com localização:
+Revisar o código em **5 categorias obrigatórias**, documentando findings com localização. Com `--security`: aprofundar a categoria 3 cobrindo todo o OWASP Top 10 e análise de dependências (`npm audit`/`pip audit` ou equivalente). Com `--full`: aplicar o mesmo nível de detalhe às 5 categorias.
 
 **1. Critérios de aceite da task:**
 - Cada critério de aceite está implementado?
@@ -361,21 +445,37 @@ Revisar o código em **5 categorias obrigatórias**, documentando findings com l
 - Métricas instrumentadas se definido na TechSpec?
 - Tratamento de erros com contexto suficiente para debug?
 
+### Fase 1.5 — Verificação dos critérios de aceite (se task fornecida)
+
+Para cada critério de aceite da task, produzir uma linha de evidência — não apenas afirmar que foi atendido:
+
+| # | Critério de Aceite | Verificado? | Evidência |
+|---|---------------------|-------------|-----------|
+| 1 | [AC da task] | ✅ / ❌ / ⚠️ | [arquivo:linha ou "não encontrado"] |
+
 ### Fase 2 — Geração do relatório
 
 Criar `docs/checklists/[feature]-[task-id]-review.md` com:
 
-**Formato de finding:**
+**Formato de finding — cada um cita o guideline violado e mostra antes/depois quando aplicável:**
 ```
-[CRÍTICO|IMPORTANTE|SUGESTÃO]: [arquivo:linha] — [descrição do problema]
-Recomendação: [o que fazer]
+#### [C1|I1|S1] [Título conciso do problema]
+Arquivo: [caminho:linha]
+Problema: [o que está errado e por que é um problema]
+Como corrigir:
+  Atual:   [trecho problemático]
+  Correto: [como deve ficar]
+Guideline violado: [arquivo.md — seção específica] (obrigatório — se não houver guideline cobrindo o caso, dizer explicitamente "não coberto — recomendo adicionar")
 ```
 
 **Seções obrigatórias do relatório:**
+- `## Critérios de Aceite` — tabela da Fase 1.5 (se task fornecida)
+- `## 🔴 Crítico` — bloqueiam o merge (vazio = "nenhum")
+- `## 🟡 Importante` — devem ser corrigidos antes do merge (vazio = "nenhum")
+- `## 🔵 Sugestão` — melhorias que não bloqueiam (vazio = "nenhuma")
+- `## ✅ Pontos Positivos` — algo bem feito no código revisado (cultura de feedback — nunca omitir, mesmo que curto)
 - `## Segurança` — findings de segurança (vazio = "Nenhum finding de segurança")
-- `## Qualidade de Código` — findings de qualidade
 - `## Conformidade com TechSpec` — desvios da especificação
-- `## Observabilidade` — findings de logs/métricas
 - `## Resultado` — APROVADO | APROVADO COM RESSALVAS | REPROVADO
 
 Salvar progressivamente por seção.
@@ -473,65 +573,121 @@ Artifact Registry:
 
 ## Objetivo
 
-Levantar, através de entrevista estruturada, os tokens visuais, componentes e padrões de interação necessários para a feature, produzindo um Design Brief pronto para prototipagem. Cada decisão de design system relevante gera um Decision Record do tipo DDR.
+Você é o **Design Lead** do pipeline: conduz a discovery de UX/UI **depois do PRD de negócio e antes da TechSpec** — o Design Brief que você gera informa as decisões de arquitetura frontend do `/techspec`. **Você não escreve HTML nesta skill** — ao final, aciona o agente prototipador (`.agents/agents/designer.md`) para materializar tokens e protótipos em background. Cada decisão de design system relevante gera um Decision Record do tipo DDR.
+
+Pipeline: `/prd` → **`/designer`** → `/techspec` → `/tasks` → `/implement`
 
 ## Pré-condições
 
 - `docs/prd/[feature]-prd.md` deve existir com status `ok` no Artifact Registry
 - `memory/state.md` com a feature registrada
 
+## Regra fundamental — interação interativa
+
+- Perguntar **uma de cada vez**, aguardando resposta antes de avançar.
+- Pular qualquer tópico já respondido pela Fase 0 (detecção) — nunca perguntar o que já está decidido em um design system existente.
+
 ## Workflow
 
-### Fase 0 — Leitura de contexto
+### Fase 0 — Detecção de projeto existente (silenciosa, sempre primeiro)
 
-1. `docs/prd/[feature]-prd.md` — objetivo de negócio, público-alvo, jornadas descritas
+Antes de qualquer pergunta, ler nesta ordem de prioridade (fonte superior prevalece em caso de conflito):
+
+1. `systems/[sistema]/guidelines/design.md` — design system corporativo do sistema, se existir e tiver conteúdo real (tokens, inventário de componentes). **Fonte de verdade** — não perguntar sobre nada já coberto.
+2. `DESIGN.md` na raiz do sistema — alternativa agnóstica ao item 1, mesma autoridade.
+3. `docs/design/[outra-feature]-design-brief.md` de feature anterior já aprovada no mesmo sistema — ler para não repetir decisões de marca.
+4. `docs/design/[outra-feature]/design-tokens.json` mais recente — extrair valores exatos já em uso.
+5. Diretório de tema no código do sistema (`src/theme/`, `styles/tokens/`, `design-system/` etc.) — ler para extrair tokens reais já implementados.
+6. `docs/design/*/prototypes/` — listar protótipos existentes para entender o padrão visual estabelecido.
+
+| Situação detectada | Comportamento |
+|---|---|
+| Design system (`guidelines/design.md` ou `DESIGN.md`) com conteúdo | Pular integralmente as perguntas de marca/cor/tipografia/navegação da Fase 2. Informar: "Design system detectado em [caminho] — padrões visuais carregados." |
+| Brief anterior + tema no código, sem design system formal | Pular perguntas de marca/cor/tipografia; focar em escopo, fluxos e estados da feature atual |
+| Tema no código, sem brief e sem design system | Extrair tokens do código; perguntar apenas tom, navegação e escopo |
+| Projeto novo, sem nenhum artefato | Executar a Fase 2 completa |
+
+### Fase 1 — Leitura de contexto
+
+1. `docs/prd/[feature]-prd.md` — objetivo de negócio, personas, jornadas, RFs
 2. `memory/state.md` — confirmar versão do PRD no Artifact Registry
 3. `docs/spdd/[feature]-canvas.md`, se existir — ler dimensão E já preenchida por `/prd`/`/techspec` para não duplicar entidades de domínio
+4. Identificar quais RFs implicam interface visual (telas, formulários, listagens, modais, notificações)
 
-### Fase 1 — Levantamento de tokens visuais (uma pergunta por vez)
+### Fase 2 — Entrevista de design
 
-Perguntar, **uma de cada vez**, absorvendo o que já estiver decidido em guidelines/PRD:
+Perguntar apenas o que a Fase 0 não resolveu:
 
-1. Paleta de cores (primária, secundária, fundo, superfície, erro, sucesso, texto) — ou "usar design system existente: [nome]"
-2. Tipografia (fonte heading, fonte body, fonte mono, escala de tamanhos)
-3. Grid e breakpoints (mobile/tablet/desktop)
-4. Escala de espaçamento (base 4px ou 8px)
+**[Somente projeto novo] 1. Personalidade da marca** — tom do produto (sério/corporativo, jovem/vibrante, minimalista, lúdico).
 
-Salvar respostas incrementalmente no Design Brief à medida que forem obtidas.
+**[Somente projeto novo] 2. Paleta e temas** — cor primária/acento/fundo/superfície/erro/sucesso/texto; suporte a Light only / Dark only / Ambos.
 
-### Fase 2 — Componentes
+**[Somente projeto novo] 3. Referências visuais** — produto concorrente ou não que serve de inspiração.
 
-Para cada tela/fluxo relevante do PRD:
-1. Identificar componentes necessários (ex: botão, card, modal, formulário)
-2. Para cada componente: variantes, estados (default/hover/active/disabled/loading/error)
-3. Salvar seção de Componentes do Design Brief
+**[Somente projeto novo] 4. Tipografia e grid** — fonte heading/body/mono, escala de tamanhos, base de espaçamento (4px/8px), breakpoints mobile/tablet/desktop.
 
-### Fase 3 — Padrões de interação
+**[Somente projeto novo] 5. Estrutura de navegação** — sidebar, topbar, bottom nav, tabs etc.
 
-1. Levantar padrões de feedback (sucesso, erro, loading) e transições/animações
-2. Confirmar requisitos de acessibilidade (contraste WCAG AA, foco visível, leitores de tela, tamanho mínimo de toque)
-3. Salvar seções de Padrões de Interação e Acessibilidade
+**[Sempre] 6. Inventário de telas e fluxos** — para cada tela/view no escopo da feature:
+- Nome da tela, RF(s) atendido(s), persona(s) que a utiliza, rota sugerida, origem/destino na navegação
+- Mapear o happy path de ponta a ponta
+- Mapear ao menos um fluxo de erro crítico
 
-### Fase 4 — Decision Records de Design
+**[Sempre] 7. Estados por tela** — para cada tela do inventário, marcar quais estados são obrigatórios no protótipo: idle, loading, preenchido, erro, sucesso, vazio.
 
-Para cada decisão de design system relevante tomada nas Fases 1-3 (ex: escolha de paleta, escolha de grid, padrão de componente não trivial):
+**[Sempre] 8. Responsividade, acessibilidade e i18n** — plataformas-alvo e breakpoint prioritário; nível de acessibilidade (WCAG AA mínimo, navegação por teclado, leitor de tela); suporte a múltiplos idiomas (impacta layout).
+
+**[Sempre] 9. Decisões em aberto** — decisões de produto que o protótipo deve ajudar a responder; quantas variações de layout explorar.
+
+Salvar respostas incrementalmente no Design Brief à medida que forem obtidas — não aguardar o fim da entrevista.
+
+### Fase 3 — Geração do Design Brief
+
+Gerar/atualizar `docs/design/[feature]-design-brief.md` cobrindo (uma seção por bloco da entrevista):
+
+1. Contexto e objetivo (referência ao PRD)
+2. Identidade visual (tom, paleta com hex, tipografia, radius, espaçamento, tema suportado, referência visual)
+3. Navegação e layout (padrão, breakpoints, componentes existentes a reutilizar)
+4. Inventário de telas (tabela: ID, nome, RF(s), persona, rota)
+5. Fluxos de navegação (happy path + fluxo de erro)
+6. Estados por tela (tabela: tela × idle/loading/preenchido/erro/sucesso/vazio, marcando obrigatórios)
+7. Acessibilidade e internacionalização
+8. Decisões em aberto (questão, opções, impacto)
+9. Escopo do protótipo (quais telas, quantas variações, estados obrigatórios)
+10. Decision Records de Design (DDRs desta fase)
+
+### Fase 4 — Confirmação com o usuário
+
+Apresentar resumo objetivo do brief salvo (N telas no escopo, fluxos mapeados, estados obrigatórios, requisitos de acessibilidade) e perguntar se está correto ou precisa de ajuste antes de acionar o prototipador. Aplicar correções no arquivo salvo se necessário.
+
+### Fase 5 — Decision Records de Design
+
+Para cada decisão de design system relevante tomada nas Fases 2-3 (ex: escolha de paleta, escolha de grid, padrão de componente não trivial):
 1. Verificar próximo número de sequência DDR no índice de `memory/constitution.md`
 2. Criar `docs/decisions/ddr-[NNN]-[slug].md` a partir do template de Decision Record
 3. Adicionar ao índice de DDRs em `memory/constitution.md`
-4. Referenciar o DDR na seção 8 do Design Brief
+4. Referenciar o DDR na seção 10 do Design Brief
 
-### Fase 5 — Atualização do Canvas (dimensão E)
+### Fase 6 — Atualização do Canvas (dimensão E)
 
 Atualizar dimensão **E — Entities** do canvas `docs/spdd/[feature]-canvas.md`, complementando (não substituindo) as entidades de domínio já registradas por `/prd`/`/techspec` com as entidades de UX/UI:
-- Componentes principais e seus tokens
+- Telas e componentes principais e seus tokens
 - `_Atualizado por: /designer v1.0 — [data]_`
 - `> Decisões: DDR-[NNN], ...`
 
 Salvar o canvas após a atualização.
 
-### Fase 6 — Validação e Handoff
+### Fase 7 — Handoff para o agente prototipador (obrigatório, não sob demanda)
 
-1. Validar o Design Brief:
+Perguntar: "Deseja acionar o agente prototipador agora para gerar screen-map, tokens e protótipo HTML? [Sim/Não]"
+
+- **Se sim:** acionar o agente autônomo `designer` (`.agents/agents/designer.md`) pelo mecanismo nativo do ambiente (ferramenta `Agent`/`Task` no Claude Code referenciando `.claude/agents/designer.md`; mecanismo equivalente de subagente em outras plataformas; sem suporte a subagentes, executar o protocolo do agente na mesma sessão). O agente lê o Design Brief e o PRD e gera, sem fazer novas perguntas: `docs/design/[feature]/screen-map.md`, `docs/design/[feature]/design-tokens.json` e `docs/design/[feature]/prototypes/*.html`.
+- **Se não:** encerrar informando que o brief está salvo e o próximo passo é `/techspec`; deixar claro que tokens/protótipo ficam pendentes e devem ser gerados antes do `/techspec` avançar para decisões de UI.
+- **Nunca pular esta fase silenciosamente** — é a causa mais comum de o design ficar incompleto (brief sem tokens/protótipo).
+
+### Fase 8 — Validação e handoff final
+
+1. Validar o Design Brief (a validação também checa a existência de `screen-map.md`, `design-tokens.json` e ao menos um protótipo `.html` gerados pelo agente prototipador):
    ```
    python .agents/scripts/validate.py --mode output \
      --rules .agents/skills/designer/validate-rules.json \
@@ -539,7 +695,7 @@ Salvar o canvas após a atualização.
    ```
 2. Atualizar `memory/state.md`:
    - Artifact Registry: `docs/design/[feature]-design-brief.md | 1.0 | ok`
-3. Sugerir próximo passo: prototipagem (fora do pipeline SDD) ou `/techspec` se ainda não executado
+3. Sugerir próximo passo: `/techspec` (o `screen-map.md` pode ser usado como referência de telas e rotas)
 
 ## Artefatos
 
@@ -547,15 +703,19 @@ Salvar o canvas após a atualização.
 - `docs/prd/[feature]-prd.md` (obrigatório)
 - `memory/state.md` (obrigatório)
 - `docs/spdd/[feature]-canvas.md` (opcional — se já existir)
+- `systems/[sistema]/guidelines/design.md` ou `DESIGN.md` (opcional — design system existente)
 
 **Saída:**
 - `docs/design/[feature]-design-brief.md`
+- `docs/design/[feature]/screen-map.md` (gerado pelo agente prototipador na Fase 7)
+- `docs/design/[feature]/design-tokens.json` (gerado pelo agente prototipador na Fase 7)
+- `docs/design/[feature]/prototypes/*.html` (gerado pelo agente prototipador na Fase 7; publicação como Artifact é complemento opcional quando a ferramenta estiver disponível — nunca substitui o arquivo local)
 - `docs/decisions/ddr-[NNN]-[slug].md` (um por decisão de design system)
 
 ## Canvas
 
 Esta skill atualiza:
-- **E — Entities:** entidades de UX/UI (componentes, tokens), complementando as entidades de domínio
+- **E — Entities:** entidades de UX/UI (telas, componentes, tokens), complementando as entidades de domínio
 - Referências a DDRs criadas nesta fase: `> Decisões: DDR-001, ...` (ou `> Decisões: —` se nenhuma)
 
 ## Handoff
@@ -565,6 +725,9 @@ Ao concluir, registrar em `memory/state.md` (seção da feature ativa):
 ```markdown
 - **Etapa concluída:** /designer (v1.0) — [data]
 - **Artefato:** docs/design/[feature]-design-brief.md
+- **Screen map:** docs/design/[feature]/screen-map.md
+- **Design tokens:** docs/design/[feature]/design-tokens.json
+- **Protótipos:** docs/design/[feature]/prototypes/*.html [+ URLs de Artifact, se publicado]
 - **DDRs criados:** DDR-[NNN], ...
 ```
 
@@ -699,24 +862,59 @@ E adicionar ao Artifact Registry:
 
 ## Objetivo
 
-Gerar os 9 arquivos de guidelines para um sistema, capturando decisões de stack, arquitetura e padrões de engenharia através de entrevista interativa. Cada decisão técnica significativa gera um ADR (Architecture Decision Record). Os guidelines são a fonte de verdade para todas as skills subsequentes do pipeline.
+Gerar os guidelines de um sistema, capturando decisões de stack, arquitetura e padrões de engenharia através de entrevista interativa — adaptada ao **cenário** do sistema (greenfield, brownfield ou migração). Cada decisão técnica significativa gera um ADR. Os guidelines são a fonte de verdade para todas as skills subsequentes do pipeline, incluindo o design system lido pelo `/designer`.
+
+## Argumentos recebidos
+
+- (sem argumento) — descobre os sistemas pendentes em `memory/state.md` e conduz o processo para eles
+- `[sistema]` (ex: `api-auth`) — foca no sistema informado
+- `[sistema] [arquivo]` (ex: `api-auth security`) — foca em um arquivo específico de um sistema já configurado
 
 ## Pré-condições
 
 - `memory/state.md` deve existir com o sistema registrado na tabela de Sistemas
-- `systems/[sistema]/` deve existir (ou será criado)
+- `systems/[sistema]/` deve existir (ou será criado) — é o **repositório do sistema**: além de `guidelines/`, é onde `/tasks`, `/implement`, `/tdd` e `/code-review` criam e editam todo o código (ex: `systems/[sistema]/backend/`, `systems/[sistema]/frontend/`). Nunca na raiz do workspace, mesmo em projetos de sistema único.
 - Se guidelines já existem: perguntar se deseja atualizar (bump de versão) ou substituir
 
 ## Workflow
 
-### Fase 0 — Verificação
+### Fase 0 — Verificação e detecção de cenário
 
-1. Identificar o sistema-alvo: ler `--system` do argumento ou perguntar
+1. Identificar o sistema-alvo: ler o argumento ou perguntar
 2. Verificar se `systems/[sistema]/guidelines/` já existe
    - Se sim: listar os arquivos existentes e perguntar "Atualizar guidelines existentes?"
 3. Criar diretório `systems/[sistema]/guidelines/` se não existir
+4. **Determinar o cenário** (gravado na tabela Sistemas de `memory/state.md`, ou perguntar se ausente):
+
+| Cenário | Fonte primária das respostas | Comportamento da entrevista |
+|---|---|---|
+| **Greenfield** (novo, sem código) | Entrevista completa | Perguntas prescritivas — define os padrões do zero |
+| **Brownfield** (código existente adotando SSPDD) | Inventário do código (Fase 0.5) | Módulos viram confirmação: "Detectei X — confirma?"; só pergunta o que não pode inferir |
+| **Migração** (legado trocando de tecnologia) | Inventário do legado (as-is) + entrevista do alvo (to-be) | Duas passadas: inventário automático gera `legacy-context.md`; entrevista prescritiva define os guidelines do alvo + Módulo de Migração |
+
+### Fase 0.5 — Inventário do código (obrigatório para Brownfield e Migração)
+
+> Em Greenfield, pular esta fase.
+
+Antes de perguntar qualquer coisa, montar o inventário — a resposta já está no repositório:
+
+1. **Stack e dependências**: manifests (`package.json`, `pyproject.toml`, `pom.xml`, `go.mod`, `*.csproj`) — linguagens, frameworks, versões exatas
+2. **Estrutura**: árvore de `src/` (ou equivalente) — padrão arquitetural em prática
+3. **Ferramentas**: configs presentes (`.eslintrc*`, `.prettierrc*`, `ruff.toml`, configs de teste, pipelines em `.github/workflows/`) — lint, testes, CI
+4. **Convenções git**: amostra do histórico (`git log --oneline -20` dentro de `systems/[sistema]/`) — formato de commits e branches em uso
+5. Registrar cada item como inferência com evidência (ex: "Arquitetura: por camada — `src/controllers`, `src/services`") — na Fase 1 esses itens são **confirmados em bloco**, não perguntados do zero
+
+**Adicionalmente para Migração**: identificar também integrações externas, pontos de entrada (rotas, jobs, listeners) e débitos/riscos evidentes (dependências EOL, áreas sem teste) — alimenta `legacy-context.md` (Fase 3).
+
+Apresentar o diagnóstico em texto antes de iniciar a entrevista: o que foi inferido, o que será confirmado, o que precisa ser perguntado do zero.
 
 ### Fase 1 — Entrevista de stack (uma pergunta por vez)
+
+**Regra de arquivos extras**: se `systems/[sistema]/guidelines/` já contém um arquivo fora do padrão (ex: `GUIDELINE_ARQUITETURA.md`) cobrindo total ou parcialmente um módulo abaixo, pular as perguntas já respondidas por ele — na Fase 3, o arquivo padrão correspondente só registra uma referência ao arquivo extra + eventuais gaps, sem duplicar conteúdo.
+
+**Brownfield**: onde o inventário da Fase 0.5 já inferiu a resposta, confirmar em bloco ("Detectei: TypeScript 5.4, NestJS 10, PostgreSQL via Prisma — confirma?") e perguntar apenas os gaps. Se o usuário quiser um padrão diferente do que o código pratica, registrar as duas colunas no guideline: *estado atual* e *alvo*.
+
+**Migração**: conduzir como greenfield para o sistema **alvo** (to-be); o inventário do legado é só referência. Ao final, conduzir também o Módulo de Migração.
 
 **Módulo A — Linguagem e runtime:**
 - "Qual linguagem principal? (ex: Python, TypeScript, Go, Rust)"
@@ -756,6 +954,24 @@ Gerar os 9 arquivos de guidelines para um sistema, capturando decisões de stack
 - "Há pipeline de CI/CD? Qual ferramenta?"
 - "Quais checks são obrigatórios antes do merge?"
 
+**Módulo I — Design e UI/UX** *(pular se o sistema for puramente backend/API ou CLI sem interface gráfica)*
+
+Antes de perguntar: verificar, na ordem, `DESIGN.md` na raiz do sistema, `systems/[sistema]/guidelines/design.md` com conteúdo real, `docs/design/*/design-tokens.json` de feature anterior, ou diretório de tema no código (`src/theme/`, `styles/tokens/`). Se algo for encontrado, extrair e **perguntar só os gaps**.
+
+- "Já existem tokens de cor definidos (hex de primária/acento/fundo/erro/sucesso) ou preciso levantá-los no `/designer`?"
+- "Qual a estratégia de componentes? (100% customizado / biblioteca headless + customização / biblioteca opinionada completa)"
+- "Qual o padrão de iconografia?"
+- "Quais os breakpoints e a estratégia de responsividade (mobile-first / desktop-first / ambos)?"
+- "Qual o nível mínimo de acessibilidade exigido? (WCAG AA / AAA / sem requisito formal)"
+
+Se nada for encontrado e o sistema tiver UI: conduzir o módulo completo — a resposta popula `guidelines/design.md` (Fase 3), que o `/designer` e o agente prototipador leem como fonte de verdade.
+
+**Módulo de Migração** *(somente cenário Migração — respostas geram `legacy-context.md` e um ADR inicial)*
+- "Qual abordagem de migração? (Strangler Fig / Big Bang / convivência paralela / a definir)"
+- "Qual o nível de paridade exigido com o legado? (total / funcional / parcial — descrever)"
+- "Como os dados do legado serão tratados? (migração completa / incremental / sistema novo começa vazio)"
+- "Qual o critério de corte do legado? (ex: 100% do tráfego no novo por 30 dias sem incidente)"
+
 ### Fase 2 — Criação de ADRs
 
 Para cada decisão técnica significativa tomada durante a entrevista (escolha de stack, framework, padrão arquitetural), criar um ADR:
@@ -782,6 +998,8 @@ Gerar em ordem, salvando após cada um:
 7. `systems/[sistema]/guidelines/git-workflow.md` — branching, commits, PR process, CI/CD
 8. `systems/[sistema]/guidelines/skill-conventions.md` — padrões de uso das skills do pipeline
 9. `systems/[sistema]/guidelines/spdd-integration.md` — como SPDD/canvas se integra ao workflow do time
+10. `systems/[sistema]/guidelines/design.md` — **somente se o Módulo I foi conduzido** (sistema com UI). Tokens visuais (hex exatos), inventário de componentes, breakpoints, acessibilidade — é a fonte que `/designer` e o agente prototipador leem antes de gerar qualquer protótipo. Se um design system externo (`DESIGN.md`) já é a fonte primária, este arquivo só referencia + registra gaps complementares
+11. `legacy-context.md` — **somente cenário Migração**. Stack legada, pontos de entrada, integrações externas, comportamentos a preservar, débitos conhecidos, e a estratégia de migração decidida no Módulo de Migração. Registrar a decisão também como ADR inicial em `memory/constitution.md`
 
 Executar validação ao final:
 ```
@@ -791,11 +1009,21 @@ python .agents/scripts/validate.py --mode output \
   --system [sistema]
 ```
 
+### Fase 3.5 — Comitê de Análise Assíncrono (opcional)
+
+Antes de finalizar, oferecer revisão cruzada:
+
+> "Os guidelines foram estruturados. Deseja que eu submeta este planejamento aos agents especialistas (Architect, Security, DevOps) em background para revisar antes de fechar? [Sim/Não]"
+
+- **Se sim**: invocar os agents `.agents/agents/architect.md`, `.agents/agents/security.md`, `.agents/agents/devops.md` via ferramenta `Agent`, instruindo cada um a **ler os arquivos recém-salvos em disco** (não colar o conteúdo no prompt) e avaliar riscos, gaps e trade-offs não considerados. Apresentar o feedback consolidado (1-3 pontos por agent) e perguntar se aceita incorporar antes de fechar. Se aceitar, atualizar os arquivos e re-executar a validação.
+- **Se não**: seguir direto para a Fase 4.
+
 ### Fase 4 — Handoff
 
 Atualizar `memory/state.md`:
 - Tabela de Sistemas: marcar Guidelines como `ok` para o sistema
 - Artifact Registry: adicionar cada arquivo de guidelines com status `ok`
+- Se restarem sistemas pendentes na fila da Fase 0: retornar à Fase 0.5/1 para o próximo antes de encerrar
 
 ## Artefatos
 
@@ -803,8 +1031,8 @@ Atualizar `memory/state.md`:
 - `memory/state.md` (obrigatório)
 
 **Saída:**
-- `systems/{{SYSTEM}}/guidelines/` — 9 arquivos de guidelines
-- `docs/decisions/ADR-[NNN]-*.md` — um ou mais ADRs de decisões de stack
+- `systems/{{SYSTEM}}/guidelines/` — 9 arquivos padrão + `design.md` (se sistema com UI) + `legacy-context.md` (se Migração)
+- `docs/decisions/ADR-[NNN]-*.md` — um ou mais ADRs de decisões de stack (inclui ADR de estratégia de migração, se aplicável)
 
 **Validação:** `python .agents/scripts/validate.py --mode output --rules .agents/skills/guidelines/validate-rules.json --artifact [guideline] --system [sistema]`
 
@@ -844,6 +1072,13 @@ Artifact Registry — adicionar uma linha por arquivo:
 
 Implementar uma task específica do documento de tasks com fidelidade à TechSpec e ao REASONS Canvas. O canvas fornece contexto crítico de Norms (padrões a seguir) e Safeguards (restrições a respeitar) antes de qualquer linha de código. Cada task implementada é rastreável aos RFs de origem.
 
+## Argumentos recebidos
+
+- `TASK-2.1` — implementa a task pelo ID (com decisão TDD automática)
+- `"Título da task"` — implementa pela descrição
+- (sem argumento) — lista as tasks disponíveis e pergunta qual executar
+- `TASK-2.1 --no-tdd` — implementação direta, sem ciclo TDD mesmo se os critérios da Fase 1 indicariam TDD
+
 ## Pré-condições
 
 - `docs/tasks/[feature]-tasks.md` deve existir com a task solicitada
@@ -857,6 +1092,8 @@ Implementar uma task específica do documento de tasks com fidelidade à TechSpe
 ## Workflow
 
 ### Fase 0 — Leitura de contexto (obrigatória)
+
+**Regra fundamental de localização — todo trabalho desta skill acontece dentro de `systems/[sistema]/`:** criação/edição de arquivos de código, execução de testes e comandos git rodam nesse diretório, no repositório daquele sistema — nunca na raiz do workspace. Resolver `[sistema]` pelo campo `Sistema:` da task (ou o único da tabela Sistemas de `memory/state.md`, se houver apenas um). Os caminhos do "Guia técnico de implementação" da task são sempre relativos a `systems/[sistema]/`.
 
 **Ler nesta ordem, sem pular:**
 
@@ -884,14 +1121,23 @@ Avaliar automaticamente se TDD é aplicável:
 | Documentação, SKILL.md, templates Markdown | Não |
 | Migração de banco de dados | Não (testar integração separada) |
 
-Se TDD aplicável: seguir ciclo Red → Green → Refactor antes de implementar.
-Se TDD não aplicável: implementar diretamente com verificação manual.
+Se TDD aplicável (e `--no-tdd` não foi passado): seguir ciclo Red → Green → Refactor antes de implementar.
+Se TDD não aplicável ou `--no-tdd`: implementar diretamente com verificação manual.
+
+### Fase 1.5 — Caminho rápido vs. completo
+
+Antes de codificar, decidir o nível de confirmação com base no tamanho da task:
+
+- **Caminho rápido (task `[P]` — até 4h)**: se os requisitos estão claros e sem ambiguidade, pular a confirmação de plano — implementar direto, mencionando em uma linha o que será feito antes de começar.
+- **Caminho completo (task `[M]`/`[G]` ou com ambiguidade)**: apresentar um plano de implementação em bullets (arquivo a criar/modificar → o que será feito) e aguardar confirmação antes de prosseguir.
+
+Se houver ambiguidade ou informação ausente na task que impeça implementar com segurança, perguntar ao usuário antes — em qualquer um dos dois caminhos. Não assumir.
 
 ### Fase 2 — Implementação
 
-2.1. **Verificar se arquivo-alvo já existe:**
+2.1. **Verificar se arquivo-alvo já existe (dentro de `systems/[sistema]/`):**
    - Se sim: ler conteúdo antes de modificar (nunca sobrescrever cegamente)
-   - Se não: criar novo seguindo os padrões de N
+   - Se não: criar novo dentro de `systems/[sistema]/`, seguindo os padrões de N — nunca na raiz do workspace
 
 2.2. **Implementar seguindo os critérios de aceite da task:**
    - Cada item do checklist "O que deve ser feito" deve ser implementado
@@ -916,6 +1162,18 @@ Após implementar, verificar **cada critério de aceite** da task:
 
 Se algum critério não for atendido: corrigir antes de reportar conclusão.
 
+### Fase 3.5 — Handoff de code review
+
+Task concluída — perguntar:
+
+> "Deseja submeter os arquivos a um code review antes de prosseguir? (a) Sim — agent QA revisa em contexto fresco [recomendado para tasks M/G] / (b) Inline — review rápido no contexto atual / (c) Não — seguir direto para o relatório"
+
+- **(a) Agent QA**: invocar `.agents/agents/qa.md` via ferramenta `Agent`, passando a lista de arquivos criados/modificados e a referência à task + critérios de aceite, instruindo a aplicar as dimensões do `/code-review`. Apresentar o relatório recebido ao usuário.
+- **(b) Inline**: aplicar as mesmas 5 categorias do `/code-review` no contexto atual (correção funcional, aderência aos guidelines, segurança — obrigatória, qualidade, testes).
+- **(c)**: seguir direto para a Fase 4.
+
+Se houver findings 🟡/🔴 em (a) ou (b): aguardar decisão do usuário — (i) corrigir agora, (ii) criar task de bug-fix separada, (iii) ignorar e concluir mesmo assim — antes de avançar.
+
 ### Fase 4 — Sugestão de validação e próximos passos
 
 Após implementação concluída, informar ao usuário:
@@ -928,7 +1186,9 @@ Após implementação concluída, informar ao usuário:
      --rules .agents/skills/[skill]/validate-rules.json \
      --artifact [artefato-gerado]
    ```
-4. Sugerir próximos passos: `/code-review` ou próxima task
+4. Sugerir próximos passos: `/code-review` (se não feito na Fase 3.5) ou próxima task
+
+Marcar `Status: Concluída` no arquivo individual `docs/tasks/[feature]/TASK-[EPIC].[SEQ]-[slug].md` da task.
 
 Atualizar `memory/state.md` se task for a última do Epic:
 - Marcar Epic como concluído no status da feature
@@ -1053,6 +1313,15 @@ Atualizar dimensão **R** do canvas `docs/spdd/[feature]-canvas.md`:
 - Adicionar referência a BDRs criados (se houver decisões de escopo/priorização)
 - Salvar canvas imediatamente
 
+### Fase 3.5 — Comitê de Análise Assíncrono (opcional)
+
+Com o PRD salvo, oferecer revisão cruzada antes de liberar para `/techspec`:
+
+> "O PRD foi gerado e salvo. Deseja que eu submeta os requisitos aos agents especialistas (Architect, Security, QA) em background para uma crítica antes de avançar? [Sim/Não]"
+
+- **Se sim**: invocar `.agents/agents/architect.md`, `.agents/agents/security.md`, `.agents/agents/qa.md` via ferramenta `Agent`, instruindo cada um a **ler o PRD salvo em disco** (não colar o conteúdo no prompt) e apontar riscos, gaps de escopo ou requisitos não testáveis. Apresentar o feedback consolidado (1-3 pontos por agent) e perguntar se aceita que o PRD salvo seja atualizado. Se aceitar, aplicar e re-validar.
+- **Se não**: seguir para a Fase 4.
+
 ### Fase 4 — Handoff
 
 Atualizar `memory/state.md`:
@@ -1060,10 +1329,12 @@ Atualizar `memory/state.md`:
 - Artifact Registry: adicionar entrada `docs/prd/[feature]-prd.md | 1.0 | ok`
 - Se canvas foi criado/atualizado: `docs/spdd/[feature]-canvas.md | — | draft`
 
+**Detecção de interface visual:** verificar se algum sistema afetado tem front-end (ler `systems/[sistema]/guidelines/stack.md` procurando frameworks de UI — React, Next.js, Vue, Angular, Flutter, SwiftUI etc. — ou se o PRD descreve telas/jornadas de usuário final). Se sim, incluir `/designer` na lista de próximos passos, **antes** de `/techspec`.
+
 Informar ao usuário:
 - Caminho do PRD gerado
 - Resultado da validação
-- Próximo passo sugerido: `/clarify` (se houver questões em aberto) ou `/techspec [feature] --system [sistema]`
+- Próximo passo sugerido: `/clarify` (se houver questões em aberto) → `/designer` (se detectada interface visual) → `/techspec [feature] --system [sistema]`
 
 ## Artefatos
 
@@ -1098,7 +1369,8 @@ Ao concluir, registrar em `memory/state.md`:
 - **Artefato:** docs/prd/[feature]-prd.md
 - **RFs Must Have:** RF-001, RF-002, ...
 - **Questões em aberto:** [listar ou "nenhuma"]
-- **Próximo comando:** /techspec [feature] --system [sistema]
+- **Interface visual detectada:** [sim/não — se sim, recomendar /designer antes do /techspec]
+- **Próximo comando:** /designer [feature] (se interface visual) ou /techspec [feature] --system [sistema]
 ```
 
 Artifact Registry:
@@ -1323,6 +1595,12 @@ Artifact Registry:
 
 Decompor a TechSpec em tasks de implementação executáveis, agrupadas em Epics e User Stories, com dependências explícitas e oportunidades de paralelismo identificadas. Cada task é auto-contida: tem contexto, critérios de aceite e guia técnico suficientes para ser implementada sem consultar outros documentos.
 
+## Argumentos recebidos
+
+- (sem argumento) — gera tasks para a feature ativa em `memory/state.md`
+- `"nome-da-feature"` — gera para uma feature específica
+- `update` — modo revisão: lê o documento de tasks existente e pergunta o que adicionar/remover/repriorizar, preservando IDs já atribuídos
+
 ## Pré-condições
 
 - `docs/techspec/[feature]-techspec.md` deve existir com status `ok` no Artifact Registry
@@ -1370,16 +1648,27 @@ Para decisões de priorização ou escopo tomadas aqui: criar BDR (Business Deci
    - **[P] com TASK-X.Y** se pode ser executada em paralelo
    - **Contexto:** por que esta task existe, o que ela resolve
    - **O que deve ser feito:** checklist de ações concretas
-   - **Guia técnico:** arquivo a criar/modificar, padrão a seguir
+   - **Guia técnico:** arquivo a criar/modificar, padrão a seguir — **todo caminho de arquivo é relativo a `systems/[sistema]/`** (ex: `backend/src/main/...`, nunca `systems/[sistema]/backend/src/main/...` nem caminho a partir da raiz do workspace). `/implement` e `/tdd` resolvem `[sistema]` pelo campo Sistema da task e operam dentro desse diretório
    - **Critérios de aceite:** mensuráveis e verificáveis
 
-2.3. Salvar após cada Epic completo
+2.3. **Gerar arquivo individual por task (obrigatório):** para cada Task, salvar também `docs/tasks/[feature]/TASK-[EPIC].[SEQ]-[slug].md` contendo o conteúdo completo da task (todos os campos da 2.2) de forma autocontida — é o arquivo que `/implement TASK-X.Y` consome diretamente, sem precisar abrir o documento consolidado. Não é opcional nem gerado apenas sob pedido do usuário.
 
-2.4. Gerar tabela de Sumário de Epics e Grafo de Dependências no início
+2.4. Salvar após cada Epic completo (documento consolidado + arquivos individuais das tasks do Epic)
 
-2.5. Gerar seção "Backlog Priorizado" ao final com ordem de início recomendada
+2.5. Gerar tabela de Sumário de Epics e o **Grafo de Dependências** no início, em ASCII (não apenas lista) — a representação visual explícita das cadeias de dependência, marcando `⚡` nas tasks do mesmo nível que podem rodar em paralelo:
+```
+TASK-1.1 (Setup BD)
+  └── TASK-1.2 (Migration)
+        └── TASK-2.1 (Repositório)
+              ├── TASK-2.2 [P] (Use Case A)  ⚡ paralelo com TASK-2.3
+              └── TASK-2.3 [P] (Use Case B)  ⚡ paralelo com TASK-2.2
+```
 
-2.6. Validação ao concluir:
+2.6. **Se a feature afeta 2+ sistemas**, gerar a seção "Plano Git Multi-Sistema": branch da feature em cada repositório afetado (`feature/[nome]`, conforme o `git-workflow.md` de cada sistema) e a ordem de merge entre repositórios derivada das dependências (tabela: ordem / sistema / o que entrega / pré-requisito / compatibilidade retroativa). Em workspace de sistema único, omitir esta seção.
+
+2.7. Gerar seção "Backlog Priorizado" ao final com ordem de início recomendada
+
+2.8. Validação ao concluir:
 ```
 python .agents/scripts/validate.py --mode output \
   --rules .agents/skills/tasks/validate-rules.json \
@@ -1408,6 +1697,21 @@ Após salvar O: verificar se todas as 7 dimensões estão preenchidas.
 
 **Regra crítica:** canvas só transita para `READY` quando O é preenchida e todas as outras 6 também estão preenchidas. Nunca publicar canvas com O vazia.
 
+### Fase 3.5 — Comitê de Análise Assíncrono (opcional)
+
+Com as tasks salvas (documento consolidado + arquivos individuais), oferecer revisão cruzada antes de liberar para `/implement`:
+
+> "As tasks foram geradas e salvas. Deseja que eu submeta o planejamento aos agents especialistas (Architect, QA) em background para revisão crítica? [Sim/Não]"
+
+- **Se sim**: invocar `.agents/agents/architect.md` e `.agents/agents/qa.md` via ferramenta `Agent`, cada um lendo os arquivos recém-salvos em `docs/tasks/` (não colar conteúdo no prompt), apontando critérios de aceite vagos, tasks que misturam responsabilidades, ou dependências mal sequenciadas. Apresentar o feedback consolidado e perguntar se aceita atualizar os arquivos salvos.
+- **Se não**: seguir para a Fase 3.6.
+
+### Fase 3.6 — Opção: criar GitHub Issues
+
+Perguntar: "Deseja que eu crie as tasks como GitHub Issues? Se sim, informe o repositório (`owner/repo`)."
+
+Se confirmado, usar o CLI `gh` (`gh issue create` por task): labels a partir das tags da task (`backend`, `frontend`, `infra`, `test`); corpo com contexto, o que fazer e critérios de aceite; "Depende de #N" referenciando issues de dependência; agrupar por milestone se um sprint foi especificado.
+
 ### Fase 4 — Handoff
 
 Atualizar `memory/state.md`:
@@ -1424,6 +1728,7 @@ Atualizar `memory/state.md`:
 
 **Saída:**
 - `docs/tasks/[feature]-tasks.md` — plano completo de tasks
+- `docs/tasks/[feature]/TASK-[EPIC].[SEQ]-[slug].md` — um arquivo autocontido por task (obrigatório)
 - `docs/spdd/[feature]-canvas.md` — dimensão O atualizada; pode transitar para READY
 - `docs/decisions/BDR-[NNN]-*.md` — BDRs de priorização (se houver)
 
@@ -1476,6 +1781,8 @@ Implementar uma task seguindo o ciclo TDD rigoroso: escrever testes que falham a
 
 ### Fase 0 — Leitura de contexto (obrigatória)
 
+**Regra fundamental de localização — todo o ciclo acontece dentro de `systems/[sistema]/`:** testes, implementação e comandos git rodam nesse diretório, no repositório daquele sistema — nunca na raiz do workspace. Resolver `[sistema]` pelo campo `Sistema:` da task.
+
 Ler nesta ordem antes de qualquer código:
 
 1. Task alvo: ID, critérios de aceite, guia técnico
@@ -1500,6 +1807,14 @@ Ler nesta ordem antes de qualquer código:
    - **Confirmar que o teste FALHA** antes de prosseguir (se não falha, o teste é inútil)
 
 1.3. Salvar arquivo(s) de teste
+
+1.4. Executar os testes e classificar o resultado:
+
+| Resultado | O que fazer |
+|---|---|
+| Todos falhando (RED confirmado) | Prosseguir para a Fase 2 |
+| Alguns passando | Revisar — teste que passa sem implementação não testa nada real (mock com valor default, asserção vazia). Corrigir o teste antes de prosseguir |
+| Erro de compilação/import (módulo não existe) | Normal em TDD estrito — criar os arquivos com stubs vazios (função que lança `NotImplementedError`/equivalente) apenas para viabilizar a execução dos testes, sem implementar lógica ainda |
 
 **Output desta fase:** suite de testes falhando, cobrindo todos os critérios de aceite.
 
@@ -1629,6 +1944,15 @@ python .agents/scripts/validate.py --mode input \
 ```
 Se stale: alertar e aguardar confirmação para prosseguir com `--force` consciente.
 
+### Fase 0.5 — Pesquisa de incertezas técnicas (condicional)
+
+> Só executa quando existem incertezas técnicas reais. Se tudo já é conhecido pelos guidelines/PRD, informar "Nenhuma incerteza técnica identificada — prosseguindo para a Fase 1." e seguir.
+
+1. Identificar incertezas que, se não resolvidas agora, geram decisões erradas na TechSpec: integração externa sem documentação clara, escolha de biblioteca com trade-off não óbvio, padrão de modelagem não coberto pelos guidelines, estratégia de auth para caso específico do PRD, comportamento de concorrência/consistência eventual.
+2. Para cada incerteza: documentar o que é desconhecido, pesquisar (guidelines ou web), registrar a decisão tomada com justificativa.
+3. **Se houver 2+ incertezas**: gerar `docs/techspec/[feature]-research.md` com, por incerteza — contexto (requisito do PRD que a origina), opções avaliadas com pros/contras, decisão, justificativa, impacto na TechSpec. Fechar com tabela de incertezas não resolvidas (questão / impacto / bloqueante?).
+4. **Incertezas bloqueantes**: apresentar ao usuário e aguardar resposta antes de prosseguir. Não bloqueantes vão para a Seção 10 da TechSpec ("Questões em Aberto").
+
 ### Fase 1 — Decisões técnicas (com o usuário)
 
 Fazer perguntas técnicas necessárias **uma de cada vez**, absorvendo o máximo dos guidelines sem perguntar o que já está decidido:
@@ -1652,11 +1976,13 @@ Para cada decisão técnica que envolva trade-off: criar ADR.
 
 **Salvar a cada seção concluída.**
 
+**Princípio de fonte única de verdade**: modelagem de dados e contratos de API são volumosos demais para viver dentro do documento principal — vivem em artefatos granulares que o TechSpec resume e referencia. Nunca gerar o mesmo conteúdo em dois lugares.
+
 2.1. Criar `docs/techspec/[feature]-techspec.md` usando template techspec
    - Seção 1 (Visão Geral Técnica) → salvar
    - Seção 2 (Decisões Arquiteturais) com referências aos ADRs criados → salvar
-   - Seção 3 (Modelo de Dados) — criar também `docs/techspec/[feature]/data-model.md` → salvar ambos
-   - Seção 4 (Contratos de API/Interface) → salvar
+   - Seção 3 (Modelo de Dados) — **resumo + link**; criar `docs/techspec/[feature]/data-model.md` como fonte de verdade (diagrama ER, entidades com campos/índices, ciclo de vida de estados, estratégia de migrations) → salvar ambos
+   - Seção 4 (Contratos de API/Interface) — **índice de endpoints + link**; criar um arquivo por recurso/área funcional em `docs/techspec/[feature]/contracts/[recurso].md` (request, response, tabela de erros, RF atendido) → salvar cada um. Se a feature não tiver API, omitir e registrar "Nenhuma interface de API identificada — contratos não gerados."
    - Seção 5 (Arquitetura e Fluxo) → salvar
    - Seção 6 (Dependências Inter-Sistemas) — incluir mocks se criados → salvar
    - Seção 7 (Estratégia de Testes) → salvar
@@ -1673,7 +1999,9 @@ Para cada decisão técnica que envolva trade-off: criar ADR.
 
 2.2. Se mock contracts criados: gerar task de substituição e documentar em Seção 6
 
-2.3. Validação ao final:
+2.3. **Gerar `docs/techspec/[feature]/quickstart.md` (obrigatório, não sob demanda)**: stack, estrutura de pastas, setup mínimo, cenários principais por RF (Dado/Quando/Então + exemplo executável), pontos de atenção e cenários de teste críticos. É o guia rápido que `/implement` e `/tdd` consultam antes de codificar.
+
+2.4. Validação ao final:
 ```
 python .agents/scripts/validate.py --mode output \
   --rules .agents/skills/techspec/validate-rules.json \
@@ -1703,12 +2031,23 @@ Salvar cada dimensão no canvas `docs/spdd/[feature]-canvas.md` individualmente:
 
 Salvar canvas após cada dimensão atualizada.
 
+### Fase 3.5 — Comitê de Análise Assíncrono (opcional)
+
+Com a TechSpec e os artefatos granulares salvos, oferecer revisão cruzada:
+
+> "A TechSpec foi gerada e salva. Deseja que eu submeta este planejamento aos agents especialistas (Architect, Security, Database, DevOps, QA) em background para revisão crítica antes de avançar para `/tasks`? [Sim/Não]"
+
+- **Se sim**: invocar os agents relevantes via ferramenta `Agent`, cada um lendo os arquivos salvos em disco (não colar conteúdo no prompt), avaliando gargalos de performance, falhas de modelagem, riscos de segurança e testabilidade dos contratos. Apresentar feedback consolidado (1-3 pontos por agent) e perguntar se aceita atualizar os arquivos salvos. Se aceitar, aplicar e re-validar.
+- **Se não**: seguir para a Fase 4.
+
 ### Fase 4 — Handoff
 
 Atualizar `memory/state.md`:
 - Artifact Registry: `docs/techspec/[feature]-techspec.md | 1.0 | ok`
 - Se PRD foi mantido sem alteração: TechSpec status = `ok`
 - Marcar feature como "Em especificação técnica → pronto para /tasks"
+
+**Rede de segurança — detecção de interface visual:** se `docs/design/[feature]-design-brief.md` **não existir** e algum `systems/[sistema]/guidelines/stack.md` envolvido indicar framework de UI (React, Next.js, Vue, Angular, Flutter, SwiftUI etc.), alertar o usuário e recomendar rodar `/designer` antes do `/tasks` — mesmo que o `/prd` já devesse ter sugerido. Nunca assumir silenciosamente que a feature é backend-only.
 
 ## Artefatos
 
@@ -1719,7 +2058,10 @@ Atualizar `memory/state.md`:
 
 **Saída:**
 - `docs/techspec/[feature]-techspec.md` — TechSpec principal
-- `docs/techspec/[feature]/data-model.md` — modelo de dados detalhado
+- `docs/techspec/[feature]/data-model.md` — modelo de dados detalhado (fonte de verdade)
+- `docs/techspec/[feature]/contracts/[recurso].md` — um arquivo por recurso de API (fonte de verdade), se aplicável
+- `docs/techspec/[feature]/quickstart.md` — guia rápido de implementação (obrigatório)
+- `docs/techspec/[feature]-research.md` — se 2+ incertezas técnicas foram resolvidas na Fase 0.5
 - `docs/contracts/[X]-mock-contract.md` — se sistemas externos indisponíveis
 - `docs/decisions/ADR-[NNN]-*.md` — ADRs de decisões técnicas
 - `docs/spdd/[feature]-canvas.md` — dimensões E, A, S, N atualizadas
@@ -1789,6 +2131,27 @@ Gerar e executar a suíte de testes de uma task com base nos critérios de aceit
 - Perguntar ao usuário, se não estiver explícito no pedido: "Task ainda não implementada (TDD) ou código já existe e você quer fechar cobertura (audit)?"
 - **TDD mode:** cada bloco Gherkin do RF vira um teste que falha (Red) antes de qualquer código de produção — delega a implementação em si para `/tdd` ou `/implement`
 - **Audit mode:** ler o código já implementado, mapear caminhos e branches não cobertos, gerar testes complementares para os critérios de aceite ainda sem teste
+
+### Fase 1.5 — Plano de testes (confirmação antes de gerar)
+
+Antes de escrever qualquer arquivo de teste, apresentar o plano e aguardar confirmação:
+
+```markdown
+## Plano de Testes — [Task/RF]
+
+### Escopo
+- Tipo: [unitário/integração/e2e] | Ferramenta: [conforme testing.md] | Arquivo(s): [caminho esperado]
+
+### Cenários
+- Happy path: [N cenários]
+- Casos de borda: [N cenários]
+- Fluxos de erro: [N cenários]
+
+### Dependências a mockar
+- [dependência] — [motivo]
+```
+
+Perguntar: "O plano cobre o necessário ou há cenário adicional antes de gerar o código?" Só prosseguir para a Fase 2 após confirmação — evita gerar suítes grandes que precisam ser refeitas por escopo mal calibrado.
 
 ### Fase 2 — Geração da suíte
 

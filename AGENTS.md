@@ -1,17 +1,17 @@
 # AGENTS.md — CRUDAO
 
 > Referência canônica de skills e agents disponíveis neste workspace SSPDD.
-> Gerado automaticamente por `init.py` em 2026-08-22. Não editar manualmente — reexecute `init.py`/`update.ps1` para regenerar.
+> Gerado automaticamente por `init.py` em 2026-08-24. Não editar manualmente — reexecute `init.py`/`update.ps1` para regenerar.
 
 ---
 
-## Pipeline SDD
+## Pipeline SSPDD
 
 ```
-/guidelines → /prd → [/clarify] → [/checklist] → /techspec → /spdd-canvas → /tasks → [/analyze] → /implement → [/spdd-sync] → /code-review
+/guidelines → /discovery → /prd → [/clarify] → [/checklist] → [/designer] → /techspec → /tasks → [/analyze] → /implement ou /tdd → /code-review → /tests → [/spdd-sync]
 ```
 
-Skills entre colchetes `[/skill]` são opcionais mas recomendadas.
+`/guidelines` é setup por sistema (uma vez, não por feature). O REASONS Canvas é iniciado em `/discovery` e enriquecido progressivamente por cada skill até `/code-review`. Skills entre colchetes `[/skill]` são opcionais mas recomendadas.
 
 ---
 
@@ -21,7 +21,7 @@ Skills entre colchetes `[/skill]` são opcionais mas recomendadas.
 - **/checklist** — Gera checklists de qualidade para validar o quão bem os requisitos estão escritos no PRD e na TechSpec, funcionando como testes unitários dos requisitos. Use ao verificar se requisitos estão completos, claros e mensuráveis antes de avançar para TechSpec ou implementação.
 - **/clarify** — Identifica e resolve ambiguidades no PRD ativo, fazendo perguntas direcionadas uma de cada vez e atualizando o documento incrementalmente. Use quando o PRD tem termos vagos, métricas ausentes, critérios de aceite imprecisos ou casos de borda não definidos que podem gerar retrabalho.
 - **/code-review** — Realiza code review integrado contra guidelines do projeto, TechSpec e critérios de aceite da task, com análise de segurança obrigatória. Ao final, extrai guardrails para atualizar dimensão S (Safeguards) do canvas. Use após implementar uma task antes de mergar.
-- **/designer** — Conduz entrevista de descoberta de design para definir guidelines de UX/UI e gerar um design brief para prototipagem. Atualiza dimensão E do canvas com entidades visuais/UX. Use no início de features com interface visual, antes do handoff para prototipagem.
+- **/designer** — Conduz entrevista de descoberta de design (após /prd, antes de /techspec) para features com interface visual — mapeia telas, fluxos, estados e requisitos de acessibilidade, gera o Design Brief e aciona o agente prototipador autônomo para gerar tokens e protótipos navegáveis. Atualiza dimensão E do canvas com entidades visuais/UX. Pular para features puramente backend/API.
 - **/discovery** — Conduz levantamento leve de problema, personas e contexto de negócio, inicializando o REASONS Canvas com dimensões R e E em DRAFT. Use como porta de entrada do pipeline antes do /prd.
 - **/guidelines** — Conduz entrevista de stack e arquitetura para gerar os arquivos de guidelines do sistema (stack, architecture, coding-standards, testing, security, observability, git-workflow, skill-conventions, spdd-integration). Cria ADRs para decisões técnicas significativas. Use no início de cada novo sistema antes de /techspec.
 - **/implement** — Executa uma task de implementação com precisão seguindo TechSpec, guidelines e canvas do projeto. Lê dimensões N (Norms) e S (Safeguards) do canvas como contexto. Use para implementar uma task específica do documento de tasks, produzindo código rastreável pronto para code review.
@@ -41,7 +41,7 @@ Agents são especialistas invocáveis para decisões pontuais durante o pipeline
 
 - **architect** — Responsável por decisões de arquitetura de software: estrutura de módulos, padrões de design, trade-offs técnicos e consistência entre sistemas.
 - **database** — Responsável por modelagem de dados, esquemas, migrações e desempenho de consultas.
-- **designer** — Responsável por UX/UI: consistência visual, usabilidade e handoff de design para prototipagem.
+- **designer** — Desenvolvedor Frontend Prototipador operando em background no pipeline SSPDD. Materializa as definições de negócio (PRD) e estética (Design Brief) em código real — protótipos navegáveis de alta fidelidade. **Não faz perguntas ao usuário**: lê, analisa, gera os artefatos diretamente nos arquivos do projeto e informa que concluiu.
 - **devops** — Responsável por CI/CD, infraestrutura, deploy e observabilidade operacional.
 - **qa** — Responsável pela estratégia de testes, cobertura e qualidade funcional das entregas.
 - **security** — Responsável pela análise de segurança: vulnerabilidades, controles de acesso e conformidade com guardrails.

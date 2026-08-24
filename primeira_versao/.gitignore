@@ -1,0 +1,50 @@
+# SSPDD workspace .gitignore
+# Gerado em: 2026-08-22 para CRUDAO
+
+# Segredos e credenciais
+.env
+.env.*
+.env.local
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Artefatos temporários
+*.tmp
+*.bak
+
+# Backend (Java/Maven)
+systems/CRUDAO/backend/target/
+systems/CRUDAO/backend/logs/
+
+# Frontend (Node/Next.js)
+systems/CRUDAO/frontend/node_modules/
+systems/CRUDAO/frontend/.next/
+systems/CRUDAO/frontend/out/
+systems/CRUDAO/frontend/*.tsbuildinfo
+systems/CRUDAO/frontend/next-env.d.ts
+
+# Mantidos explicitamente no git (não ignorar):
+# docs/
+# memory/constitution.md
+# memory/state.md
+# .agents/
+# scripts/

@@ -1,5 +1,8 @@
 # SSPDD workspace .gitignore
-# Gerado em: 2026-08-22 para CRUDAO
+# Gerado em: 2026-08-24 para CRUDAO
+
+# Sistemas externos — cada um tem seu próprio repositório git
+systems/
 
 # Segredos e credenciais
 .env
@@ -30,17 +33,6 @@ Thumbs.db
 # Artefatos temporários
 *.tmp
 *.bak
-
-# Backend (Java/Maven)
-systems/CRUDAO/backend/target/
-systems/CRUDAO/backend/logs/
-
-# Frontend (Node/Next.js)
-systems/CRUDAO/frontend/node_modules/
-systems/CRUDAO/frontend/.next/
-systems/CRUDAO/frontend/out/
-systems/CRUDAO/frontend/*.tsbuildinfo
-systems/CRUDAO/frontend/next-env.d.ts
 
 # Mantidos explicitamente no git (não ignorar):
 # docs/

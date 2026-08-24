@@ -1,0 +1,22 @@
+{
+  "skill": "discovery",
+  "artifact_pattern": "docs/discovery/*-discovery.md",
+  "modes": {
+    "input": {
+      "check_registry": false,
+      "required_artifacts": []
+    },
+    "output": {
+      "required_sections": [
+        "## 1. Problema",
+        "## 2. Personas",
+        "## 3. Objetivos de Negócio",
+        "## 4. Hipótese de Solução"
+      ],
+      "id_patterns": {},
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": []
+    }
+  }
+}

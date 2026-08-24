@@ -6,5 +6,5 @@
 @memory/state.md
 @README.md
 
-> Workspace SSPDD gerado em 2026-08-22 (idioma: pt_BR).
+> Workspace SSPDD gerado em 2026-08-24 (idioma: pt_BR).
 > `CLAUDE.md` e `AGENTS.md` são sempre mantidos em conteúdo equivalente — `AGENTS.md` é a fonte canônica cross-vendor (skills e agents), `CLAUDE.md` referencia via `@`.

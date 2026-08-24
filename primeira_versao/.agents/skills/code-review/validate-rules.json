@@ -1,0 +1,23 @@
+{
+  "skill": "code-review",
+  "artifact_pattern": "docs/checklists/*-review.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## Segurança",
+        "## Qualidade de Código",
+        "## Resultado"
+      ],
+      "id_patterns": {},
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": []
+    }
+  }
+}
