@@ -139,7 +139,7 @@ _Atualizado por: /techspec v1.1 — 2026-08-23_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review (agent QA) — 2026-08-23, a partir das TASK-05.0, TASK-05.1 e TASK-05.2_
+_Atualizado por: /code-review — 2026-08-24, a partir da TASK-06.1_
 > Decisões: —
 
 **Restrições:**
@@ -155,6 +155,8 @@ _Atualizado por: /code-review (agent QA) — 2026-08-23, a partir das TASK-05.0,
 - **G-RBAC-07** (v1.2, TechSpec — comitê de análise, achado security): `papel:gerenciar` nunca é atribuível via `UsuarioProjetoPapel` — é checada exclusivamente contra `Usuario.admin`, nunca contra papel de projeto. `PUT /api/projetos/{id}/membros/{usuarioId}` deve rejeitar qualquer papel cuja permissão inclua `papel:gerenciar` (além do papel `admin` em si). RN-006 do PRD superseded em parte por este guardrail (PRD v1.3).
 - **G-RBAC-08** (v1.2, TechSpec — comitê de análise, achado architect): a checagem de "projeto finalizado" (RN-015) deve viver dentro de `AutorizacaoProjetoService.exigirPermissao` (ponto único), não replicada como validação independente em cada Service — evita a mesma classe de esquecimento silencioso do G-RBAC-06.
 - **G-FE-02** (TASK-05.3, code review agent QA): gating de UI baseado em permissões (`GET /api/usuarios/me`) deve preferir checagem direta (`permissoes.includes(chave)` / `admin || permissoesProjeto.has(chave)`) a listas sintéticas hardcoded por papel (ex.: `if (admin) return new Set([...chaves fixas...])`) — reduz risco de uma nova tela esquecer de estender a lista sintética ao introduzir uma nova chave de permissão. Ver `AdminApp.tsx` (`permissoesProjeto`).
+- **G-RBAC-09** (TASK-06.1, code review — achado exposto pela suíte E2E, débito técnico não bloqueante): todo ponto de auto-provisionamento "find-or-create" sob concorrência (ex.: `UsuarioContexto.provisionar`, primeiro login de um usuário) deve tratar a corrida entre a busca e a inserção — capturar `DataIntegrityViolationException` e recair para uma nova busca, ou usar `INSERT ... ON CONFLICT`. Mesma classe de problema já resolvida para refresh de token em G-AUTH-04; `RbacSeeder.buscarOuCriarPapel`/`buscarOuCriarPermissao` não sofrem disso por rodarem sequencialmente no startup, mas `UsuarioContexto.provisionar` roda sob requisição HTTP concorrente e ainda não tem a mesma proteção — reproduzido de forma determinística rodando a suíte E2E com workers paralelos contra um volume novo.
+- **G-TEST-01** (TASK-06.1): specs E2E que localizam um elemento por texto renderizado devem preferir `getByTestId(...).filter({ hasText })` a encadear `.locator('..')` a partir do nó de texto — a segunda forma quebra com qualquer mudança de profundidade do DOM do componente, sem relação com o comportamento sendo testado. Ver `board.spec.ts`/`rbac.spec.ts` (`data-testid="card-tarefa"`).
 
 **O que NÃO fazer:**
 - Não expor `access_token`/`refresh_token`/`id_token` ao JS do browser para chamadas REST — toda chamada autenticada à API passa pelo proxy server-side (`/api/proxy/[...path]`), nunca por fetch direto do client com o token. **Exceção documentada:** `GET /api/ws-token` expõe o `access_token` ao client especificamente para o header CONNECT do STOMP (a lib roda no browser e conecta direto ao backend, sem passar pelo proxy) — o token não é persistido pelo client (sem localStorage/cookie), só usado em memória no momento do connect.

@@ -25,7 +25,7 @@ _Atualizado em: 2026-08-22_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-configuravel | CRUDAO | 1.3 | 1.2 | 1.1 | Em implementação — RBAC redesenhado por projeto (BDR-001); canvas READY; próxima: TASK-04.2 |
+| kanban-configuravel | CRUDAO | 1.3 | 1.3 | 1.1 | Implementação completa (16/16 tasks, 00.1 a 06.1) — E2E cobrindo fluxos críticos e RBAC por projeto; code review ainda não executado |
 
 ---
 
@@ -179,6 +179,24 @@ _Atualizado em: 2026-08-22_
 - **Nota técnica:** heurística "dev-tier" (tem `tarefa:gerenciar` mas não `tarefa:atribuir`) no frontend é só gating de UX, mesma lógica do backend (`TarefaService.ehDevTier`) — backend é a fonte real de autorização (RNF-003)
 - **Code review:** agent QA (general-purpose) — aprovado sem findings bloqueantes; 2 🟡 não corrigidos (botão "Atribuir a mim" não checa vínculo ao projeto antes de exibir — backend já rejeita corretamente; `key={i}` na tabela de histórico por falta de id no DTO)
 - **Próxima task:** TASK-05.3 (painel de administração — arquivos já presentes no working tree, não commitados/registrados aqui) ou TASK-06.1 (testes E2E)
+
+- **Verificação:** TASK-05.3 — Frontend: Painel de Administração — confirmada como já implementada e concluída (arquivo individual marcado "Concluída — 2026-08-24"; `frontend/src/app/admin/`, `frontend/src/components/admin/`, `backend/.../MigracaoAdminRunner.java` presentes no working tree, ainda não commitados) — verificação feita ao iniciar a TASK-06.1, que dependia dela
+
+- **Task implementada:** TASK-06.1 — Testes E2E dos fluxos principais e revisão de cobertura — 2026-08-24
+- **Arquivos:** `frontend/playwright.config.ts` (novo); `frontend/e2e/{fixtures/api.ts,fixtures/login.ts,board.spec.ts,dashboard.spec.ts,rbac.spec.ts}` (novos, 14 testes); `frontend/vitest.config.ts` (+ `exclude: ['e2e/**']`, evita que o vitest tente rodar specs do Playwright); `frontend/src/components/board/{CardTarefa,BoardApp}.tsx` (+ `data-testid` em card/menu/célula — únicos hooks de teste que faltavam para seletores E2E estáveis, sem mudança de comportamento)
+- **Ferramenta escolhida (Q-005):** Playwright — specs rodam contra a stack real via `docker compose up` (não sobem/derrubam a stack sozinhas)
+- **Testes:** 14 testes E2E (Playwright) cobrindo RF-001/002/004/005/012 (board: mover via menu e via drag-and-drop, 409 em transição inválida, impedimento, desfinalizar/REABERTURA, tempo real STOMP ≤2s), RF-006/RF-007 (dashboard assíncrono), e RBAC por projeto (bloqueio de ação sem permissão, isolamento entre projetos, autoatribuição RN-012, `tarefa:finalizar` na ida e na volta RN-011, projeto finalizado bloqueando escrita RN-015, toggles RF-016 travando edição, aba "Papéis" só admin global) — todos passando contra `docker compose up` real; suíte unitária do frontend (43 testes) e do backend (`mvn test` + `spotless:check`) revalidadas, sem regressão; `next build` e `tsc --noEmit` limpos
+- **Setup de fixtures:** specs usam a API do backend autenticada via Keycloak (password grant, `directAccessGrantsEnabled` do realm de dev) para montar cada cenário (projeto/workflow/etapas/transições/raia/tarefas/membros) — cada teste cria seu próprio projeto, evitando interferência entre testes paralelos; a UI só é exercitada nos pontos que o critério de aceite pede
+- **Achado de ambiente corrigido:** volume local do PostgreSQL estava desatualizado (schema anterior à TASK-01.3/02.3 — `ddl-auto=update` não conseguia adicionar `tarefa.iniciada`/`usuario.admin` como `NOT NULL` em tabelas com linhas existentes); resetado (`docker compose down -v`) com autorização do usuário, mesmo padrão de residual já registrado nas notas de ambiente das TASK-03.1/05.2
+- **Cobertura vs. metas de testing.md:** TDD amplo nos Services de domínio (visível pelo histórico de tasks — cada regra de negócio relevante tem teste unitário dedicado); não há ferramenta de medição de cobertura configurada no backend (sem JaCoCo) nem no frontend — meta numérica (80% TDD / 100% BDD) não é verificável automaticamente hoje. Não bloqueante para esta task (revisão qualitativa feita), registrado como débito técnico não bloqueante para eventual task futura de observabilidade/CI.
+- **Canvas:** `docs/spdd/kanban-configuravel-canvas.md` já estava `READY` (7/7 dimensões) desde 2026-08-23 — confirmado sem necessidade de alteração
+- **Code review:** TASK-06.1 — APROVADO COM RESSALVAS — 2026-08-24
+- **Findings:** 0 críticos, 2 importantes (I1 meta de cobertura sem tooling de medição — JaCoCo ausente; I2 race condition real em `UsuarioContexto.provisionar` sob login concorrente, achada pela suíte E2E, mitigada no fixture `global-setup.ts`, correção na origem fica para task futura), 2 sugestões (S1 aplicado — seletores por `data-testid` em vez de `.locator('..')`; S2 avaliado — credenciais de dev duplicadas em `e2e/fixtures/api.ts`, mesmo valor já público em `crudao-realm.json`)
+- **Arquivos ajustados no review:** `frontend/e2e/global-setup.ts` (novo — provisiona admin.teste/user.teste serialmente antes dos workers paralelos), `frontend/playwright.config.ts` (+ `globalSetup`), `frontend/e2e/{board,rbac}.spec.ts` (seletores por `data-testid` — finding S1)
+- **Artefato:** `docs/checklists/kanban-configuravel-TASK-06.1-review.md`
+- **Canvas:** dimensão S atualizada (guardrails G-RBAC-09, G-TEST-01) — permanece `READY`
+- **Próximo passo:** abrir task de bug-fix para I2 (race condition em `UsuarioContexto.provisionar`) quando conveniente; feature pronta para merge
+- **Feature kanban-configuravel:** todas as 16 tasks do plano (00.1 a 06.1) concluídas e revisadas
 
 ## Reorganização — código movido para systems/CRUDAO/
 

@@ -36,6 +36,8 @@ export function CardTarefa({
   return (
     <div
       className={styles.card}
+      data-testid="card-tarefa"
+      data-etapa-atual-id={tarefa.etapaAtualId}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('text/plain', tarefa.id);
@@ -81,7 +83,7 @@ export function CardTarefa({
       </div>
 
       {menuAberto && (
-        <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.menu} data-testid="menu-acoes-tarefa" onClick={(e) => e.stopPropagation()}>
           {acoes.length === 0 && (
             <span className={styles.menuItem} style={{ color: 'var(--color-text-secondary)' }}>
               Nenhuma transição disponível

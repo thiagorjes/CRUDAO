@@ -7,5 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    // e2e/ são specs do Playwright (TASK-06.1) — suíte e runner separados do vitest.
+    exclude: ['**/node_modules/**', 'e2e/**'],
   },
 });

@@ -308,6 +308,7 @@ function BoardGrid({
             return (
               <div
                 key={chave}
+                data-testid={`celula-etapa-${etapa.id}`}
                 className={`${styles.celula} ${valida ? styles.celulaValida : ''} ${destacadaAgora ? styles.celulaValida : ''}`}
                 onDragOver={(e) => {
                   if (!valida) return;
