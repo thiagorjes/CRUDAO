@@ -61,6 +61,17 @@ _Atualizado em: 2026-08-24_
 
 ## kanban-tarefas
 
+- **Etapa concluída:** /implement TASK-03.3 — 2026-08-25
+- **Task implementada:** TASK-03.3 — CRUD de Raia (swimlanes), incl. migration V4 com seed de raia default global `projeto_id=null` (RF-011, RN-CB-005) — 2026-08-25
+- **Arquivos:** systems/CRUDAO/backend/src/main/resources/db/migration/V4__raia.sql (novo); .../domain/raia/{Raia,RaiaRepository}.java (novo pacote); .../raia/{RaiaService,RaiaController,RaiaResponse,CriarRaiaRequest,EditarRaiaRequest}.java (novo pacote); teste .../raia/RaiaServiceTest.java (novo)
+- **Padrão seguido:** idêntico a TASK-03.2 (Workflow) — leitura via `permissaoGuard.membro` (só vínculo ao projeto), escrita via `permissaoGuard.exigir("workflow:administrar")` + `exigirProjetoAtivo` (RN-015). Raia default global (`projeto=null`) nunca editável/excluível via `PUT/DELETE /api/raias/{id}` — bloqueada com `422` em `buscarRaiaDoProjeto`.
+- **RN-005:** stub `possuiTarefasAtivasNaRaia` sempre `false`, mesma decisão fechada de TASK-03.2/TASK-04.1 (Comitê de Análise) — substituição obrigatória em TASK-04.1.
+- **Testes:** `mvn test` (sem ITs) — suíte completa verde, incl. 13 casos novos em `RaiaServiceTest` (listar com/sem vínculo, fallback para raia global, criar/editar/excluir autorizado e não autorizado, nome vazio, ordem negativa, raia global bloqueada, 404).
+- **Code review:** agent QA (contexto fresco, persona via general-purpose) — 0 findings 🔴; 2 findings 🟡 corrigidos: ausência de `UNIQUE(projeto_id, ordem)` na migration V4 (→ `uk_raia_projeto_ordem`, tratamento de `DataIntegrityViolationException` → `409` em `criar`/`editar`, consistente com `Etapa`), cobertura de teste incompleta (adicionados casos de nome vazio, sem-permissão em editar/excluir, projeto finalizado, exclusão de raia global). Nitpick 🟢 "buscar recurso antes de autorizar" (mesmo padrão já aceito em TASK-03.2) mantido por consistência.
+- **Próxima task:** TASK-04.1 — Migrations V5-V6 + criar card (dona da checagem real de RN-005, obrigatória)
+
+_Etapa anterior:_
+
 - **Etapa concluída:** /implement TASK-03.2 — 2026-08-25
 - **Task implementada:** TASK-03.2 — CRUD Workflow/Etapa/Transicao, dona da migration V3 (RF-002, RF-009, RF-010) — 2026-08-25
 - **Arquivos:** systems/CRUDAO/backend/src/main/resources/db/migration/V3__workflow_etapa_transicao.sql (novo); .../domain/workflow/{Workflow,Etapa,Transicao,WorkflowRepository,EtapaRepository,TransicaoRepository}.java (novo pacote); .../workflow/{WorkflowService,WorkflowController,EtapaController} + DTOs (novo pacote); teste .../workflow/WorkflowServiceTest.java (novo)

@@ -95,7 +95,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [ ] TASK-02.3 — CRUD papéis/permissões/usuários (dona da migration V8)
 - [x] TASK-03.1 — CRUD Projeto incl. finalizar/reabrir
 - [x] TASK-03.2 — CRUD Workflow/Etapa/Transicao
-- [ ] TASK-03.3 — CRUD Raia
+- [x] TASK-03.3 — CRUD Raia
 - [ ] TASK-04.1 — Migrations V5-V6 + criar card
 - [ ] TASK-04.2 — Mover tarefa: transição + congelamento + lead-time
 - [ ] TASK-04.3 — Impedimento: marcar/desmarcar

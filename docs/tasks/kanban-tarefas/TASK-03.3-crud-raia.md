@@ -1,5 +1,6 @@
 # TASK-03.3 — CRUD Raia (swimlanes)
 
+**Status:** Concluída — 2026-08-25
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RF-011
