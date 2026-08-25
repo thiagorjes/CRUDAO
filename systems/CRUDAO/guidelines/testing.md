@@ -4,6 +4,7 @@ _Versão: 1.0 | Data: 2026-08-22_
 ## Backend
 
 - **Framework:** JUnit 5 + Testcontainers (para testes de integração com PostgreSQL real).
+- **Pré-requisito de ambiente (achado TASK-02.3):** `SecurityConfig` registra `spring-boot-starter-oauth2-client`, cujo autoconfigure resolve o _issuer_ OIDC (`ClientRegistrationRepository`) **eagerly na subida do `ApplicationContext`** — qualquer teste que suba contexto Spring completo (`@SpringBootTest`, ou `@WebMvcTest` que importe a configuração de segurança real) exige um Keycloak acessível em `http://localhost:8080/realms/kanban-dev`. Antes de rodar `mvn test` localmente: `docker compose up -d keycloak postgres` (na raiz de `systems/CRUDAO/`) e aguardar `healthy`. Testes que usam apenas mocks (Mockito, sem `@SpringBootTest`) não precisam disso.
 
 ## Frontend
 

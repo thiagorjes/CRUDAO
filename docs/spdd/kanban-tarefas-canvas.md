@@ -1,5 +1,5 @@
 # REASONS Canvas — Kanban de Tarefas
-_Status: DRAFT | Idioma: pt_BR | Iniciado em: 2026-08-24_
+_Status: READY | Idioma: pt_BR | Iniciado em: 2026-08-24_
 
 > **Como usar:** cada skill do pipeline preenche suas dimensões ao concluir.
 > Canvas transita de DRAFT → READY quando todas as 7 dimensões estiverem preenchidas.
@@ -93,7 +93,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [ ] TASK-02.1 — OIDC Keycloak + provisioning JIT + /api/me + logout
 - [ ] TASK-02.2 — RBAC: motor de permissões efetivas + guard (TDD obrigatório)
 - [ ] TASK-02.3 — CRUD papéis/permissões/usuários (dona da migration V8)
-- [ ] TASK-03.1 — CRUD Projeto incl. finalizar/reabrir
+- [x] TASK-03.1 — CRUD Projeto incl. finalizar/reabrir
 - [ ] TASK-03.2 — CRUD Workflow/Etapa/Transicao
 - [ ] TASK-03.3 — CRUD Raia
 - [ ] TASK-04.1 — Migrations V5-V6 + criar card
@@ -132,11 +132,21 @@ _Atualizado por: /techspec v1.0 — 2026-08-25_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review v1.0 — [pendente]_
+_Atualizado por: /implement TASK-02.3 — 2026-08-25_
 > Decisões: —
 
 **Restrições:**
-- {{RESTRICAO_1}}
+- RN-006 — papel `admin` (global, `protegido=true`) nunca pode ser editado, excluído, ter seus toggles alterados, **nem associado a um usuário via `POST /api/projetos/{projetoId}/usuarios`** (achado de code review TASK-02.3 — escalação de privilégio: qualquer usuário com `papel:administrar` local conseguia se autoconceder o `admin` global antes da correção).
+- RN-017 — usuário não pode alterar `PapelPermissao` de nenhum papel que ele próprio possui no projeto; toda alteração de toggle gera `PapelPermissaoAuditoria`.
+- Testes de integração (`@SpringBootTest`/`@WebMvcTest` que sobem `SecurityConfig` real) exigem Keycloak acessível — `docker compose up -d keycloak postgres` antes de `mvn test` (ver `guidelines/testing.md` e `techspec/kanban-tarefas/quickstart.md`).
 
 **O que NÃO fazer:**
-- {{NAO_FAZER_1}}
+- Não tratar chave de papel duplicada no projeto como caso "não vai acontecer" — a constraint `uk_papel_projeto_chave` estoura `DataIntegrityViolationException`; validar antes do `save` e responder `409`.
+- Não confiar em `papel.getProjeto() != null` sozinho para validar se um papel pode ser associado — `admin` tem `projeto=null` e é o caso que mais precisa ser bloqueado (checar `protegido` primeiro).
+
+---
+
+_Atualizado por: /implement TASK-03.1 — 2026-08-25_
+
+- **ADR-007** — bootstrap do primeiro admin via `Usuario.adminGlobal` (flag, não papel) setado no primeiro login do e-mail configurado em `kanban.bootstrap.admin-email`; `PermissaoGuard` bypassa RBAC escopado para `adminGlobal=true`, exceto `exigirProjetoAtivo` (RN-015 vale sempre, sem exceção para nenhum papel).
+- **Guard reutilizável `PermissaoGuard.exigirProjetoAtivo(projetoId)`** (RN-015) — chamar em todo endpoint de escrita das epics 04+ antes de gravar; `KANBAN_BOOTSTRAP_ADMIN_EMAIL` é obrigatória em produção (sem ela, ninguém cria o primeiro projeto).

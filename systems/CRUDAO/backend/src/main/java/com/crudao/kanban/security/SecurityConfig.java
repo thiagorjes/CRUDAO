@@ -1,0 +1,71 @@
+package com.crudao.kanban.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+/**
+ * Autenticação via Keycloak (OIDC), sem fallback local (ADR-006).
+ *
+ * <p>Duas filter chains: {@code /api/**} como resource server stateless e o restante com {@code
+ * oauth2Login} para o fluxo de Authorization Code (login via browser).
+ *
+ * <p>O resource server valida o Bearer token via <b>introspection (opaque token)</b>, não via
+ * decodificação local de JWT — isso garante que {@code POST /api/auth/logout} revogando o token no
+ * Keycloak (achado do Comitê — Security) tenha efeito imediato: a próxima chamada com o mesmo
+ * token recebe {@code inactive=true} do endpoint de introspection e cai em 401, em vez de
+ * continuar válido até a expiração natural do JWT.
+ *
+ * <p>{@code @EnableMethodSecurity} habilita {@code @PreAuthorize} nos controllers de escrita das
+ * demais epics, usando {@code @permissaoGuard.permitido(...)} (RBAC — TASK-02.2, RNF-003).
+ */
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    @Bean
+    @Order(1)
+    public SecurityFilterChain apiFilterChain(
+            HttpSecurity http, AtivoUsuarioFilter ativoUsuarioFilter) throws Exception {
+        http.securityMatcher("/api/**")
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/api/ping").permitAll()
+                                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
+                .addFilterAfter(ativoUsuarioFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain browserFilterChain(
+            HttpSecurity http, OidcLoginSuccessHandler oidcLoginSuccessHandler) throws Exception {
+        http.authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(
+                                                "/actuator/health/liveness",
+                                                "/actuator/health/readiness",
+                                                "/oauth2/**",
+                                                "/login/**")
+                                        .permitAll()
+                                        // demais endpoints do actuator (incl. /actuator/health com
+                                        // show-details=always) exigem sessão autenticada — não
+                                        // podem expor detalhes internos (ex.: stacktrace do
+                                        // health-check do Keycloak) sem autenticação.
+                                        .anyRequest()
+                                        .authenticated())
+                .oauth2Login(oauth2 -> oauth2.successHandler(oidcLoginSuccessHandler));
+        return http.build();
+    }
+}

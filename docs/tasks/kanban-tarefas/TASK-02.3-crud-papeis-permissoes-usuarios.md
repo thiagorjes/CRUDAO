@@ -1,5 +1,7 @@
 # TASK-02.3 — CRUD de papéis/permissões/usuários (RN-006, RN-017)
 
+**Status:** Concluída — 2026-08-25
+
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RF-013, RF-015, RF-016

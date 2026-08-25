@@ -7,6 +7,12 @@ spring:
   profiles:
     active: dev
 
+kanban:
+  bootstrap:
+    # E-mail do usuário que vira admin global (RF-008, ADR-007) no primeiro login OIDC — sem
+    # default em produção, deve ser setado via env var KANBAN_BOOTSTRAP_ADMIN_EMAIL.
+    admin-email: ${KANBAN_BOOTSTRAP_ADMIN_EMAIL:}
+
 management:
   endpoints:
     web:
@@ -16,3 +22,4 @@ management:
     health:
       probes:
         enabled: true
+      show-details: always

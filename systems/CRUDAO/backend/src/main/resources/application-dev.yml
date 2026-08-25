@@ -25,8 +25,20 @@ spring:
           keycloak:
             issuer-uri: http://localhost:8080/realms/kanban-dev
       resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8080/realms/kanban-dev
+        opaquetoken:
+          introspection-uri: http://localhost:8080/realms/kanban-dev/protocol/openid-connect/token/introspect
+          client-id: kanban-frontend
+          client-secret: kanban-dev-secret
+
+app:
+  keycloak:
+    issuer-uri: http://localhost:8080/realms/kanban-dev
+
+kanban:
+  bootstrap:
+    # admin.teste já cadastrado no realm dev (keycloak/realm-export.json) — vira admin global no
+    # primeiro login.
+    admin-email: admin.teste@crudao.local
 
 logging:
   level:

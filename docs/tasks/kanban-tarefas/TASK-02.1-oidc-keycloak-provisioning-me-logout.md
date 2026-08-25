@@ -12,12 +12,14 @@ Habilita login via SSO — pré-requisito de qualquer ação autenticada no sist
 
 ## O que deve ser feito
 
-- [ ] Configurar Spring Security OAuth2 Client para Authorization Code Flow com Keycloak.
-- [ ] Implementar provisioning just-in-time de `Usuario` a partir do `sub`/claims do token no primeiro login.
-- [ ] Implementar `GET /api/me` retornando usuário + vínculos projeto/papel.
-- [ ] Implementar `POST /api/auth/logout` com RP-Initiated Logout (back-channel) no Keycloak.
-- [ ] Retornar `401` se `Usuario.ativo=false` mesmo com token válido (achado do Comitê — Security).
-- [ ] Health-check dedicado de dependência Keycloak (`/actuator/health/keycloak` ou equivalente).
+- [x] Configurar Spring Security OAuth2 Client para Authorization Code Flow com Keycloak.
+- [x] Implementar provisioning just-in-time de `Usuario` a partir do `sub`/claims do token no primeiro login.
+- [x] Implementar `GET /api/me` retornando usuário + vínculos projeto/papel.
+- [x] Implementar `POST /api/auth/logout` com RP-Initiated Logout (back-channel) no Keycloak.
+- [x] Retornar `401` se `Usuario.ativo=false` mesmo com token válido (achado do Comitê — Security).
+- [x] Health-check dedicado de dependência Keycloak (`/actuator/health/keycloak` ou equivalente).
+
+**Status: Concluída** — 2026-08-25
 
 ## Guia técnico
 

@@ -1,5 +1,6 @@
 # TASK-01.2 — Migrations V1-V2: Usuario, Projeto, Papel, Permissao, PapelPermissao, UsuarioProjetoPapel
 
+**Status:** Concluída — 2026-08-25
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RF-008, RF-013, RF-014, RF-015, RF-016
@@ -12,10 +13,11 @@ Base de dados fundacional para autenticação e RBAC — todas as demais entidad
 
 ## O que deve ser feito
 
-- [ ] Criar migration V1 (Usuario, Projeto) conforme `docs/techspec/kanban-tarefas/data-model.md`.
-- [ ] Criar migration V2 (Papel, Permissao, PapelPermissao, UsuarioProjetoPapel) com seed de papéis (`admin`, `product_owner`, `project_admin`, `dev`, `gestor`), catálogo de permissões (`tarefa:gerenciar`, `tarefa:finalizar`, `tarefa:impedimento`, `projeto:administrar`, `workflow:administrar`, `papel:administrar`, `usuario:associar`) e defaults de `PapelPermissao` refletindo RN-011, RN-012, RN-013, RN-CB-001, RN-CB-002.
-- [ ] Criar entidades JPA correspondentes + repositórios Spring Data.
-- [ ] Garantir `admin` como papel global (`projetoId=null`) e protegido (RN-006).
+- [x] Criar migration V1 (Usuario, Projeto) conforme `docs/techspec/kanban-tarefas/data-model.md`.
+- [x] Criar migration V2 (Papel, Permissao, PapelPermissao, UsuarioProjetoPapel) com catálogo de permissões (8 chaves, incl. `tarefa:excluir` — decisão do Comitê em TASK-04.4) e seed do papel `admin` (global, protegido, com todas as permissões habilitadas).
+  - **Decisão tomada com o usuário:** papéis default por projeto (`product_owner`, `project_admin`, `dev`, `gestor`) **não** são semeados em V2 — são escopados por `Projeto` (que ainda não existe nesta migration). Ficam como constante no código, instanciados pelo `ProjetoService` ao criar um projeto (TASK-03.1), aplicando os defaults de RN-011/012/013/RN-CB-001/002 nesse momento.
+- [x] Criar entidades JPA correspondentes + repositórios Spring Data.
+- [x] Garantir `admin` como papel global (`projetoId=null`) e protegido (RN-006) — reforçado por índice único parcial `uk_papel_global_chave`.
 
 ## Guia técnico
 

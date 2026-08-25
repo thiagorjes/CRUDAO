@@ -1,5 +1,7 @@
 # TASK-03.1 — CRUD de Projeto incl. finalizar/reabrir
 
+**Status: Concluída — 2026-08-25**
+
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RF-008

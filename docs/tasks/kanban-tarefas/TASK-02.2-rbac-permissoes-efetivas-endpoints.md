@@ -1,5 +1,7 @@
 # TASK-02.2 — RBAC: motor de permissões efetivas + guard reutilizável
 
+**Status:** Concluída — 2026-08-25
+
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RF-013 (suporte)

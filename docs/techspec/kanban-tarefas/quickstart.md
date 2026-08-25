@@ -32,6 +32,7 @@ frontend/
 2. Backend: `./mvnw spring-boot:run` — Flyway aplica migrations automaticamente no boot.
 3. Frontend: `npm install && npm run dev`.
 4. Keycloak: realm/client pré-configurado com redirect URI `http://localhost:3000/login/oauth2/code/keycloak`.
+5. Admin global (ADR-007): logue com `admin.teste@crudao.local` / `admin123` (já cadastrado no realm dev) — vira `adminGlobal=true` no primeiro login (property `kanban.bootstrap.admin-email`, já setada em `application-dev.yml`), única forma de criar o primeiro projeto e configurar papéis/usuários.
 
 ## Cenários principais por RF (Dado/Quando/Então)
 
@@ -101,6 +102,7 @@ assertThrows(TransicaoNaoPermitidaException.class,
 - **RNF-003:** toda checagem de permissão do frontend é só UX — replicar sempre no service backend, nunca confiar em "se o botão não aparece, a ação está bloqueada".
 - **RN-011/RN-012:** lógica de atribuição/finalização é a mais sensível a bug silencioso — cobrir com teste unitário por combinação de papel × ação antes de integrar ao controller.
 - **ADR-004:** listener LISTEN/NOTIFY deve reconectar com backoff — sem isso, um pod "surdo" após queda de rede quebra RNF-001 silenciosamente (sem erro visível ao usuário).
+- **Testes de integração exigem Keycloak rodando (achado TASK-02.3):** `spring-boot-starter-oauth2-client` resolve o issuer OIDC eagerly na subida do `ApplicationContext` — qualquer teste `@SpringBootTest`/`@WebMvcTest` que suba o `SecurityConfig` real falha com `ConnectException` sem `docker compose up -d keycloak postgres` rodando antes de `mvn test` (ver `testing.md`). Testes unitários com Mockito (sem contexto Spring) não são afetados.
 
 ## Cenários de teste críticos (resumo)
 

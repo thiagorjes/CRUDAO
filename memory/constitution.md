@@ -28,6 +28,7 @@ _Criada em: 2026-08-24_
 | [ADR-004](../docs/decisions/ADR-004-broadcast-listen-notify.md) | Broadcast de eventos multi-pod via PostgreSQL LISTEN/NOTIFY | Aceito |
 | [ADR-005](../docs/decisions/ADR-005-flyway-migrations.md) | Flyway para versionamento de schema | Aceito |
 | [ADR-006](../docs/decisions/ADR-006-sem-fallback-auth-keycloak.md) | Sem fallback de autenticação local quando Keycloak indisponível | Aceito |
+| [ADR-007](../docs/decisions/ADR-007-bootstrap-admin-global.md) | Bootstrap do primeiro admin via flag `adminGlobal` + e-mail configurado | Aceito |
 
 ### BDR
 

@@ -41,6 +41,7 @@ Projeto ──< Raia                       │
 | nome | varchar(255) | |
 | email | varchar(255) UNIQUE | |
 | ativo | boolean | default true |
+| adminGlobal | boolean | default false — bootstrap do primeiro admin (ADR-007), bypassa RBAC escopado |
 | criadoEm | timestamptz | |
 
 Índices: `UNIQUE(keycloakSub)`, `UNIQUE(email)`.
@@ -291,6 +292,7 @@ Auditoria de alterações em toggles de permissão (RF-016, RN-017 — comitê d
 | V6 | TarefaEtapaHistorico, TarefaImpedimentoHistorico, TarefaAuditoria |
 | V7 | Notificacao |
 | V8 | PapelPermissaoAuditoria (RN-017, achado do Comitê de Análise — Security) |
+| V9 | Usuario.adminGlobal (bootstrap do primeiro admin, ADR-007, achado da TASK-03.1) |
 
 Toda alteração futura de schema gera nova migration `V{n+1}` — nunca editar migration já aplicada (ver `git-workflow.md`).
 

@@ -10,7 +10,9 @@ Lista projetos visíveis ao usuário autenticado (via `UsuarioProjetoPapel`).
 
 ## POST /api/projetos
 
-Requer papel com `projeto:administrar` (tipicamente `admin`).
+Requer `Usuario.adminGlobal=true` (ADR-007) — não há projeto ainda para escopar `projeto:administrar`
+via `UsuarioProjetoPapel`. O admin global é provisionado no primeiro login do e-mail configurado em
+`kanban.bootstrap.admin-email`; ele passa a configurar os demais usuários/papéis depois.
 
 **Request:** `{ "nome": "string", "descricao": "string?" }`
 **Response 201:** `{ "id", "nome", "descricao", "status": "ATIVO" }`
