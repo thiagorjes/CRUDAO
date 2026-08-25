@@ -84,11 +84,36 @@ Backend em camadas (Controller → Service → Repository → DTO/Mapper via Map
 
 ## O — Operations
 
-_Atualizado por: /tasks v1.0 — [pendente]_
+_Atualizado por: /tasks v1.0 — 2026-08-25_
 > Decisões: —
 
-**Tasks ordenadas por dependência:**
-- [ ] TASK-01.1 — {{DESCRICAO_TASK}}
+**Tasks ordenadas por dependência (25 tasks em 8 epics — revisado pelo Comitê de Análise — ver [kanban-tarefas-tasks.md](../tasks/kanban-tarefas-tasks.md)):**
+- [ ] TASK-01.1 — Setup projeto backend/frontend + docker-compose + Keycloak dev
+- [ ] TASK-01.2 — Migrations V1-V2: Usuario/Projeto/Papel/Permissao
+- [ ] TASK-02.1 — OIDC Keycloak + provisioning JIT + /api/me + logout
+- [ ] TASK-02.2 — RBAC: motor de permissões efetivas + guard (TDD obrigatório)
+- [ ] TASK-02.3 — CRUD papéis/permissões/usuários (dona da migration V8)
+- [ ] TASK-03.1 — CRUD Projeto incl. finalizar/reabrir
+- [ ] TASK-03.2 — CRUD Workflow/Etapa/Transicao
+- [ ] TASK-03.3 — CRUD Raia
+- [ ] TASK-04.1 — Migrations V5-V6 + criar card
+- [ ] TASK-04.2 — Mover tarefa: transição + congelamento + lead-time
+- [ ] TASK-04.3 — Impedimento: marcar/desmarcar
+- [ ] TASK-04.4 — Excluir tarefa + Auditoria PapelPermissao
+- [ ] TASK-04.5 — GET board + GET detalhe (projeção DTO)
+- [ ] TASK-05.1 — EventoBoardPublisher + LISTEN/NOTIFY + STOMP
+- [ ] TASK-05.2 — Notificações internas
+- [ ] TASK-05.3 — Resiliência: reconexão, resync, health-check
+- [ ] TASK-06.1 — Migration V7 + dashboard lead-time
+- [ ] TASK-07.1 — Shell Next.js + auth
+- [ ] TASK-07.2 — Board: colunas, raias, cards, mover
+- [ ] TASK-07.3 — Detalhe da tarefa
+- [ ] TASK-07.4 — Admin projeto/workflow/raia
+- [ ] TASK-07.5 — Admin papéis/permissões
+- [ ] TASK-07.6 — Dashboard UI
+- [ ] TASK-07.7 — Notificações UI
+- [ ] TASK-08.1 — Testes multi-pod / WebSocket
+- [ ] TASK-08.2 — Observabilidade final
 
 ---
 

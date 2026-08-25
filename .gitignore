@@ -2,7 +2,7 @@
 # Gerado em: 2026-08-24 para CRUDAO
 
 # Sistemas externos — cada um tem seu próprio repositório git
-systems/
+#systems/
 
 # Segredos e credenciais
 .env

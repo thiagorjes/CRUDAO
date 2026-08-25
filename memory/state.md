@@ -42,7 +42,8 @@ _Atualizado em: 2026-08-24_
 | docs/decisions/ADR-004-broadcast-listen-notify.md | 1.0 | ok |
 | docs/decisions/ADR-005-flyway-migrations.md | 1.0 | ok |
 | docs/decisions/ADR-006-sem-fallback-auth-keycloak.md | 1.0 | ok |
-| docs/spdd/kanban-tarefas-canvas.md | — | draft (6/7 dimensões — aguarda /tasks) |
+| docs/tasks/kanban-tarefas-tasks.md | 1.0 | ok |
+| docs/spdd/kanban-tarefas-canvas.md | — | draft (7/7 dimensões preenchidas — falta S/Safeguards de /code-review para READY) |
 
 ---
 
@@ -54,17 +55,25 @@ _Atualizado em: 2026-08-24_
 | 2026-08-25 | /prd kanban-tarefas concluído (v1.0) |
 | 2026-08-25 | /designer kanban-tarefas concluído (v1.0) |
 | 2026-08-25 | /techspec kanban-tarefas concluído (v1.0) — ADR-004/005/006 criados |
+| 2026-08-25 | /tasks kanban-tarefas concluído (v1.0) — 24 tasks em 8 epics |
 
 ---
 
 ## kanban-tarefas
 
-- **Etapa concluída:** /techspec (v1.0) — 2026-08-25
-- **Artefatos:** docs/techspec/kanban-tarefas-techspec.md + data-model.md + quickstart.md + 7 contratos de API
+- **Etapa concluída:** /implement TASK-01.1 — 2026-08-25
+- **Task implementada:** TASK-01.1 — Setup projeto backend/frontend + docker-compose + Keycloak dev — 2026-08-25
+- **Arquivos:** systems/CRUDAO/backend/** (pom.xml, KanbanApplication, HealthController, application.yml/application-dev.yml, Dockerfile), systems/CRUDAO/frontend/** (Next.js skeleton, Dockerfile), systems/CRUDAO/docker-compose.yml, systems/CRUDAO/keycloak/realm-export.json, systems/CRUDAO/README.md
+- **Testes:** não aplicável (task de configuração/skeleton, TDD não se aplica) — validação sintática de pom.xml/docker-compose.yml/realm-export.json ok; execução real (mvnw/npm/docker up) não realizada neste ambiente sandbox (sem acesso a Maven Central/npm registry/Docker daemon) — validar localmente antes de considerar 100% fechada
+- **Code review:** inline via agent general-purpose (papel QA) — 1 finding 🔴 corrigido (colisão de porta 8080 backend×Keycloak → backend movido para 8081), demais 🟡 são notas de dev-only já documentadas
+- **Próxima task:** TASK-01.2 — Migrations V1-V2: Usuario/Projeto/Papel/Permissao
+- **Artefato:** docs/tasks/kanban-tarefas-tasks.md + docs/tasks/kanban-tarefas/TASK-*.md (24 arquivos)
+- **Total de tasks:** 25 tasks em 8 epics (Infra, Auth/RBAC, Projetos/Workflows/Raias, Tarefas core, Tempo real/Notificações, Dashboard, Frontend, Hardening) — revisado pelo Comitê de Análise (Architect+QA): TASK-02.2 desmembrada em 02.2+02.3; correções de RN-005, RN-012, TDD obrigatório, RNF-005 e grafo de dependências aplicadas
+- **Granularidade:** maior (decisão do usuário) — tasks G (1-2 dias) predominantes, poucas M/P
+- **Canvas:** DRAFT (dimensão O preenchida; falta S/Safeguards de /code-review para READY)
+- **Nota de escopo confirmada com usuário:** setup do Keycloak (realm/client) para ambiente local de dev está em TASK-01.1 — Keycloak (IdP) em si é premissa externa já disponível (ADR-006); não há menção de time externo responsável na TechSpec.
 - **Sistemas afetados:** CRUDAO
-- **Mock contracts:** nenhum (Keycloak e PostgreSQL sem necessidade de mock)
-- **ADRs criados:** ADR-004 (broadcast LISTEN/NOTIFY, atualizado pós-comitê), ADR-005 (Flyway), ADR-006 (sem fallback auth Keycloak)
-- **Comitê de Análise Assíncrono:** executado 2026-08-25 (Architect, Security, Database, DevOps, QA/general-purpose) — 13 achados aplicados aos artefatos salvos: `EventoBoardPublisher` (porta de domínio + afterCommit), resincronização client-side por `seq`, autorização em subscrição STOMP, RN-017 (bloqueia autoconcessão de permissão), índices em `TarefaEtapaHistorico`/`TarefaImpedimentoHistorico`, exigência de projeção DTO (evitar N+1), health-checks (listener + Keycloak) e métricas mínimas via Actuator, logout com back-channel Keycloak, checagem de `Usuario.ativo`, cobertura Gherkin dos 19 RFs na Seção 7
-- **Decisão em aberto:** densidade do card no board (compacto vs. expandido, TL-03/TL-03b) — segue sem resolução, não bloqueia /tasks
+- **ADRs/artefatos herdados de /techspec:** ADR-004, ADR-005, ADR-006; comitê de análise assíncrono já aplicado (13 achados)
+- **Decisão em aberto:** densidade do card no board (compacto vs. expandido, TL-03/TL-03b) — não bloqueia implementação
 - **Nota:** ADR-001/002/003 referenciados nas guidelines mas ausentes em docs/decisions/ (pré-existente) — recriar antes de auditoria formal
-- **Próximo comando:** /tasks kanban-tarefas
+- **Próximo comando:** /implement TASK-01.1 (ou /tdd para tasks marcadas TDD obrigatório, ex. TASK-04.2)

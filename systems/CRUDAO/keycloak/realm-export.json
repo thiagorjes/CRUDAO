@@ -1,0 +1,53 @@
+{
+  "realm": "kanban-dev",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "kanban-frontend",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "kanban-dev-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/login/oauth2/code/keycloak"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "dev" },
+      { "name": "admin" }
+    ]
+  },
+  "users": [
+    {
+      "username": "dev.teste",
+      "enabled": true,
+      "email": "dev.teste@crudao.local",
+      "firstName": "Dev",
+      "lastName": "Teste",
+      "credentials": [
+        { "type": "password", "value": "dev123", "temporary": false }
+      ],
+      "realmRoles": ["dev"]
+    },
+    {
+      "username": "admin.teste",
+      "enabled": true,
+      "email": "admin.teste@crudao.local",
+      "firstName": "Admin",
+      "lastName": "Teste",
+      "credentials": [
+        { "type": "password", "value": "admin123", "temporary": false }
+      ],
+      "realmRoles": ["admin"]
+    }
+  ]
+}

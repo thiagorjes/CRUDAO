@@ -1,0 +1,33 @@
+# Credenciais e client-secret abaixo são apenas para ambiente dev local — nunca usar em produção.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kanban
+    username: kanban
+    password: kanban
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: kanban-frontend
+            client-secret: kanban-dev-secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:3000/login/oauth2/code/keycloak"
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8080/realms/kanban-dev
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/kanban-dev
+
+logging:
+  level:
+    com.crudao.kanban: DEBUG
