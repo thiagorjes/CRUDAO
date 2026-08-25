@@ -53,6 +53,7 @@ public class TarefaService {
 
     private static final String PERMISSAO_GERENCIAR = "tarefa:gerenciar";
     private static final String PERMISSAO_FINALIZAR = "tarefa:finalizar";
+    private static final String PERMISSAO_IMPEDIMENTO = "tarefa:impedimento";
 
     private final TarefaRepository tarefaRepository;
     private final TarefaEtapaHistoricoRepository tarefaEtapaHistoricoRepository;
@@ -316,6 +317,78 @@ public class TarefaService {
                 tarefa.getImpedidaDesde(),
                 historicoEtapas,
                 tempoImpedimentoTotalSegundos);
+    }
+
+    /**
+     * Marca impedimento (RF-004). Requer {@code tarefa:impedimento} (RN-013 — default dev,
+     * product_owner, project_admin, admin; gestor não). Abre um novo {@link
+     * TarefaImpedimentoHistorico} — RN-002 permite múltiplos ciclos marca/desmarca acumulando
+     * tempo, então não há checagem de "já impedida" além do estado {@code impedida} em si.
+     */
+    @Transactional
+    public TarefaResponse marcarImpedimento(UUID tarefaId) {
+        Tarefa tarefa = buscarTarefa(tarefaId);
+        UUID projetoId = tarefa.getProjeto().getId();
+        exigirProjetoAtivoParaTarefa(projetoId);
+        permissaoGuard.exigir(projetoId, PERMISSAO_IMPEDIMENTO);
+
+        if (tarefa.isImpedida()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "tarefa já está impedida");
+        }
+
+        OffsetDateTime agora = OffsetDateTime.now();
+
+        TarefaImpedimentoHistorico historico = new TarefaImpedimentoHistorico();
+        historico.setTarefa(tarefa);
+        historico.setMarcadoEm(agora);
+        tarefaImpedimentoHistoricoRepository.save(historico);
+
+        tarefa.setImpedida(true);
+        tarefa.setImpedidaDesde(agora);
+        tarefa.setAtualizadoEm(agora);
+        tarefa = tarefaRepository.save(tarefa);
+
+        registrarAuditoria(tarefa, UsuarioAutenticadoHolder.get(), "impedimento", null, "marcado", agora);
+
+        return toResponse(tarefa);
+    }
+
+    /**
+     * Desmarca impedimento (RF-004). Fecha o {@link TarefaImpedimentoHistorico} em aberto (RN-002).
+     */
+    @Transactional
+    public TarefaResponse desmarcarImpedimento(UUID tarefaId) {
+        Tarefa tarefa = buscarTarefa(tarefaId);
+        UUID projetoId = tarefa.getProjeto().getId();
+        exigirProjetoAtivoParaTarefa(projetoId);
+        permissaoGuard.exigir(projetoId, PERMISSAO_IMPEDIMENTO);
+
+        if (!tarefa.isImpedida()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "tarefa não está impedida");
+        }
+
+        OffsetDateTime agora = OffsetDateTime.now();
+
+        TarefaImpedimentoHistorico historico =
+                tarefaImpedimentoHistoricoRepository.findByTarefaId(tarefaId).stream()
+                        .filter(h -> h.getDesmarcadoEm() == null)
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.CONFLICT, "tarefa sem histórico de impedimento em andamento"));
+        historico.setDesmarcadoEm(agora);
+        tarefaImpedimentoHistoricoRepository.save(historico);
+
+        tarefa.setImpedida(false);
+        tarefa.setImpedidaDesde(null);
+        tarefa.setAtualizadoEm(agora);
+        tarefa = tarefaRepository.save(tarefa);
+
+        registrarAuditoria(
+                tarefa, UsuarioAutenticadoHolder.get(), "impedimento", historico.getMarcadoEm(), "desmarcado", agora);
+
+        return toResponse(tarefa);
     }
 
     private long tempoImpedimento(TarefaImpedimentoHistorico impedimento, OffsetDateTime agora) {

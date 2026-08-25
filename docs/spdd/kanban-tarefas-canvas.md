@@ -98,7 +98,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [x] TASK-03.3 — CRUD Raia
 - [x] TASK-04.1 — Migrations V5-V6 + criar card
 - [ ] TASK-04.2 — Mover tarefa: transição + congelamento + lead-time
-- [ ] TASK-04.3 — Impedimento: marcar/desmarcar
+- [x] TASK-04.3 — Impedimento: marcar/desmarcar
 - [ ] TASK-04.4 — Excluir tarefa + Auditoria PapelPermissao
 - [ ] TASK-04.5 — GET board + GET detalhe (projeção DTO)
 - [ ] TASK-05.1 — EventoBoardPublisher + LISTEN/NOTIFY + STOMP

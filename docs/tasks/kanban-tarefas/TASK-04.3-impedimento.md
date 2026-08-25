@@ -29,3 +29,5 @@ Sinalização de bloqueio — base do KPI de redução de tempo parado por imped
 - Marcar/desmarcar reflete corretamente em `impedida`/`impedidaDesde` e no histórico.
 - Múltiplos ciclos acumulam tempo de impedimento corretamente.
 - Auditoria registrada em cada marca/desmarca.
+
+**Status:** Concluída

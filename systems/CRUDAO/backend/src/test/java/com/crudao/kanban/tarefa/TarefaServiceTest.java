@@ -18,6 +18,7 @@ import com.crudao.kanban.domain.tarefa.TarefaAuditoria;
 import com.crudao.kanban.domain.tarefa.TarefaAuditoriaRepository;
 import com.crudao.kanban.domain.tarefa.TarefaEtapaHistorico;
 import com.crudao.kanban.domain.tarefa.TarefaEtapaHistoricoRepository;
+import com.crudao.kanban.domain.tarefa.TarefaImpedimentoHistorico;
 import com.crudao.kanban.domain.tarefa.TarefaImpedimentoHistoricoRepository;
 import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.Projeto;
@@ -31,6 +32,7 @@ import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.rbac.PermissaoGuard;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -54,6 +56,7 @@ class TarefaServiceTest {
 
     private static final String PERMISSAO_GERENCIAR = "tarefa:gerenciar";
     private static final String PERMISSAO_FINALIZAR = "tarefa:finalizar";
+    private static final String PERMISSAO_IMPEDIMENTO = "tarefa:impedimento";
 
     @Mock private TarefaRepository tarefaRepository;
     @Mock private TarefaEtapaHistoricoRepository tarefaEtapaHistoricoRepository;
@@ -565,6 +568,183 @@ class TarefaServiceTest {
         when(permissaoGuard.membro(projetoId)).thenReturn(false);
 
         assertThatThrownBy(() -> service.detalhe(tarefa.getId())).isInstanceOf(AccessDeniedException.class);
+    }
+
+    // ---- TASK-04.3: impedimento ----
+
+    @Test
+    void marcarImpedimento_semPermissao_lanca403() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado"))
+                .when(permissaoGuard)
+                .exigir(projetoId, PERMISSAO_IMPEDIMENTO);
+
+        assertThatThrownBy(() -> service.marcarImpedimento(tarefa.getId()))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(tarefaImpedimentoHistoricoRepository, never()).save(any());
+        verify(tarefaRepository, never()).save(any());
+    }
+
+    @Test
+    void marcarImpedimento_projetoFinalizado_lanca409() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado")).when(permissaoGuard).exigirProjetoAtivo(projetoId);
+
+        assertThatThrownBy(() -> service.marcarImpedimento(tarefa.getId()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+    }
+
+    @Test
+    void marcarImpedimento_tarefaJaImpedida_lanca409() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        tarefa.setImpedida(true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+        assertThatThrownBy(() -> service.marcarImpedimento(tarefa.getId()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+        verify(tarefaImpedimentoHistoricoRepository, never()).save(any());
+    }
+
+    @Test
+    void marcarImpedimento_abreHistoricoESetaImpedida() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(tarefaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.marcarImpedimento(tarefa.getId());
+
+        assertThat(tarefa.isImpedida()).isTrue();
+        assertThat(tarefa.getImpedidaDesde()).isNotNull();
+        var historicoCaptor = ArgumentCaptor.forClass(TarefaImpedimentoHistorico.class);
+        verify(tarefaImpedimentoHistoricoRepository).save(historicoCaptor.capture());
+        assertThat(historicoCaptor.getValue().getMarcadoEm()).isNotNull();
+        assertThat(historicoCaptor.getValue().getDesmarcadoEm()).isNull();
+        var auditoriaCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
+        verify(tarefaAuditoriaRepository).save(auditoriaCaptor.capture());
+        assertThat(auditoriaCaptor.getValue().getCampo()).isEqualTo("impedimento");
+    }
+
+    @Test
+    void desmarcarImpedimento_semPermissao_lanca403() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        tarefa.setImpedida(true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado"))
+                .when(permissaoGuard)
+                .exigir(projetoId, PERMISSAO_IMPEDIMENTO);
+
+        assertThatThrownBy(() -> service.desmarcarImpedimento(tarefa.getId()))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(tarefaRepository, never()).save(any());
+    }
+
+    @Test
+    void desmarcarImpedimento_tarefaNaoImpedida_lanca409() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+        assertThatThrownBy(() -> service.desmarcarImpedimento(tarefa.getId()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+    }
+
+    @Test
+    void desmarcarImpedimento_fechaHistoricoAbertoESetaLivre() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        tarefa.setImpedida(true);
+        tarefa.setImpedidaDesde(OffsetDateTime.now().minusHours(2));
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        TarefaImpedimentoHistorico aberto = new TarefaImpedimentoHistorico();
+        aberto.setTarefa(tarefa);
+        aberto.setMarcadoEm(tarefa.getImpedidaDesde());
+        TarefaImpedimentoHistorico fechadoAnterior = new TarefaImpedimentoHistorico();
+        fechadoAnterior.setTarefa(tarefa);
+        fechadoAnterior.setMarcadoEm(OffsetDateTime.now().minusDays(1));
+        fechadoAnterior.setDesmarcadoEm(OffsetDateTime.now().minusDays(1).plusMinutes(10));
+        when(tarefaImpedimentoHistoricoRepository.findByTarefaId(tarefa.getId()))
+                .thenReturn(List.of(fechadoAnterior, aberto));
+        when(tarefaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.desmarcarImpedimento(tarefa.getId());
+
+        assertThat(tarefa.isImpedida()).isFalse();
+        assertThat(tarefa.getImpedidaDesde()).isNull();
+        assertThat(aberto.getDesmarcadoEm()).isNotNull();
+        assertThat(fechadoAnterior.getDesmarcadoEm()).isNotNull();
+        var auditoriaCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
+        verify(tarefaAuditoriaRepository).save(auditoriaCaptor.capture());
+        assertThat(auditoriaCaptor.getValue().getCampo()).isEqualTo("impedimento");
+    }
+
+    @Test
+    void desmarcarImpedimento_projetoFinalizado_lanca409() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        tarefa.setImpedida(true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado")).when(permissaoGuard).exigirProjetoAtivo(projetoId);
+
+        assertThatThrownBy(() -> service.desmarcarImpedimento(tarefa.getId()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+    }
+
+    @Test
+    void impedimento_multiplosCiclos_acumulamTempoCorretamente() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(tarefaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // 1º ciclo: marca e desmarca 10 min depois.
+        service.marcarImpedimento(tarefa.getId());
+        TarefaImpedimentoHistorico ciclo1 = new TarefaImpedimentoHistorico();
+        ciclo1.setTarefa(tarefa);
+        ciclo1.setMarcadoEm(OffsetDateTime.now().minusMinutes(30));
+        when(tarefaImpedimentoHistoricoRepository.findByTarefaId(tarefa.getId())).thenReturn(List.of(ciclo1));
+        service.desmarcarImpedimento(tarefa.getId());
+        assertThat(tarefa.isImpedida()).isFalse();
+        assertThat(ciclo1.getDesmarcadoEm()).isNotNull();
+
+        // 2º ciclo: marca de novo e desmarca 5 min depois — histórico acumula os dois fechados.
+        service.marcarImpedimento(tarefa.getId());
+        TarefaImpedimentoHistorico ciclo2 = new TarefaImpedimentoHistorico();
+        ciclo2.setTarefa(tarefa);
+        ciclo2.setMarcadoEm(OffsetDateTime.now().minusMinutes(10));
+        when(tarefaImpedimentoHistoricoRepository.findByTarefaId(tarefa.getId()))
+                .thenReturn(List.of(ciclo1, ciclo2));
+        service.desmarcarImpedimento(tarefa.getId());
+
+        assertThat(tarefa.isImpedida()).isFalse();
+        assertThat(ciclo2.getDesmarcadoEm()).isNotNull();
+        when(tarefaEtapaHistoricoRepository.findByTarefaIdOrderByEntradaEm(tarefa.getId())).thenReturn(List.of());
+        when(permissaoGuard.membro(projetoId)).thenReturn(true);
+
+        TarefaDetalheResponse detalhe = service.detalhe(tarefa.getId());
+        long ciclo1Segundos = Duration.between(ciclo1.getMarcadoEm(), ciclo1.getDesmarcadoEm()).getSeconds();
+        long ciclo2Segundos = Duration.between(ciclo2.getMarcadoEm(), ciclo2.getDesmarcadoEm()).getSeconds();
+        assertThat(detalhe.tempoImpedimentoTotalSegundos()).isEqualTo(ciclo1Segundos + ciclo2Segundos);
+    }
+
+    @Test
+    void impedimento_tarefaInexistente_lanca404() {
+        UUID id = UUID.randomUUID();
+        when(tarefaRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.marcarImpedimento(id))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("404");
     }
 
     private Usuario usuarioAutenticado() {

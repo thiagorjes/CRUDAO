@@ -61,6 +61,16 @@ _Atualizado em: 2026-08-24_
 
 ## kanban-tarefas
 
+- **Etapa concluída:** /implement TASK-04.3 — 2026-08-25
+- **Task implementada:** TASK-04.3 — Impedimento: marcar/desmarcar + histórico (RF-004, RN-013) — 2026-08-25
+- **Arquivos:** systems/CRUDAO/backend/src/main/java/com/crudao/kanban/tarefa/{TarefaService,TarefaController}.java (métodos/endpoints `marcarImpedimento`/`desmarcarImpedimento`, `POST`/`DELETE /api/tarefas/{id}/impedimento`); teste .../tarefa/TarefaServiceTest.java (+11 casos)
+- **Decisões:** reusa entidades/repositório já criados em TASK-04.1 (`TarefaImpedimentoHistorico`); segue os mesmos padrões de TASK-04.2 (`exigirProjetoAtivoParaTarefa` 403→409, `tarefa:impedimento` via RBAC configurável — não hardcoded por papel). Múltiplos ciclos marca/desmarca suportados sem checagem extra além do estado `impedida` — RN-002 já é validada no cálculo de lead-time existente (`TarefaService.detalhe`/`tempoImpedimento`, TASK-04.2).
+- **Testes:** `mvn test` (sem ITs) — **112/112 verdes** (36 em `TarefaServiceTest`, incl. 11 novos desta task, incl. caso dedicado de múltiplos ciclos acumulando tempo).
+- **Code review:** agent QA (contexto fresco, persona via general-purpose) — 0 findings 🔴/🟡. 4 findings 🟢: 2 corrigidos (teste `desmarcarImpedimento_projetoFinalizado_lanca409` simétrico ao de marcar; teste dedicado de múltiplos ciclos acumulando tempo — ambos tocavam critério de aceite explícito da task; `valorAnterior` da auditoria de desmarcar trocado de literal fixo para o dado real do histórico). 2 não corrigidos (baixo risco, não bloqueantes): `TarefaResponse` de marcar/desmarcar não expõe `impedida`/`impedidaDesde` (cliente pode buscar via `GET /detalhe`).
+- **Próxima task:** TASK-04.4 (excluir tarefa + auditoria) — paralela a TASK-04.2/TASK-04.3, depende só de TASK-04.1
+
+_Etapa anterior:_
+
 - **Etapa concluída:** /tdd TASK-04.2 — 2026-08-25
 - **Task implementada (TDD):** TASK-04.2 — Mover tarefa: engine de transição + congelamento + lead-time (RF-002, RF-003, RF-006, RF-012, RN-004, RN-011, RN-012, RN-016) — 2026-08-25
 - **Arquivos:** systems/CRUDAO/backend/src/main/java/com/crudao/kanban/tarefa/{TarefaService,TarefaController}.java (métodos `mover`/`editar`/`detalhe` novos, `criar` ajustado); .../tarefa/{MoverTarefaRequest,EditarTarefaRequest,HistoricoEtapaResponse,TarefaDetalheResponse}.java (novo); .../domain/tarefa/{TarefaEtapaHistoricoRepository,TarefaImpedimentoHistoricoRepository}.java (+métodos de consulta por tarefa); teste .../tarefa/TarefaServiceTest.java (+17 casos: mover, editar, detalhe)

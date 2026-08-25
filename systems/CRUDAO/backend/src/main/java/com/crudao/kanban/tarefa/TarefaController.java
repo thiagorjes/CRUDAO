@@ -3,6 +3,7 @@ package com.crudao.kanban.tarefa;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,5 +44,15 @@ public class TarefaController {
     @GetMapping("/api/tarefas/{id}")
     public ResponseEntity<TarefaDetalheResponse> detalhe(@PathVariable UUID id) {
         return ResponseEntity.ok(tarefaService.detalhe(id));
+    }
+
+    @PostMapping("/api/tarefas/{id}/impedimento")
+    public ResponseEntity<TarefaResponse> marcarImpedimento(@PathVariable UUID id) {
+        return ResponseEntity.ok(tarefaService.marcarImpedimento(id));
+    }
+
+    @DeleteMapping("/api/tarefas/{id}/impedimento")
+    public ResponseEntity<TarefaResponse> desmarcarImpedimento(@PathVariable UUID id) {
+        return ResponseEntity.ok(tarefaService.desmarcarImpedimento(id));
     }
 }
