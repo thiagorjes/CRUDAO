@@ -62,9 +62,10 @@
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
         <dependency>
+            <!-- Escopo compile (não runtime): BoardEventListener (TASK-05.1, ADR-004) usa
+                 org.postgresql.PGConnection/PGNotification diretamente para LISTEN/NOTIFY. -->
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -94,6 +95,12 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- RNF-001 (propagação de evento em <2s) — testes de BoardEventListener/ListenNotifyPublisher. -->
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

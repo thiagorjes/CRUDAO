@@ -34,6 +34,7 @@ import com.crudao.kanban.domain.workflow.Transicao;
 import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.evento.EventoBoardPublisher;
 import com.crudao.kanban.rbac.PermissaoGuard;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -74,6 +75,7 @@ class TarefaServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private UsuarioProjetoPapelRepository usuarioProjetoPapelRepository;
     @Mock private PermissaoGuard permissaoGuard;
+    @Mock private EventoBoardPublisher eventoBoardPublisher;
 
     private TarefaService service;
 
@@ -97,7 +99,8 @@ class TarefaServiceTest {
                         raiaRepository,
                         usuarioRepository,
                         usuarioProjetoPapelRepository,
-                        permissaoGuard);
+                        permissaoGuard,
+                        eventoBoardPublisher);
         UsuarioAutenticadoHolder.set(usuarioAutenticado);
     }
 
@@ -195,6 +198,9 @@ class TarefaServiceTest {
         assertThat(historico.getEtapa()).isEqualTo(e0);
         assertThat(historico.getEntradaEm()).isNotNull();
         assertThat(historico.getSaidaEm()).isNull();
+
+        verify(eventoBoardPublisher)
+                .publicar(projetoId, com.crudao.kanban.evento.TipoEventoBoard.TAREFA_CRIADA, response.id());
     }
 
     @Test
@@ -328,6 +334,9 @@ class TarefaServiceTest {
         var auditoriaCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
         verify(tarefaAuditoriaRepository).save(auditoriaCaptor.capture());
         assertThat(auditoriaCaptor.getValue().getCampo()).isEqualTo("etapa");
+
+        verify(eventoBoardPublisher)
+                .publicar(projetoId, com.crudao.kanban.evento.TipoEventoBoard.TAREFA_MOVIDA, tarefa.getId());
     }
 
     @Test
@@ -819,6 +828,8 @@ class TarefaServiceTest {
         verify(tarefaObservadorRepository).deleteByTarefaId(tarefa.getId());
         verify(tarefaAuditoriaRepository).deleteByTarefaId(tarefa.getId());
         verify(tarefaRepository).delete(tarefa);
+        verify(eventoBoardPublisher)
+                .publicar(projetoId, com.crudao.kanban.evento.TipoEventoBoard.TAREFA_EXCLUIDA, tarefa.getId());
     }
 
     @Test

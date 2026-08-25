@@ -35,7 +35,10 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain apiFilterChain(
             HttpSecurity http, AtivoUsuarioFilter ativoUsuarioFilter) throws Exception {
-        http.securityMatcher("/api/**")
+        // /ws/** (handshake STOMP, TASK-05.1/ADR-004) protegido pelo mesmo resource server opaco —
+        // o AtivoUsuarioFilter resolve o Usuario local no handshake, capturado por
+        // AutenticacaoHandshakeInterceptor para uso na sessão WebSocket.
+        http.securityMatcher("/api/**", "/ws/**")
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(

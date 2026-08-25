@@ -32,3 +32,7 @@ Mecanismo de broadcast multi-pod ([ADR-004](../../decisions/ADR-004-broadcast-li
 - Subscrição sem vínculo ao projeto rejeitada com `ERROR` STOMP.
 - Evento publicado é recebido por cliente conectado (validação com 1 pod; teste multi-pod completo em TASK-08.1).
 - Payload do evento inclui `seq` incremental (base para resincronização em TASK-05.3).
+
+---
+
+**Status:** Concluída — 2026-08-25

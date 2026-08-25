@@ -22,6 +22,8 @@ import com.crudao.kanban.domain.workflow.Transicao;
 import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.evento.EventoBoardPublisher;
+import com.crudao.kanban.evento.TipoEventoBoard;
 import com.crudao.kanban.rbac.PermissaoGuard;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -72,6 +74,7 @@ public class TarefaService {
     private final UsuarioRepository usuarioRepository;
     private final UsuarioProjetoPapelRepository usuarioProjetoPapelRepository;
     private final PermissaoGuard permissaoGuard;
+    private final EventoBoardPublisher eventoBoardPublisher;
 
     public TarefaService(
             TarefaRepository tarefaRepository,
@@ -86,7 +89,8 @@ public class TarefaService {
             RaiaRepository raiaRepository,
             UsuarioRepository usuarioRepository,
             UsuarioProjetoPapelRepository usuarioProjetoPapelRepository,
-            PermissaoGuard permissaoGuard) {
+            PermissaoGuard permissaoGuard,
+            EventoBoardPublisher eventoBoardPublisher) {
         this.tarefaRepository = tarefaRepository;
         this.tarefaEtapaHistoricoRepository = tarefaEtapaHistoricoRepository;
         this.tarefaImpedimentoHistoricoRepository = tarefaImpedimentoHistoricoRepository;
@@ -100,6 +104,7 @@ public class TarefaService {
         this.usuarioRepository = usuarioRepository;
         this.usuarioProjetoPapelRepository = usuarioProjetoPapelRepository;
         this.permissaoGuard = permissaoGuard;
+        this.eventoBoardPublisher = eventoBoardPublisher;
     }
 
     @Transactional
@@ -146,6 +151,8 @@ public class TarefaService {
         historico.setEntradaEm(agora);
         historico.setSaidaEm(null);
         tarefaEtapaHistoricoRepository.save(historico);
+
+        eventoBoardPublisher.publicar(projetoId, TipoEventoBoard.TAREFA_CRIADA, tarefa.getId());
 
         return toResponse(tarefa);
     }
@@ -218,6 +225,8 @@ public class TarefaService {
 
         registrarAuditoria(
                 tarefa, UsuarioAutenticadoHolder.get(), "etapa", etapaAnteriorId, etapaDestino.getId().toString(), agora);
+
+        eventoBoardPublisher.publicar(projetoId, TipoEventoBoard.TAREFA_MOVIDA, tarefa.getId());
 
         return toResponse(tarefa);
     }
@@ -406,8 +415,8 @@ public class TarefaService {
      * (RN-CB-003). Registros filhos (histórico de etapa/impedimento, observadores, auditoria) são
      * removidos antes da tarefa — as FKs não têm {@code ON DELETE CASCADE}.
      *
-     * <p>Publicação do evento {@code TAREFA_EXCLUIDA} via STOMP (RNF-001) fica a cargo do
-     * publisher introduzido em TASK-05.1 — mesmo estado dos demais endpoints desta classe.
+     * <p>Publica {@link TipoEventoBoard#TAREFA_EXCLUIDA} via {@link EventoBoardPublisher} (RNF-001,
+     * ADR-004, TASK-05.1) após o commit.
      */
     @Transactional
     public void excluir(UUID tarefaId) {
@@ -424,6 +433,8 @@ public class TarefaService {
         tarefaObservadorRepository.deleteByTarefaId(tarefaId);
         tarefaAuditoriaRepository.deleteByTarefaId(tarefaId);
         tarefaRepository.delete(tarefa);
+
+        eventoBoardPublisher.publicar(projetoId, TipoEventoBoard.TAREFA_EXCLUIDA, tarefaId);
     }
 
     /**

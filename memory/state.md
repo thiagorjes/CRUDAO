@@ -56,10 +56,21 @@ _Atualizado em: 2026-08-24_
 | 2026-08-25 | /designer kanban-tarefas concluído (v1.0) |
 | 2026-08-25 | /techspec kanban-tarefas concluído (v1.0) — ADR-004/005/006 criados |
 | 2026-08-25 | /tasks kanban-tarefas concluído (v1.0) — 24 tasks em 8 epics |
+| 2026-08-25 | /implement TASK-05.1 concluído — EventoBoardPublisher/LISTEN-NOTIFY/STOMP (ADR-004) |
 
 ---
 
 ## kanban-tarefas
+
+- **Etapa concluída:** /implement TASK-05.1 — 2026-08-25
+- **Task implementada:** TASK-05.1 — EventoBoardPublisher + adapter LISTEN/NOTIFY + STOMP + autorização de subscrição (RNF-001, RNF-002, ADR-004) — 2026-08-25
+- **Arquivos:** systems/CRUDAO/backend/src/main/java/com/crudao/kanban/evento/{TipoEventoBoard,EventoBoardPayload,EventoBoardPublisher}.java (novo, porta de domínio); .../evento/adapter/{ListenNotifyPublisher,BoardEventListener,BoardEventListenerHealthIndicator}.java (novo, adapter); .../websocket/{StompConfig,AutenticacaoHandshakeInterceptor,BoardChannelInterceptor}.java (novo); .../tarefa/TarefaService.java (publica evento em `criar`/`mover`/`excluir`, fecha os stubs de TASK-04.1/04.2/04.4); .../security/SecurityConfig.java (`/ws/**` no securityMatcher do resource server opaco); pom.xml (postgresql `runtime`→`compile`, +`awaitility` teste)
+- **Decisões:** publicação via `pg_notify(channel, payload)` (evita concatenar JSON no SQL) em `TransactionSynchronization.afterCommit` — nunca antes do commit. Conexão de `NOTIFY` e a de `LISTEN` são ambas via `DriverManager` dedicado (fora do pool Hikari da aplicação — não disputam capacidade com conexões transacionais, achado de code review). Autorização de subscrição STOMP reusa `PermissaoGuard.membro` (mesmo critério do REST); usuário resolvido no handshake HTTP (`AtivoUsuarioFilter`) e propagado para a sessão WS via `AutenticacaoHandshakeInterceptor` (o `ThreadLocal` de `UsuarioAutenticadoHolder` não sobrevive além do handshake). Escopo desta task é só `/topic/board/{projetoId}`; `/topic/notificacoes/{usuarioId}` fica para TASK-05.2/05.3.
+- **Testes:** `mvn test -Dtest="*Test,*IT"` (Testcontainers + Keycloak real via `docker compose up -d`) — **149/149 verdes**. Inclui `BoardEventoNotifyIT` (NOTIFY→LISTEN→STOMP real contra Postgres, propagação <2s via Awaitility, `seq` incremental, reconexão após queda de conexão), `ListenNotifyPublisherTest` (publicação só após `afterCommit`), `BoardChannelInterceptorStompErrorFrameTest` (rejeição de subscrição vira frame STOMP `ERROR` real via `StompSubProtocolHandler`), `BoardEventListenerHealthIndicatorTest`.
+- **Code review:** agent QA (contexto fresco, persona via general-purpose) — 0 findings 🔴. 2 findings 🟡 corrigidos: (1) `ListenNotifyPublisher` pegava conexão do pool Hikari dentro do `afterCommit`, disputando com a conexão transacional ainda não liberada — trocado para conexão dedicada via `DriverManager`, mesmo padrão do listener; (2) `BoardEventListener.parar()` esperava até 5s pelo timeout do `getNotifications()` bloqueante — corrigido fechando `conexaoAtual` diretamente no `@PreDestroy`, desbloqueio imediato. 2 findings 🟢 corrigidos com testes novos (frame `ERROR` fim a fim, reconexão + health indicator).
+- **Próxima task:** TASK-05.2/05.3 (notificações por usuário, resincronização client-side por `seq`) ou TASK-06.x (Dashboard)
+
+_Etapa anterior:_
 
 - **Etapa concluída:** /implement TASK-04.5 — 2026-08-25 — **Epic 04 (Tarefas core) concluído.**
 - **Task implementada:** TASK-04.5 — GET board + GET detalhe com projeção DTO, sem N+1 (RF-001, RF-006) — 2026-08-25
