@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.crudao.kanban.domain.raia.Raia;
 import com.crudao.kanban.domain.raia.RaiaRepository;
+import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.Projeto;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.rbac.PermissaoGuard;
@@ -30,6 +31,7 @@ class RaiaServiceTest {
 
     @Mock private RaiaRepository raiaRepository;
     @Mock private ProjetoRepository projetoRepository;
+    @Mock private TarefaRepository tarefaRepository;
     @Mock private PermissaoGuard permissaoGuard;
 
     private RaiaService service;
@@ -39,7 +41,7 @@ class RaiaServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new RaiaService(raiaRepository, projetoRepository, permissaoGuard);
+        service = new RaiaService(raiaRepository, projetoRepository, tarefaRepository, permissaoGuard);
     }
 
     @Test
@@ -171,14 +173,25 @@ class RaiaServiceTest {
 
     @Test
     void excluir_autorizado_removeRaiaDoProjeto() {
-        // Stub RN-005 sempre retorna "sem tarefas ativas" até TASK-04.1 — apenas garante que a raia
-        // do projeto é excluída com sucesso quando autorizada. Checagem real de 409 fica para TASK-04.1.
         Raia raiaDoProjeto = raia(projeto(), "Backend", 0);
         when(raiaRepository.findById(raiaId)).thenReturn(Optional.of(raiaDoProjeto));
+        when(tarefaRepository.existsByRaiaIdAndEtapaAtualEtapaFinalFalse(raiaId)).thenReturn(false);
 
         service.excluir(raiaId);
 
         verify(raiaRepository).delete(raiaDoProjeto);
+    }
+
+    @Test
+    void excluir_comTarefaAtiva_lanca409SemExcluir() {
+        Raia raiaDoProjeto = raia(projeto(), "Backend", 0);
+        when(raiaRepository.findById(raiaId)).thenReturn(Optional.of(raiaDoProjeto));
+        when(tarefaRepository.existsByRaiaIdAndEtapaAtualEtapaFinalFalse(raiaId)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.excluir(raiaId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+        verify(raiaRepository, never()).delete(any());
     }
 
     @Test

@@ -61,6 +61,18 @@ _Atualizado em: 2026-08-24_
 
 ## kanban-tarefas
 
+- **Etapa concluída:** /implement TASK-04.1 — 2026-08-25
+- **Task implementada:** TASK-04.1 — Migrations V5-V6 + entidade Tarefa + criação de card pelo board (RF-018, RN-CB-001/003/004/005), dona da checagem real de RN-005 — 2026-08-25
+- **Arquivos:** systems/CRUDAO/backend/src/main/resources/db/migration/{V5__tarefa,V6__tarefa_historico_auditoria}.sql (novo); .../domain/tarefa/{Tarefa,TarefaObservador,TarefaEtapaHistorico,TarefaImpedimentoHistorico,TarefaAuditoria,TarefaRepository,TarefaObservadorRepository,TarefaEtapaHistoricoRepository,TarefaImpedimentoHistoricoRepository,TarefaAuditoriaRepository}.java (novo pacote); .../tarefa/{TarefaService,TarefaController,CriarTarefaRequest,TarefaResponse}.java (novo pacote); .../domain/raia/RaiaRepository.java (+`findByProjetoIdOrderByOrdem`); .../workflow/WorkflowService.java (RN-005 real + regra "um workflow por projeto"); .../raia/RaiaService.java (RN-005 real); testes .../tarefa/TarefaServiceTest.java (novo), .../workflow/WorkflowServiceTest.java e .../raia/RaiaServiceTest.java (+casos RN-005/409)
+- **RN-005 fechada de vez:** `TarefaRepository.existsBy{Workflow,EtapaAtual,Raia}IdAndEtapaAtualEtapaFinalFalse` — "ativa" = etapa atual não é etapa final. Substitui os stubs de TASK-03.2/TASK-03.3 em `WorkflowService`/`RaiaService` (409 na exclusão com tarefa ativa vinculada).
+- **Decisão de code review (agent QA) aplicada:** `WorkflowService.criar` agora bloqueia com `409` a criação de um segundo workflow no mesmo projeto — resolve a ambiguidade de "workflow ativo do projeto" citada em `contracts/tarefas.md` sem alterar migration já aplicada (V3). `TarefaService.criar` depende dessa garantia para escolher o workflow do projeto sem ambiguidade (antes escolhia arbitrariamente o primeiro de uma lista sem `ORDER BY`).
+- **Gap registrado, não bloqueante:** `TarefaService.resolverResponsavel` não valida vínculo do usuário responsável com o projeto na criação — revisar junto de RN-012 em TASK-04.2.
+- **Testes:** `mvn test` (sem ITs) — **85/85 verdes** (9 novos em `TarefaServiceTest`, +2 em `WorkflowServiceTest`, +1 em `RaiaServiceTest`).
+- **Code review:** agent QA (contexto fresco, persona via general-purpose) — 0 findings 🔴; 2 findings 🟡 corrigidos: workflow escolhido sem critério de "ativo" quando há múltiplos por projeto (→ regra de serviço "um workflow por projeto"), cobertura de teste incompleta (adicionados casos de responsável inexistente, workflow sem etapas, raia explícita válida do próprio projeto, conteúdo do `TarefaEtapaHistorico` salvo). Nitpicks 🟢 (ausência de `try/catch DataIntegrityViolationException` em `Tarefa.save` — sem `UNIQUE` relevante hoje, não bloqueante; falta de validação de vínculo do responsável ao projeto — registrado acima) não corrigidos nesta task.
+- **Próxima task:** TASK-04.2 — Mover tarefa: transição + congelamento + lead-time (inclui RN-012, revisar `resolverResponsavel` junto)
+
+_Etapa anterior:_
+
 - **Etapa concluída:** /implement TASK-03.3 — 2026-08-25
 - **Task implementada:** TASK-03.3 — CRUD de Raia (swimlanes), incl. migration V4 com seed de raia default global `projeto_id=null` (RF-011, RN-CB-005) — 2026-08-25
 - **Arquivos:** systems/CRUDAO/backend/src/main/resources/db/migration/V4__raia.sql (novo); .../domain/raia/{Raia,RaiaRepository}.java (novo pacote); .../raia/{RaiaService,RaiaController,RaiaResponse,CriarRaiaRequest,EditarRaiaRequest}.java (novo pacote); teste .../raia/RaiaServiceTest.java (novo)

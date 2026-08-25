@@ -8,5 +8,7 @@ public interface RaiaRepository extends JpaRepository<Raia, UUID> {
 
     List<Raia> findByProjetoId(UUID projetoId);
 
+    List<Raia> findByProjetoIdOrderByOrdem(UUID projetoId);
+
     List<Raia> findByProjetoIdIsNull();
 }

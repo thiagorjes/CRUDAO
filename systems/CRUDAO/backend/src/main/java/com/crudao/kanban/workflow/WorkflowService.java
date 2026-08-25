@@ -1,5 +1,6 @@
 package com.crudao.kanban.workflow;
 
+import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.domain.workflow.Etapa;
 import com.crudao.kanban.domain.workflow.EtapaRepository;
@@ -36,6 +37,7 @@ public class WorkflowService {
     private final EtapaRepository etapaRepository;
     private final TransicaoRepository transicaoRepository;
     private final ProjetoRepository projetoRepository;
+    private final TarefaRepository tarefaRepository;
     private final PermissaoGuard permissaoGuard;
 
     public WorkflowService(
@@ -43,11 +45,13 @@ public class WorkflowService {
             EtapaRepository etapaRepository,
             TransicaoRepository transicaoRepository,
             ProjetoRepository projetoRepository,
+            TarefaRepository tarefaRepository,
             PermissaoGuard permissaoGuard) {
         this.workflowRepository = workflowRepository;
         this.etapaRepository = etapaRepository;
         this.transicaoRepository = transicaoRepository;
         this.projetoRepository = projetoRepository;
+        this.tarefaRepository = tarefaRepository;
         this.permissaoGuard = permissaoGuard;
     }
 
@@ -63,6 +67,14 @@ public class WorkflowService {
         permissaoGuard.exigir(projetoId, PERMISSAO_ADMINISTRAR);
         permissaoGuard.exigirProjetoAtivo(projetoId);
         exigirNomeValido(request.nome());
+
+        // Um workflow por projeto — o contrato de tarefas (`contracts/tarefas.md`) assume "o
+        // workflow ativo do projeto" no singular; sem essa checagem, TarefaService.criar teria que
+        // escolher arbitrariamente entre múltiplos workflows do mesmo projeto (achado de code
+        // review, TASK-04.1).
+        if (!workflowRepository.findByProjetoId(projetoId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "projeto já possui workflow configurado");
+        }
 
         Workflow workflow = new Workflow();
         workflow.setProjeto(projetoRepository.getReferenceById(projetoId));
@@ -198,17 +210,16 @@ public class WorkflowService {
     }
 
     /**
-     * Stub RN-005 — `Tarefa` só existe a partir de TASK-04.1; até lá, nenhum workflow tem tarefas
-     * ativas. Substituído obrigatoriamente pela checagem real em TASK-04.1 (decisão fechada pelo
-     * Comitê de Análise, não é opcional).
+     * RN-005 — "ativa" = tarefa cuja etapa atual não é etapa final (ainda não finalizada).
+     * Substitui o stub deixado por TASK-03.2 (achado do Comitê de Análise, TASK-04.1).
      */
     private boolean possuiTarefasAtivasNoWorkflow(UUID workflowId) {
-        return false;
+        return tarefaRepository.existsByWorkflowIdAndEtapaAtualEtapaFinalFalse(workflowId);
     }
 
-    /** Stub RN-005 — ver {@link #possuiTarefasAtivasNoWorkflow(UUID)}. */
+    /** RN-005 — ver {@link #possuiTarefasAtivasNoWorkflow(UUID)}. */
     private boolean possuiTarefasAtivasNaEtapa(UUID etapaId) {
-        return false;
+        return tarefaRepository.existsByEtapaAtualIdAndEtapaAtualEtapaFinalFalse(etapaId);
     }
 
     private void reordenar(Etapa etapaMovida, int novaOrdem) {

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.Projeto;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.domain.workflow.Etapa;
@@ -37,6 +38,7 @@ class WorkflowServiceTest {
     @Mock private EtapaRepository etapaRepository;
     @Mock private TransicaoRepository transicaoRepository;
     @Mock private ProjetoRepository projetoRepository;
+    @Mock private TarefaRepository tarefaRepository;
     @Mock private PermissaoGuard permissaoGuard;
 
     private WorkflowService service;
@@ -48,7 +50,12 @@ class WorkflowServiceTest {
     void setUp() {
         service =
                 new WorkflowService(
-                        workflowRepository, etapaRepository, transicaoRepository, projetoRepository, permissaoGuard);
+                        workflowRepository,
+                        etapaRepository,
+                        transicaoRepository,
+                        projetoRepository,
+                        tarefaRepository,
+                        permissaoGuard);
     }
 
     @Test
@@ -81,12 +88,23 @@ class WorkflowServiceTest {
 
     @Test
     void criarWorkflow_autorizado_persisteVinculadoAoProjeto() {
+        when(workflowRepository.findByProjetoId(projetoId)).thenReturn(List.of());
         when(projetoRepository.getReferenceById(projetoId)).thenReturn(projetoRef());
         when(workflowRepository.save(any(Workflow.class))).thenAnswer(inv -> inv.getArgument(0));
 
         WorkflowResponse resposta = service.criar(projetoId, new CriarWorkflowRequest("Padrão"));
 
         assertThat(resposta.nome()).isEqualTo("Padrão");
+    }
+
+    @Test
+    void criarWorkflow_projetoJaTemWorkflow_lanca409SemSalvar() {
+        when(workflowRepository.findByProjetoId(projetoId)).thenReturn(List.of(workflow()));
+
+        assertThatThrownBy(() -> service.criar(projetoId, new CriarWorkflowRequest("Outro")))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+        verify(workflowRepository, never()).save(any());
     }
 
     @Test
@@ -247,14 +265,41 @@ class WorkflowServiceTest {
     }
 
     @Test
-    void excluirWorkflow_semTarefasAtivas_stubPermiteExclusao() {
+    void excluirWorkflow_semTarefasAtivas_permiteExclusao() {
         Workflow workflow = workflow();
         when(workflowRepository.findById(workflowId)).thenReturn(Optional.of(workflow));
         when(etapaRepository.findByWorkflowIdOrderByOrdem(workflowId)).thenReturn(List.of());
+        when(tarefaRepository.existsByWorkflowIdAndEtapaAtualEtapaFinalFalse(workflowId)).thenReturn(false);
 
         service.excluirWorkflow(workflowId);
 
         verify(workflowRepository).delete(workflow);
+    }
+
+    @Test
+    void excluirWorkflow_comTarefaAtiva_lanca409SemExcluir() {
+        Workflow workflow = workflow();
+        when(workflowRepository.findById(workflowId)).thenReturn(Optional.of(workflow));
+        when(tarefaRepository.existsByWorkflowIdAndEtapaAtualEtapaFinalFalse(workflowId)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.excluirWorkflow(workflowId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+        verify(workflowRepository, never()).delete(any());
+    }
+
+    @Test
+    void excluirEtapa_comTarefaAtiva_lanca409SemExcluir() {
+        Etapa etapa = new Etapa();
+        etapa.setId(UUID.randomUUID());
+        etapa.setWorkflow(workflow());
+        when(etapaRepository.findById(etapa.getId())).thenReturn(Optional.of(etapa));
+        when(tarefaRepository.existsByEtapaAtualIdAndEtapaAtualEtapaFinalFalse(etapa.getId())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.excluirEtapa(etapa.getId()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+        verify(etapaRepository, never()).delete(any());
     }
 
     private Projeto projetoRef() {

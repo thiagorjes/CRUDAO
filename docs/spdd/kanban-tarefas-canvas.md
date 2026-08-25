@@ -96,7 +96,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [x] TASK-03.1 — CRUD Projeto incl. finalizar/reabrir
 - [x] TASK-03.2 — CRUD Workflow/Etapa/Transicao
 - [x] TASK-03.3 — CRUD Raia
-- [ ] TASK-04.1 — Migrations V5-V6 + criar card
+- [x] TASK-04.1 — Migrations V5-V6 + criar card
 - [ ] TASK-04.2 — Mover tarefa: transição + congelamento + lead-time
 - [ ] TASK-04.3 — Impedimento: marcar/desmarcar
 - [ ] TASK-04.4 — Excluir tarefa + Auditoria PapelPermissao
@@ -155,3 +155,9 @@ _Atualizado por: /implement TASK-03.2 — 2026-08-25_
 
 - Não confiar em `findById(destinoId)` sozinho para validar destino de uma `Transicao` — sempre checar `destino.getWorkflow().getId().equals(origem.getWorkflow().getId())`; achado de code review (agent QA) — sem essa checagem, um admin de projeto conseguia criar transição apontando para etapa de workflow/projeto alheio.
 - `DataIntegrityViolationException` de constraint `UNIQUE` (ex.: `uk_etapa_workflow_ordem`, `uk_transicao_origem_destino`) deve sempre virar `409`, nunca vazar como `500` — padrão recorrente entre tasks (já corrigido também em TASK-02.3).
+
+_Atualizado por: /implement TASK-04.1 — 2026-08-25_
+
+- RN-005 real (não mais stub): "tarefa ativa" = `etapaAtual.etapaFinal=false`. Checagem via `TarefaRepository.existsBy{Workflow,EtapaAtual,Raia}IdAndEtapaAtualEtapaFinalFalse`, usada por `WorkflowService`/`RaiaService` na exclusão (409 se houver tarefa ativa vinculada).
+- **Um workflow por projeto passa a ser regra de serviço** (`WorkflowService.criar` bloqueia com `409` se o projeto já tiver workflow) — decisão fechada em code review (agent QA) para resolver a ambiguidade de "workflow ativo do projeto" citada em `contracts/tarefas.md`, já que o data-model não modela essa unicidade nem um flag de ativo. `TarefaService.criar` depende dessa garantia para escolher o workflow do projeto sem ambiguidade.
+- `TarefaService.resolverResponsavel` não valida vínculo do usuário com o projeto na criação (qualquer `usuarioId` existente no sistema pode virar responsável) — gap de integridade registrado em code review, não bloqueante para esta task; revisar junto de RN-012 em TASK-04.2.

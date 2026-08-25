@@ -2,6 +2,7 @@ package com.crudao.kanban.raia;
 
 import com.crudao.kanban.domain.raia.Raia;
 import com.crudao.kanban.domain.raia.RaiaRepository;
+import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.rbac.PermissaoGuard;
 import java.util.List;
@@ -27,12 +28,17 @@ public class RaiaService {
 
     private final RaiaRepository raiaRepository;
     private final ProjetoRepository projetoRepository;
+    private final TarefaRepository tarefaRepository;
     private final PermissaoGuard permissaoGuard;
 
     public RaiaService(
-            RaiaRepository raiaRepository, ProjetoRepository projetoRepository, PermissaoGuard permissaoGuard) {
+            RaiaRepository raiaRepository,
+            ProjetoRepository projetoRepository,
+            TarefaRepository tarefaRepository,
+            PermissaoGuard permissaoGuard) {
         this.raiaRepository = raiaRepository;
         this.projetoRepository = projetoRepository;
+        this.tarefaRepository = tarefaRepository;
         this.permissaoGuard = permissaoGuard;
     }
 
@@ -101,12 +107,11 @@ public class RaiaService {
     }
 
     /**
-     * Stub RN-005 — {@code Tarefa} só existe a partir de TASK-04.1; até lá, nenhuma raia tem
-     * tarefas ativas. Substituído obrigatoriamente pela checagem real em TASK-04.1 (mesma decisão
-     * fechada de TASK-03.2, não é opcional).
+     * RN-005 — "ativa" = tarefa cuja etapa atual não é etapa final (ainda não finalizada).
+     * Substitui o stub deixado por TASK-03.3 (achado do Comitê de Análise, TASK-04.1).
      */
     private boolean possuiTarefasAtivasNaRaia(UUID raiaId) {
-        return false;
+        return tarefaRepository.existsByRaiaIdAndEtapaAtualEtapaFinalFalse(raiaId);
     }
 
     private void exigirNomeValido(String nome) {
