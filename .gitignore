@@ -1,0 +1,42 @@
+# SSPDD workspace .gitignore
+# Gerado em: 2026-08-24 para CRUDAO
+
+# Sistemas externos — cada um tem seu próprio repositório git
+systems/
+
+# Segredos e credenciais
+.env
+.env.*
+.env.local
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Artefatos temporários
+*.tmp
+*.bak
+
+# Mantidos explicitamente no git (não ignorar):
+# docs/
+# memory/constitution.md
+# memory/state.md
+# .agents/
+# scripts/

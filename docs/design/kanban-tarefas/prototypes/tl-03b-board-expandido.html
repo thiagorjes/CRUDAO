@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-03b — Board (expandido) | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .swimlane { margin-bottom: var(--space-lg); }
+  .swimlane__title { font-size: 13px; font-weight: 700; color: var(--color-text-secondary); margin-bottom: var(--space-sm); text-transform: uppercase; }
+  .task-card--expanded p.desc { color: var(--color-text-secondary); font-size: 12px; margin: 4px 0 8px; }
+  .task-card--expanded .meta-row { display: flex; align-items: center; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Navegação principal">
+    <div class="sidebar__brand">Kanban</div>
+    <nav aria-label="Menu">
+      <a href="tl-02-lista-projetos.html">Projetos</a>
+      <a href="tl-07-dashboard.html">Dashboard</a>
+      <a href="tl-08-admin-projeto.html">Admin</a>
+    </nav>
+    <div class="sidebar__project-active">Projeto ativo: Portal do Cliente</div>
+  </aside>
+  <header class="topbar">
+    <button class="topbar__notif" aria-label="Notificações (0 não lidas)">🔔</button>
+    <div class="topbar__user"><span class="avatar">TC</span> Thiago Cavalcante</div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Board — Portal do Cliente <span class="text-secondary" style="font-size:14px; font-weight:400;">(cards expandidos — <a href="tl-03-board-compacto.html">ver variação compacta</a>)</span></h1>
+      <button class="btn btn-primary" type="button">+ Novo card</button>
+    </div>
+
+    <!-- estado: preenchido / idle -->
+    <section aria-label="Board" class="swimlane">
+      <div class="swimlane__title">Raia: Default</div>
+      <div class="board">
+        <div class="column" aria-label="Coluna A Fazer">
+          <div class="column__header"><span>A Fazer</span><span class="badge" style="background:#e9ecef;">2</span></div>
+          <a class="task-card task-card--expanded" href="tl-04-detalhe-tarefa.html" style="text-decoration:none; color:inherit; display:block;" draggable="true">
+            <span class="badge badge-tipo">Bug</span>
+            <p style="margin:8px 0 2px; font-size:14px; font-weight:600;">Corrigir timeout no gateway</p>
+            <p class="desc">Timeout intermitente ao confirmar pagamento acima de R$ 5.000.</p>
+            <div class="meta-row">
+              <span class="avatar" style="width:20px;height:20px;font-size:10px;">JS</span>
+              <span class="text-secondary">Lead-time: 2d 4h</span>
+            </div>
+          </a>
+          <div class="task-card task-card--expanded task-card__impedido" draggable="true">
+            <span class="badge badge-tipo">Feature</span>
+            <p style="margin:8px 0 2px; font-size:14px; font-weight:600;">Integrar provedor PIX</p>
+            <p class="desc">Aguardando homologação com o time de segurança.</p>
+            <div class="meta-row">
+              <span class="badge badge-warning">Impedido</span>
+              <span class="text-secondary">Lead-time: 5h</span>
+            </div>
+          </div>
+        </div>
+        <div class="column" aria-label="Coluna Em Andamento">
+          <div class="column__header"><span>Em Andamento</span><span class="badge" style="background:#e9ecef;">1</span></div>
+          <div class="task-card task-card--expanded" draggable="true">
+            <span class="badge badge-tipo">Feature</span>
+            <p style="margin:8px 0 2px; font-size:14px; font-weight:600;">Refatorar tela de extrato</p>
+            <p class="desc">Migração para novo design system.</p>
+            <div class="meta-row">
+              <span class="avatar" style="width:20px;height:20px;font-size:10px;">TC</span>
+              <span class="text-secondary">Lead-time: 1d</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- estado: dragging (indicador de coluna-destino permitida a partir de "A Fazer", por coluna — não depende da raia) -->
+    <section class="state-section">
+      <span class="state-label">Arrastando card — destino permitido é por coluna (RF-002/RN-003)</span>
+      <div class="board">
+        <div class="column" aria-label="Coluna A Fazer (origem)">
+          <div class="column__header"><span>A Fazer (origem)</span></div>
+        </div>
+        <div class="column column--drop-valid" aria-label="Coluna Em Andamento — destino permitido">
+          <div class="column__header"><span>Em Andamento</span><span class="badge-transicao badge-transicao--ok">Permitido</span></div>
+        </div>
+        <div class="column column--drop-invalid" aria-label="Coluna Concluído — destino bloqueado">
+          <div class="column__header"><span>Concluído</span><span class="badge-transicao badge-transicao--bloqueada">Sem transição</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- estado: vazio -->
+    <section class="state-section swimlane">
+      <span class="state-label">Vazio — coluna sem cards</span>
+      <div class="board">
+        <div class="column"><div class="column__header"><span>Concluído</span></div><div class="empty-state" style="padding:16px;">Sem tarefas nesta etapa</div></div>
+      </div>
+    </section>
+
+    <!-- estado: loading -->
+    <section class="state-section">
+      <span class="state-label">Loading</span>
+      <div class="board">
+        <div class="column"><div class="skeleton" style="height:100px; margin-bottom:8px;"></div></div>
+      </div>
+    </section>
+
+    <!-- estado: erro (transição bloqueada) -->
+    <section class="state-section">
+      <span class="state-label">Erro — transição bloqueada</span>
+      <div class="toast toast-error" role="alert" aria-live="assertive">Transição não permitida a partir de "A Fazer". O card retornou à posição original.</div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

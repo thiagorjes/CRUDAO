@@ -1,0 +1,24 @@
+{
+  "skill": "spdd-sync",
+  "artifact_pattern": "docs/spdd/*-deviations.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md",
+        "docs/spdd/{{FEATURE}}-canvas.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## Sumário"
+      ],
+      "id_patterns": {
+        "DEV": "DEV-\\d{3}"
+      },
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": []
+    }
+  }
+}

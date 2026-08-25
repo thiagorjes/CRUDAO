@@ -1,0 +1,29 @@
+{
+  "skill": "decision-record",
+  "artifact_pattern": "docs/decisions/*.md",
+  "modes": {
+    "output": {
+      "required_sections": [
+        "## Decisão",
+        "## Motivação",
+        "## Consequências",
+        "## Alternativas Consideradas"
+      ],
+      "id_patterns": {
+        "ADR": "ADR-\\d{3}",
+        "BDR": "BDR-\\d{3}",
+        "SDR": "SDR-\\d{3}",
+        "DDR": "DDR-\\d{3}"
+      },
+      "no_empty_placeholders": true,
+      "custom_steps": [
+        {
+          "name": "check_dr_status",
+          "script": ".agents/skills/decision-record/scripts/check_dr_status.py",
+          "args": ["{{INPUT_ARTIFACT}}"],
+          "on_failure": "error"
+        }
+      ]
+    }
+  }
+}

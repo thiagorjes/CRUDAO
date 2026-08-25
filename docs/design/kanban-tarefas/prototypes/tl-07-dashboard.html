@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-07 — Dashboard | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Navegação principal">
+    <div class="sidebar__brand">Kanban</div>
+    <nav aria-label="Menu">
+      <a href="tl-02-lista-projetos.html">Projetos</a>
+      <a href="tl-07-dashboard.html" aria-current="page">Dashboard</a>
+      <a href="tl-08-admin-projeto.html">Admin</a>
+    </nav>
+    <div class="sidebar__project-active">Projeto ativo: Plataforma de Pagamentos</div>
+  </aside>
+  <header class="topbar">
+    <button class="topbar__notif" aria-label="Notificações (2 não lidas)">🔔<span class="topbar__notif-badge">2</span></button>
+    <div class="topbar__user"><span class="avatar">TC</span> Thiago Cavalcante</div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Dashboard — Plataforma de Pagamentos</h1>
+      <select aria-label="Filtro de período">
+        <option>Últimos 30 dias</option>
+        <option>Últimos 90 dias</option>
+      </select>
+    </div>
+
+    <!-- estado: preenchido / idle -->
+    <section aria-label="KPIs">
+      <div class="kpi-grid">
+        <div class="card kpi-card"><div class="kpi-value">2d 6h</div><div class="kpi-label">Lead-time médio geral</div></div>
+        <div class="card kpi-card"><div class="kpi-value">6h 40m</div><div class="kpi-label">Tempo médio de impedimento</div></div>
+        <div class="card kpi-card"><div class="kpi-value">18</div><div class="kpi-label">Tarefas concluídas no período</div></div>
+      </div>
+      <div class="card">
+        <h2 style="font-size:14px;">Lead-time médio por etapa</h2>
+        <div class="bar-chart" role="img" aria-label="Gráfico de lead-time médio por etapa: A Fazer 1 dia, Em Andamento 2 dias, Revisão 8 horas">
+          <div class="bar-wrap"><div class="bar" style="height:60px;"></div>A Fazer</div>
+          <div class="bar-wrap"><div class="bar" style="height:120px;"></div>Em Andamento</div>
+          <div class="bar-wrap"><div class="bar" style="height:40px;"></div>Revisão</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- estado: loading -->
+    <section class="state-section">
+      <span class="state-label">Loading</span>
+      <div class="kpi-grid">
+        <div class="skeleton" style="height:64px;"></div>
+        <div class="skeleton" style="height:64px;"></div>
+        <div class="skeleton" style="height:64px;"></div>
+      </div>
+    </section>
+
+    <!-- estado: erro -->
+    <section class="state-section">
+      <span class="state-label">Erro</span>
+      <div class="toast toast-error" role="alert">Não foi possível carregar os dados do dashboard. <button class="btn btn-outline" type="button">Tentar novamente</button></div>
+    </section>
+
+    <!-- estado: vazio (sem histórico) -->
+    <section class="state-section">
+      <span class="state-label">Vazio — sem histórico</span>
+      <div class="empty-state">Ainda não há movimentações suficientes para calcular lead-time neste projeto.</div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

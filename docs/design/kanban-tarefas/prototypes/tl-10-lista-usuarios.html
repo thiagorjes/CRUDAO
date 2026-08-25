@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-10 — Lista de Usuários | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Navegação principal">
+    <div class="sidebar__brand">Kanban</div>
+    <nav aria-label="Menu">
+      <a href="tl-02-lista-projetos.html">Projetos</a>
+      <a href="tl-07-dashboard.html">Dashboard</a>
+      <a href="tl-08-admin-projeto.html" aria-current="page">Admin</a>
+    </nav>
+    <div class="sidebar__project-active">Projeto ativo: Plataforma de Pagamentos</div>
+  </aside>
+  <header class="topbar">
+    <button class="topbar__notif" aria-label="Notificações">🔔</button>
+    <div class="topbar__user"><span class="avatar">TC</span> Thiago Cavalcante</div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Usuários do Projeto</h1>
+      <div style="display:flex; gap:8px;">
+        <a href="tl-08-admin-projeto.html" class="btn btn-outline">Voltar ao Admin</a>
+        <button class="btn btn-primary" type="button">+ Associar usuário</button>
+      </div>
+    </div>
+
+    <!-- estado: preenchido / idle -->
+    <section aria-label="Usuários associados">
+      <table>
+        <thead><tr><th>Usuário</th><th>Papel</th><th></th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="avatar" style="width:22px;height:22px;font-size:10px;">JS</span> João Silva</td>
+            <td>
+              <select aria-label="Papel de João Silva">
+                <option selected>Dev</option>
+                <option>Product Owner</option>
+                <option>Project Admin</option>
+              </select>
+            </td>
+            <td><button class="btn btn-text">Remover</button></td>
+          </tr>
+          <tr>
+            <td><span class="avatar" style="width:22px;height:22px;font-size:10px;">TC</span> Thiago Cavalcante</td>
+            <td>
+              <select aria-label="Papel de Thiago Cavalcante">
+                <option>Dev</option>
+                <option>Product Owner</option>
+                <option selected>Project Admin</option>
+              </select>
+            </td>
+            <td><button class="btn btn-text">Remover</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- estado: loading -->
+    <section class="state-section">
+      <span class="state-label">Loading</span>
+      <div class="skeleton" style="height:16px; margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:16px; width:60%;"></div>
+    </section>
+
+    <!-- estado: erro -->
+    <section class="state-section">
+      <span class="state-label">Erro</span>
+      <div class="toast toast-error" role="alert">Não foi possível carregar os usuários do projeto.</div>
+    </section>
+
+    <!-- estado: vazio (sem usuários associados) -->
+    <section class="state-section">
+      <span class="state-label">Vazio — sem usuários associados</span>
+      <div class="empty-state">Nenhum usuário associado a este projeto ainda.<br><button class="btn btn-primary" type="button" style="margin-top:8px;">Associar usuário</button></div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

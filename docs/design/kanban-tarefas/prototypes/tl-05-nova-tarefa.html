@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-05 — Nova Tarefa | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  body { background: rgba(33,37,41,0.5); min-height: 100vh; display:flex; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="page-header">
+    <h1 id="modal-title" style="font-size:18px;">Novo card</h1>
+    <a href="tl-03-board-compacto.html" class="btn btn-text" aria-label="Fechar">✕</a>
+  </div>
+
+  <!-- estado: idle / preenchido -->
+  <form aria-label="Formulário de nova tarefa">
+    <div class="form-field">
+      <label for="titulo">Título *</label>
+      <input id="titulo" name="titulo" type="text" required aria-required="true" placeholder="Ex.: Corrigir timeout no gateway">
+    </div>
+    <div class="form-field">
+      <label for="descricao">Descrição</label>
+      <textarea id="descricao" name="descricao" rows="3"></textarea>
+    </div>
+    <div class="form-field">
+      <label for="tipo">Tipo</label>
+      <select id="tipo" name="tipo">
+        <option>Feature</option>
+        <option>Bug</option>
+        <option>Débito técnico</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="raia">Raia (opcional)</label>
+      <select id="raia" name="raia">
+        <option value="">Raia padrão do projeto</option>
+        <option>Backend</option>
+        <option>Mobile</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="responsavel">Responsável (opcional)</label>
+      <select id="responsavel" name="responsavel">
+        <option value="">Sem responsável</option>
+        <option>João Silva</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit" style="width:100%; justify-content:center;">Criar card</button>
+  </form>
+
+  <!-- estado: erro (validação) -->
+  <section class="state-section">
+    <span class="state-label">Erro — validação</span>
+    <div class="form-field">
+      <label for="titulo-erro">Título *</label>
+      <input id="titulo-erro" type="text" aria-invalid="true" aria-describedby="titulo-erro-msg" value="">
+      <span id="titulo-erro-msg" class="form-error" role="alert">Informe o título da tarefa.</span>
+    </div>
+  </section>
+
+  <!-- estado: loading (submit) -->
+  <section class="state-section">
+    <span class="state-label">Loading — enviando</span>
+    <button class="btn btn-primary" type="button" disabled aria-busy="true" style="width:100%; justify-content:center;">Criando…</button>
+  </section>
+
+  <!-- estado: sucesso (criado) -->
+  <section class="state-section">
+    <span class="state-label">Sucesso — criado</span>
+    <div class="toast toast-success" role="status" aria-live="polite">Card criado com sucesso. <a href="tl-03-board-compacto.html">Voltar ao board</a></div>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "skill": "checklist",
+  "artifact_pattern": "docs/checklists/*-*.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## Sumário",
+        "## Itens Críticos",
+        "## Itens Não-Críticos"
+      ],
+      "id_patterns": {
+        "CHK": "CHK-\\d{3}"
+      },
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": []
+    }
+  }
+}

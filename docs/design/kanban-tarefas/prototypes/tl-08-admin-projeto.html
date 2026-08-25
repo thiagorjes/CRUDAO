@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-08 — Admin de Projeto | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .tabs { display:flex; gap: var(--space-md); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-md); }
+  .tabs button { background:none; border:none; padding: 8px 4px; font-weight:600; color: var(--color-text-secondary); cursor:pointer; border-bottom: 2px solid transparent; }
+  .tabs button[aria-selected="true"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Navegação principal">
+    <div class="sidebar__brand">Kanban</div>
+    <nav aria-label="Menu">
+      <a href="tl-02-lista-projetos.html">Projetos</a>
+      <a href="tl-07-dashboard.html">Dashboard</a>
+      <a href="tl-08-admin-projeto.html" aria-current="page">Admin</a>
+    </nav>
+    <div class="sidebar__project-active">Projeto ativo: Plataforma de Pagamentos</div>
+  </aside>
+  <header class="topbar">
+    <button class="topbar__notif" aria-label="Notificações">🔔</button>
+    <div class="topbar__user"><span class="avatar">TC</span> Thiago Cavalcante</div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Admin de Projeto</h1>
+      <div style="display:flex; gap:8px;">
+        <a href="tl-09-admin-papeis.html" class="btn btn-outline">Papéis/Permissões</a>
+        <a href="tl-10-lista-usuarios.html" class="btn btn-outline">Usuários</a>
+        <button class="btn btn-danger" type="button">Finalizar projeto</button>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Configuração de workflow">
+      <button role="tab" aria-selected="true">Colunas</button>
+      <button role="tab" aria-selected="false">Transições</button>
+      <button role="tab" aria-selected="false">Raias</button>
+    </div>
+
+    <!-- estado: preenchido / idle -->
+    <section aria-label="Colunas do workflow">
+      <table>
+        <thead><tr><th>Ordem</th><th>Coluna</th><th>Transições de saída</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>A Fazer</td><td>Em Andamento</td><td><button class="btn btn-text">Editar</button></td></tr>
+          <tr><td>2</td><td>Em Andamento</td><td>Revisão</td><td><button class="btn btn-text">Editar</button></td></tr>
+          <tr><td>3</td><td>Revisão</td><td>Concluído, Em Andamento</td><td><button class="btn btn-text">Editar</button></td></tr>
+          <tr><td>4</td><td>Concluído (etapa final)</td><td>— (permite desfinalizar)</td><td><button class="btn btn-text">Editar</button></td></tr>
+        </tbody>
+      </table>
+      <button class="btn btn-outline" type="button" style="margin-top:var(--space-md);">+ Nova coluna</button>
+    </section>
+
+    <!-- estado: erro (validação RN-003/RN-005) -->
+    <section class="state-section">
+      <span class="state-label">Erro — validação RN-003 / RN-005</span>
+      <div class="toast toast-error" role="alert">Não é possível excluir a coluna "Em Andamento": há tarefas ativas vinculadas. Toda etapa não-final precisa de ao menos uma transição de saída.</div>
+    </section>
+
+    <!-- estado: loading -->
+    <section class="state-section">
+      <span class="state-label">Loading</span>
+      <div class="skeleton" style="height:16px; margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:16px; width:80%;"></div>
+    </section>
+
+    <!-- estado: sucesso (salvo) -->
+    <section class="state-section">
+      <span class="state-label">Sucesso — salvo</span>
+      <div class="toast toast-success" role="status" aria-live="polite">Configuração de workflow salva com sucesso.</div>
+    </section>
+
+    <!-- estado: vazio (sem workflows) -->
+    <section class="state-section">
+      <span class="state-label">Vazio — sem workflows</span>
+      <div class="empty-state">Este projeto ainda não possui workflow configurado.<br><button class="btn btn-primary" type="button" style="margin-top:8px;">Criar workflow</button></div>
+    </section>
+  </main>
+</div>
+</body>
+</html>
