@@ -100,7 +100,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [ ] TASK-04.2 — Mover tarefa: transição + congelamento + lead-time
 - [x] TASK-04.3 — Impedimento: marcar/desmarcar
 - [ ] TASK-04.4 — Excluir tarefa + Auditoria PapelPermissao
-- [ ] TASK-04.5 — GET board + GET detalhe (projeção DTO)
+- [x] TASK-04.5 — GET board + GET detalhe (projeção DTO)
 - [ ] TASK-05.1 — EventoBoardPublisher + LISTEN/NOTIFY + STOMP
 - [ ] TASK-05.2 — Notificações internas
 - [ ] TASK-05.3 — Resiliência: reconexão, resync, health-check

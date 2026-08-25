@@ -16,7 +16,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Valida que as migrations V1/V2 aplicam sem erro (Flyway + Testcontainers) e que o seed de
- * papel/permissão reflete RN-006 (admin global protegido) — TASK-01.2.
+ * papel/permissão reflete RN-006 (admin global protegido) — TASK-01.2. Catálogo de permissões
+ * atualizado para incluir {@code tarefa:auditoria} (migration V10, TASK-04.4).
  */
 @Testcontainers
 @SpringBootTest
@@ -52,6 +53,7 @@ class PapelPermissaoMigrationIT {
                         "tarefa:finalizar",
                         "tarefa:impedimento",
                         "tarefa:excluir",
+                        "tarefa:auditoria",
                         "projeto:administrar",
                         "workflow:administrar",
                         "papel:administrar",
@@ -73,7 +75,7 @@ class PapelPermissaoMigrationIT {
 
         List<PapelPermissao> permissoesDoAdmin = papelPermissaoRepository.findByPapelId(admin.getId());
 
-        assertThat(permissoesDoAdmin).hasSize(8);
+        assertThat(permissoesDoAdmin).hasSize(9);
         assertThat(permissoesDoAdmin).allMatch(PapelPermissao::isHabilitada);
     }
 }

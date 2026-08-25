@@ -3,6 +3,7 @@ package com.crudao.kanban.domain.tarefa;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TarefaEtapaHistoricoRepository extends JpaRepository<TarefaEtapaHistorico, UUID> {
@@ -10,6 +11,13 @@ public interface TarefaEtapaHistoricoRepository extends JpaRepository<TarefaEtap
     /** Registro aberto (etapa em andamento) da tarefa — RF-006, RN-001. */
     Optional<TarefaEtapaHistorico> findByTarefaIdAndSaidaEmIsNull(UUID tarefaId);
 
+    /**
+     * Histórico de etapas da tarefa, com {@code etapa} pré-carregada em uma única query —
+     * {@code TarefaService.detalhe} lê {@code h.getEtapa().getId()} por registro; sem o fetch
+     * join, cada leitura dispararia uma query lazy adicional, escalando com o volume de histórico
+     * (achado do Comitê de Análise — Database, TASK-04.5).
+     */
+    @EntityGraph(attributePaths = "etapa")
     List<TarefaEtapaHistorico> findByTarefaIdOrderByEntradaEm(UUID tarefaId);
 
     /** Usado na exclusão da tarefa (RF-019) — FK não tem cascade. */

@@ -10,7 +10,7 @@ Retorna o estado completo do board (etapas × raias × cards) para renderizaçã
 ```json
 {
   "etapas": [{ "id", "nome", "ordem", "transicoesSaida": ["etapaId"] }],
-  "raias": [{ "id", "nome", "ordem" }],
+  "raias": [{ "id", "nome", "ordem", "global" }],
   "tarefas": [{
     "id", "titulo", "etapaAtualId", "raiaId", "responsavelId",
     "impedida", "impedidaDesde", "iniciada"

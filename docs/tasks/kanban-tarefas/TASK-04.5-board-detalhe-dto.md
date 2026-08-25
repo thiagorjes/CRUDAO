@@ -1,5 +1,6 @@
 # TASK-04.5 — GET board + GET detalhe com projeção DTO (sem N+1)
 
+**Status:** Concluída — 2026-08-25
 **Tamanho:** [G] 1-2 dias
 **Sistema:** CRUDAO
 **RF de origem:** RF-001, RF-006
@@ -12,9 +13,9 @@ Endpoint mais consultado do sistema — exige projeção DTO obrigatória (achad
 
 ## O que deve ser feito
 
-- [ ] Implementar `GET /api/projetos/{projetoId}/board` retornando etapas na ordem configurada, cada uma com as tarefas correspondentes, agrupadas por raia — via JPQL `SELECT NEW` ou `@EntityGraph` cobrindo `Etapa`, `Raia`, `Tarefa`, indicador de impedimento.
-- [ ] Confirmar `GET /api/tarefas/{id}` (iniciado em TASK-04.2) usa a mesma estratégia de projeção para as associações de histórico.
-- [ ] Validar via Hibernate Statistics/Testcontainers que a contagem de queries não escala com o número de tarefas retornadas — critério de aceite explícito da TechSpec.
+- [x] Implementar `GET /api/projetos/{projetoId}/board` retornando etapas na ordem configurada, cada uma com as tarefas correspondentes, agrupadas por raia — via JPQL `SELECT NEW` ou `@EntityGraph` cobrindo `Etapa`, `Raia`, `Tarefa`, indicador de impedimento.
+- [x] Confirmar `GET /api/tarefas/{id}` (iniciado em TASK-04.2) usa a mesma estratégia de projeção para as associações de histórico.
+- [x] Validar via Hibernate Statistics/Testcontainers que a contagem de queries não escala com o número de tarefas retornadas — critério de aceite explícito da TechSpec.
 
 ## Guia técnico
 
