@@ -332,7 +332,72 @@ class TarefaServiceTest {
                 .hasMessageContaining("404");
     }
 
+    @Test
+    void mover_projetoFinalizado_lanca409() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), false);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado")).when(permissaoGuard).exigirProjetoAtivo(projetoId);
+
+        assertThatThrownBy(() -> service.mover(tarefa.getId(), new MoverTarefaRequest(UUID.randomUUID())))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+    }
+
     // ---- TASK-04.2: editar ----
+
+    @Test
+    void editar_removerResponsavel_desatribuiComGerenciarEGeraAuditoria() {
+        Workflow workflow = workflow();
+        Etapa etapa = etapaComWorkflow(0, workflow, false);
+        Tarefa tarefa = tarefa(etapa, workflow, false);
+        Usuario responsavelAtual = new Usuario();
+        responsavelAtual.setId(UUID.randomUUID());
+        tarefa.setResponsavel(responsavelAtual);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(permissaoGuard.membro(projetoId)).thenReturn(true);
+        when(tarefaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.editar(tarefa.getId(), new EditarTarefaRequest(null, null, null, true));
+
+        assertThat(tarefa.getResponsavel()).isNull();
+        verify(permissaoGuard).exigir(projetoId, PERMISSAO_GERENCIAR);
+        var auditoriaCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
+        verify(tarefaAuditoriaRepository).save(auditoriaCaptor.capture());
+        assertThat(auditoriaCaptor.getValue().getValorNovo()).isNull();
+    }
+
+    @Test
+    void editar_removerResponsavelSemGerenciar_lanca403() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), false);
+        tarefa.setResponsavel(usuarioAutenticado);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(permissaoGuard.membro(projetoId)).thenReturn(true);
+        doThrow(new AccessDeniedException("Acesso negado"))
+                .when(permissaoGuard)
+                .exigir(projetoId, PERMISSAO_GERENCIAR);
+
+        assertThatThrownBy(
+                        () -> service.editar(tarefa.getId(), new EditarTarefaRequest(null, null, null, true)))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(tarefaRepository, never()).save(any());
+    }
+
+    @Test
+    void editar_projetoFinalizado_lanca409() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), false);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado")).when(permissaoGuard).exigirProjetoAtivo(projetoId);
+
+        assertThatThrownBy(
+                        () ->
+                                service.editar(
+                                        tarefa.getId(), new EditarTarefaRequest(null, null, UUID.randomUUID(), false)))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+    }
 
     @Test
     void editar_campoEstruturalComTarefaIniciada_lanca409() {
@@ -345,7 +410,7 @@ class TarefaServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.editar(
-                                        tarefa.getId(), new EditarTarefaRequest("Novo título", null, null)))
+                                        tarefa.getId(), new EditarTarefaRequest("Novo título", null, null, false)))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("409");
         verify(tarefaRepository, never()).save(any());
@@ -360,7 +425,7 @@ class TarefaServiceTest {
         when(permissaoGuard.membro(projetoId)).thenReturn(true);
         when(tarefaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.editar(tarefa.getId(), new EditarTarefaRequest("Novo título", null, null));
+        service.editar(tarefa.getId(), new EditarTarefaRequest("Novo título", null, null, false));
 
         assertThat(tarefa.getTitulo()).isEqualTo("Novo título");
         verify(permissaoGuard).exigir(projetoId, PERMISSAO_GERENCIAR);
@@ -379,7 +444,7 @@ class TarefaServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.editar(
-                                        tarefa.getId(), new EditarTarefaRequest(null, null, terceiroId)))
+                                        tarefa.getId(), new EditarTarefaRequest(null, null, terceiroId, false)))
                 .isInstanceOf(AccessDeniedException.class);
         verify(tarefaRepository, never()).save(any());
     }
@@ -400,7 +465,7 @@ class TarefaServiceTest {
                 .thenReturn(List.of(new UsuarioProjetoPapel()));
         when(tarefaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.editar(tarefa.getId(), new EditarTarefaRequest(null, null, usuarioAutenticado.getId()));
+        service.editar(tarefa.getId(), new EditarTarefaRequest(null, null, usuarioAutenticado.getId(), false));
 
         assertThat(tarefa.getResponsavel()).isEqualTo(usuarioAutenticado);
         var auditoriaCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
@@ -426,7 +491,7 @@ class TarefaServiceTest {
                 .thenReturn(List.of(new UsuarioProjetoPapel()));
         when(tarefaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.editar(tarefa.getId(), new EditarTarefaRequest(null, null, novoResponsavelId));
+        service.editar(tarefa.getId(), new EditarTarefaRequest(null, null, novoResponsavelId, false));
 
         assertThat(tarefa.getResponsavel()).isEqualTo(novoResponsavel);
     }
@@ -449,7 +514,7 @@ class TarefaServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.editar(
-                                        tarefa.getId(), new EditarTarefaRequest(null, null, novoResponsavelId)))
+                                        tarefa.getId(), new EditarTarefaRequest(null, null, novoResponsavelId, false)))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("422");
         verify(tarefaRepository, never()).save(any());

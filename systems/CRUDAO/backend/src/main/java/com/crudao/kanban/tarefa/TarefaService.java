@@ -152,7 +152,7 @@ public class TarefaService {
     public TarefaResponse mover(UUID tarefaId, MoverTarefaRequest request) {
         Tarefa tarefa = buscarTarefa(tarefaId);
         UUID projetoId = tarefa.getProjeto().getId();
-        permissaoGuard.exigirProjetoAtivo(projetoId);
+        exigirProjetoAtivoParaTarefa(projetoId);
         exigirMembro(projetoId);
 
         if (request.etapaDestinoId() == null) {
@@ -223,7 +223,7 @@ public class TarefaService {
     public TarefaResponse editar(UUID tarefaId, EditarTarefaRequest request) {
         Tarefa tarefa = buscarTarefa(tarefaId);
         UUID projetoId = tarefa.getProjeto().getId();
-        permissaoGuard.exigirProjetoAtivo(projetoId);
+        exigirProjetoAtivoParaTarefa(projetoId);
         exigirMembro(projetoId);
 
         Usuario autor = UsuarioAutenticadoHolder.get();
@@ -251,7 +251,16 @@ public class TarefaService {
             }
         }
 
-        if (request.responsavelId() != null) {
+        if (request.removerResponsavel()) {
+            // Desatribuir é ação de gestão — dev pode "puxar" para si (RN-012), mas não esvaziar
+            // o campo (achado de code review, agent QA — antes indistinguível de "não enviado").
+            permissaoGuard.exigir(projetoId, PERMISSAO_GERENCIAR);
+            UUID responsavelAnteriorId = tarefa.getResponsavel() == null ? null : tarefa.getResponsavel().getId();
+            if (responsavelAnteriorId != null) {
+                registrarAuditoria(tarefa, autor, "responsavel", responsavelAnteriorId, null, agora);
+                tarefa.setResponsavel(null);
+            }
+        } else if (request.responsavelId() != null) {
             boolean podeGerenciar = permissaoGuard.permitido(projetoId, PERMISSAO_GERENCIAR);
             if (!podeGerenciar && !request.responsavelId().equals(autor.getId())) {
                 throw new AccessDeniedException("Acesso negado");
@@ -329,6 +338,20 @@ public class TarefaService {
     private void exigirMembro(UUID projetoId) {
         if (!permissaoGuard.membro(projetoId)) {
             throw new AccessDeniedException("Acesso negado");
+        }
+    }
+
+    /**
+     * RN-015 (projeto finalizado = somente leitura), mas traduzido para {@code 409} — não {@code
+     * 403} como o guard genérico ({@link PermissaoGuard#exigirProjetoAtivo}) devolve — porque
+     * {@code contracts/tarefas.md} documenta explicitamente esse caso como "estado incompatível"
+     * (409) para os endpoints de tarefa (achado de code review, agent QA, TASK-04.2).
+     */
+    private void exigirProjetoAtivoParaTarefa(UUID projetoId) {
+        try {
+            permissaoGuard.exigirProjetoAtivo(projetoId);
+        } catch (AccessDeniedException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "projeto finalizado — somente leitura");
         }
     }
 

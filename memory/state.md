@@ -61,6 +61,19 @@ _Atualizado em: 2026-08-24_
 
 ## kanban-tarefas
 
+- **Etapa concluída:** /tdd TASK-04.2 — 2026-08-25
+- **Task implementada (TDD):** TASK-04.2 — Mover tarefa: engine de transição + congelamento + lead-time (RF-002, RF-003, RF-006, RF-012, RN-004, RN-011, RN-012, RN-016) — 2026-08-25
+- **Arquivos:** systems/CRUDAO/backend/src/main/java/com/crudao/kanban/tarefa/{TarefaService,TarefaController}.java (métodos `mover`/`editar`/`detalhe` novos, `criar` ajustado); .../tarefa/{MoverTarefaRequest,EditarTarefaRequest,HistoricoEtapaResponse,TarefaDetalheResponse}.java (novo); .../domain/tarefa/{TarefaEtapaHistoricoRepository,TarefaImpedimentoHistoricoRepository}.java (+métodos de consulta por tarefa); teste .../tarefa/TarefaServiceTest.java (+17 casos: mover, editar, detalhe)
+- **Ciclo TDD:** Red → Green → Refactor → Review concluídos.
+- **Endpoints novos:** `POST /api/tarefas/{id}/mover` (transição validada via `Transicao`, `tarefa:finalizar` se destino/origem é etapa final — cobre "desfinalizar" no mesmo endpoint), `PUT /api/tarefas/{id}` (congelamento de `titulo`/`descricaoEscopo` pós-início, RN-012 na troca de responsável), `GET /api/tarefas/{id}` (lead-time por etapa incl. etapa em andamento + tempo de impedimento total).
+- **RN-012:** "gestão" (atribuição livre) mapeada para a permissão `tarefa:gerenciar` (não string de papel `dev`) — consistente com o RBAC 100% baseado em chaves de permissão do projeto.
+- **Gap de TASK-04.1 fechado:** `resolverResponsavelVinculado` (usado por `criar` e `editar`) agora exige vínculo do usuário ao projeto via `UsuarioProjetoPapelRepository`, não só existência do usuário.
+- **Testes:** `mvn test` (sem ITs) — **102/102 verdes** (26 em `TarefaServiceTest`, incl. 17 novos desta task).
+- **Code review:** agent QA (contexto fresco, persona via general-purpose) — 0 findings 🔴; 2 findings 🟡 corrigidos: (1) projeto finalizado em `mover`/`editar` retornava `403` (guard genérico `PermissaoGuard.exigirProjetoAtivo`, reuso de RN-015) mas o contrato `tarefas.md` documenta `409` para esse caso — corrigido com wrapper local `exigirProjetoAtivoParaTarefa` que traduz para `409` sem alterar o guard compartilhado (mantém `criar`/demais epics em `403`, comportamento já testado); (2) `PUT /api/tarefas/{id}` não permitia desatribuir responsável (`responsavelId=null` indistinguível de "não enviado") — adicionado `EditarTarefaRequest.removerResponsavel` (exige `tarefa:gerenciar`). Findings 🟢 (concorrência em histórico de etapa aberto sem lock; falta de teste "gestor reatribui tarefa não iniciada") não corrigidos — baixo risco, não bloqueantes.
+- **Próxima task:** TASK-04.3 (impedimento) ou TASK-04.4 (excluir tarefa + auditoria) — paralelas entre si e com TASK-04.2, ambas dependem só de TASK-04.1
+
+_Etapa anterior:_
+
 - **Etapa concluída:** /implement TASK-04.1 — 2026-08-25
 - **Task implementada:** TASK-04.1 — Migrations V5-V6 + entidade Tarefa + criação de card pelo board (RF-018, RN-CB-001/003/004/005), dona da checagem real de RN-005 — 2026-08-25
 - **Arquivos:** systems/CRUDAO/backend/src/main/resources/db/migration/{V5__tarefa,V6__tarefa_historico_auditoria}.sql (novo); .../domain/tarefa/{Tarefa,TarefaObservador,TarefaEtapaHistorico,TarefaImpedimentoHistorico,TarefaAuditoria,TarefaRepository,TarefaObservadorRepository,TarefaEtapaHistoricoRepository,TarefaImpedimentoHistoricoRepository,TarefaAuditoriaRepository}.java (novo pacote); .../tarefa/{TarefaService,TarefaController,CriarTarefaRequest,TarefaResponse}.java (novo pacote); .../domain/raia/RaiaRepository.java (+`findByProjetoIdOrderByOrdem`); .../workflow/WorkflowService.java (RN-005 real + regra "um workflow por projeto"); .../raia/RaiaService.java (RN-005 real); testes .../tarefa/TarefaServiceTest.java (novo), .../workflow/WorkflowServiceTest.java e .../raia/RaiaServiceTest.java (+casos RN-005/409)

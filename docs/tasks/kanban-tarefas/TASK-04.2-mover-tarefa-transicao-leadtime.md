@@ -35,3 +35,5 @@ Lógica de maior risco do domínio — movimentação de card, congelamento pós
 - Dev tentando atribuir a tarefa a terceiro → `403`; dev autoatribuindo (mesmo tarefa já atribuída a outro) → permitido (RN-012).
 - Product_owner/project_admin/admin atribuem/reatribuem livremente a qualquer usuário.
 - Toda troca de responsável gera linha em `TarefaAuditoria` (campo `responsavel`) com valor anterior/novo.
+
+**Status:** Concluída — 2026-08-25 (TDD, ver memory/state.md)
