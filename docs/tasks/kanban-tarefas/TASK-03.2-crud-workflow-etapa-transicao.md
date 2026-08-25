@@ -1,5 +1,7 @@
 # TASK-03.2 — CRUD Workflow/Etapa/Transicao
 
+**Status:** Concluída — 2026-08-25
+
 **Tamanho:** [G] 1-2 dias
 **Sistema:** CRUDAO
 **RF de origem:** RF-002, RF-009, RF-010

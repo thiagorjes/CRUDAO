@@ -94,7 +94,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [ ] TASK-02.2 — RBAC: motor de permissões efetivas + guard (TDD obrigatório)
 - [ ] TASK-02.3 — CRUD papéis/permissões/usuários (dona da migration V8)
 - [x] TASK-03.1 — CRUD Projeto incl. finalizar/reabrir
-- [ ] TASK-03.2 — CRUD Workflow/Etapa/Transicao
+- [x] TASK-03.2 — CRUD Workflow/Etapa/Transicao
 - [ ] TASK-03.3 — CRUD Raia
 - [ ] TASK-04.1 — Migrations V5-V6 + criar card
 - [ ] TASK-04.2 — Mover tarefa: transição + congelamento + lead-time
@@ -150,3 +150,8 @@ _Atualizado por: /implement TASK-03.1 — 2026-08-25_
 
 - **ADR-007** — bootstrap do primeiro admin via `Usuario.adminGlobal` (flag, não papel) setado no primeiro login do e-mail configurado em `kanban.bootstrap.admin-email`; `PermissaoGuard` bypassa RBAC escopado para `adminGlobal=true`, exceto `exigirProjetoAtivo` (RN-015 vale sempre, sem exceção para nenhum papel).
 - **Guard reutilizável `PermissaoGuard.exigirProjetoAtivo(projetoId)`** (RN-015) — chamar em todo endpoint de escrita das epics 04+ antes de gravar; `KANBAN_BOOTSTRAP_ADMIN_EMAIL` é obrigatória em produção (sem ela, ninguém cria o primeiro projeto).
+
+_Atualizado por: /implement TASK-03.2 — 2026-08-25_
+
+- Não confiar em `findById(destinoId)` sozinho para validar destino de uma `Transicao` — sempre checar `destino.getWorkflow().getId().equals(origem.getWorkflow().getId())`; achado de code review (agent QA) — sem essa checagem, um admin de projeto conseguia criar transição apontando para etapa de workflow/projeto alheio.
+- `DataIntegrityViolationException` de constraint `UNIQUE` (ex.: `uk_etapa_workflow_ordem`, `uk_transicao_origem_destino`) deve sempre virar `409`, nunca vazar como `500` — padrão recorrente entre tasks (já corrigido também em TASK-02.3).

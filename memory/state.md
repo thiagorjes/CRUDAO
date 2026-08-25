@@ -61,6 +61,17 @@ _Atualizado em: 2026-08-24_
 
 ## kanban-tarefas
 
+- **Etapa concluída:** /implement TASK-03.2 — 2026-08-25
+- **Task implementada:** TASK-03.2 — CRUD Workflow/Etapa/Transicao, dona da migration V3 (RF-002, RF-009, RF-010) — 2026-08-25
+- **Arquivos:** systems/CRUDAO/backend/src/main/resources/db/migration/V3__workflow_etapa_transicao.sql (novo); .../domain/workflow/{Workflow,Etapa,Transicao,WorkflowRepository,EtapaRepository,TransicaoRepository}.java (novo pacote); .../workflow/{WorkflowService,WorkflowController,EtapaController} + DTOs (novo pacote); teste .../workflow/WorkflowServiceTest.java (novo)
+- **RN-003:** validada em nível de serviço — editar etapa para não-final sem transição de saída existente, ou `PUT /api/etapas/{id}/transicoes` com lista vazia numa etapa não-final → `422` (contrato permite criar etapa sem transição; bloqueio só ao "operacionalizar").
+- **RN-005:** stub isolado em `possuiTarefasAtivasNoWorkflow`/`possuiTarefasAtivasNaEtapa` (sempre `false`), Javadoc apontando substituição obrigatória em TASK-04.1 — decisão fechada pelo Comitê de Análise, não é opcional.
+- **Testes:** `mvn test` (sem ITs) — **58/58 verdes** (16 no `WorkflowServiceTest`).
+- **Code review:** agent QA (contexto fresco, persona via general-purpose) — 1 finding 🔴 corrigido: `PUT /api/etapas/{id}/transicoes` não validava que a etapa de destino pertencia ao mesmo workflow da origem (permitia transição cross-projeto/cross-workflow); 5 findings 🟡 corrigidos: `DataIntegrityViolationException` de `UNIQUE(workflowId,ordem)`/`UNIQUE(etapaOrigemId,etapaDestinoId)` virava 500 (→ 409), N+1 em `GET /workflows` (uma query de transições por etapa → 1 query agrupada), falta de bloqueio de transição etapa→ela mesma (→ 422), cobertura de teste incompleta (adicionados casos de conflito 409, cross-workflow e auto-loop), `ordem` negativa não validada (→ 422 na criação/edição). Finding 🟡 "404 antes de 403" (padrão já existente em ProjetoService/PapelService) mantido por consistência com o restante do projeto — não corrigido isoladamente aqui. Nitpick de `save` redundante em `editarEtapa` após reordenação corrigido (agora um único `saveAll`).
+- **Próxima task:** TASK-03.3 (paralela, já concluída anteriormente confirmar) ou TASK-04.1
+
+_Etapa anterior:_
+
 - **Etapa concluída:** /implement TASK-03.1 — 2026-08-25
 - **Task implementada:** TASK-03.1 — CRUD de Projeto incl. finalizar/reabrir (RF-008, RN-015) — 2026-08-25
 - **Arquivos:** systems/CRUDAO/backend/src/main/resources/db/migration/V9__usuario_admin_global.sql (novo); .../domain/usuario/Usuario.java (+`adminGlobal`); .../auth/UsuarioProvisioningService.java (+bootstrap por `kanban.bootstrap.admin-email`); .../rbac/PermissaoGuard.java (+bypass admin global, +`exigirProjetoAtivo`); .../projeto/{ProjetoController,ProjetoService,CriarProjetoRequest,EditarProjetoRequest,ProjetoResponse}.java (novo pacote); application.yml + application-dev.yml (+property `kanban.bootstrap.admin-email`); testes .../projeto/ProjetoServiceTest.java (novo), .../rbac/PermissaoGuardTest.java e PermissaoGuardEndpointIT.java (+admin global/projeto ativo), .../auth/UsuarioProvisioningServiceTest.java (+bootstrap)
