@@ -3,12 +3,14 @@ package com.crudao.kanban.tarefa;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.crudao.kanban.auth.UsuarioAutenticadoHolder;
+import com.crudao.kanban.domain.papel.Papel;
 import com.crudao.kanban.domain.papel.UsuarioProjetoPapel;
 import com.crudao.kanban.domain.papel.UsuarioProjetoPapelRepository;
 import com.crudao.kanban.domain.raia.Raia;
@@ -20,6 +22,7 @@ import com.crudao.kanban.domain.tarefa.TarefaEtapaHistorico;
 import com.crudao.kanban.domain.tarefa.TarefaEtapaHistoricoRepository;
 import com.crudao.kanban.domain.tarefa.TarefaImpedimentoHistorico;
 import com.crudao.kanban.domain.tarefa.TarefaImpedimentoHistoricoRepository;
+import com.crudao.kanban.domain.tarefa.TarefaObservadorRepository;
 import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.Projeto;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
@@ -62,6 +65,7 @@ class TarefaServiceTest {
     @Mock private TarefaEtapaHistoricoRepository tarefaEtapaHistoricoRepository;
     @Mock private TarefaImpedimentoHistoricoRepository tarefaImpedimentoHistoricoRepository;
     @Mock private TarefaAuditoriaRepository tarefaAuditoriaRepository;
+    @Mock private TarefaObservadorRepository tarefaObservadorRepository;
     @Mock private ProjetoRepository projetoRepository;
     @Mock private WorkflowRepository workflowRepository;
     @Mock private EtapaRepository etapaRepository;
@@ -85,6 +89,7 @@ class TarefaServiceTest {
                         tarefaEtapaHistoricoRepository,
                         tarefaImpedimentoHistoricoRepository,
                         tarefaAuditoriaRepository,
+                        tarefaObservadorRepository,
                         projetoRepository,
                         workflowRepository,
                         etapaRepository,
@@ -745,6 +750,175 @@ class TarefaServiceTest {
         assertThatThrownBy(() -> service.marcarImpedimento(id))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("404");
+    }
+
+    // ---- TASK-04.4: excluir ----
+
+    @Test
+    void excluir_semPermissaoGerenciar_lanca403() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado"))
+                .when(permissaoGuard)
+                .exigir(projetoId, PERMISSAO_GERENCIAR);
+
+        assertThatThrownBy(() -> service.excluir(tarefa.getId())).isInstanceOf(AccessDeniedException.class);
+        verify(tarefaRepository, never()).delete(any());
+    }
+
+    @Test
+    void excluir_projetoFinalizado_lanca409() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado")).when(permissaoGuard).exigirProjetoAtivo(projetoId);
+
+        assertThatThrownBy(() -> service.excluir(tarefa.getId()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+        verify(tarefaRepository, never()).delete(any());
+    }
+
+    @Test
+    void excluir_devSemTogglePermissaoExcluir_lanca403() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        UsuarioProjetoPapel vinculoDev = new UsuarioProjetoPapel();
+        Papel papelDev = new Papel();
+        papelDev.setChave("dev");
+        vinculoDev.setPapel(papelDev);
+        when(usuarioProjetoPapelRepository.findByUsuarioIdAndProjetoId(usuarioAutenticado.getId(), projetoId))
+                .thenReturn(List.of(vinculoDev));
+        doNothing().when(permissaoGuard).exigir(projetoId, PERMISSAO_GERENCIAR);
+        doThrow(new AccessDeniedException("Acesso negado"))
+                .when(permissaoGuard)
+                .exigir(projetoId, "tarefa:excluir");
+
+        assertThatThrownBy(() -> service.excluir(tarefa.getId())).isInstanceOf(AccessDeniedException.class);
+        verify(tarefaRepository, never()).delete(any());
+    }
+
+    @Test
+    void excluir_devComTogglePermissaoExcluir_permitido() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        UsuarioProjetoPapel vinculoDev = new UsuarioProjetoPapel();
+        Papel papelDev = new Papel();
+        papelDev.setChave("dev");
+        vinculoDev.setPapel(papelDev);
+        when(usuarioProjetoPapelRepository.findByUsuarioIdAndProjetoId(usuarioAutenticado.getId(), projetoId))
+                .thenReturn(List.of(vinculoDev));
+
+        service.excluir(tarefa.getId());
+
+        verify(tarefaEtapaHistoricoRepository).deleteByTarefaId(tarefa.getId());
+        verify(tarefaImpedimentoHistoricoRepository).deleteByTarefaId(tarefa.getId());
+        verify(tarefaObservadorRepository).deleteByTarefaId(tarefa.getId());
+        verify(tarefaAuditoriaRepository).deleteByTarefaId(tarefa.getId());
+        verify(tarefaRepository).delete(tarefa);
+    }
+
+    @Test
+    void excluir_gestorSemVinculoDev_naoExigeTogglePermissaoExcluir() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(usuarioProjetoPapelRepository.findByUsuarioIdAndProjetoId(usuarioAutenticado.getId(), projetoId))
+                .thenReturn(List.of());
+
+        service.excluir(tarefa.getId());
+
+        verify(permissaoGuard, never()).exigir(projetoId, "tarefa:excluir");
+        verify(tarefaRepository).delete(tarefa);
+    }
+
+    @Test
+    void excluir_tarefaInexistente_lanca404() {
+        UUID id = UUID.randomUUID();
+        when(tarefaRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.excluir(id))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("404");
+    }
+
+    // ---- TASK-04.4: auditoria ----
+
+    @Test
+    void auditoria_semPermissaoDedicada_lanca403() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado"))
+                .when(permissaoGuard)
+                .exigir(projetoId, "tarefa:auditoria");
+
+        assertThatThrownBy(() -> service.auditoria(tarefa.getId())).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void auditoria_semVinculoAoProjeto_lanca403() {
+        // IDOR cross-projeto: usuário sem nenhum vínculo (não é gestor/admin de nenhum projeto)
+        // não pode ler a auditoria de uma tarefa de projeto ao qual não pertence.
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Acesso negado"))
+                .when(permissaoGuard)
+                .exigir(projetoId, "tarefa:auditoria");
+
+        assertThatThrownBy(() -> service.auditoria(tarefa.getId())).isInstanceOf(AccessDeniedException.class);
+        verify(tarefaAuditoriaRepository, never()).findByTarefaIdOrderByDataHora(any());
+    }
+
+    @Test
+    void auditoria_retornaHistoricoComTodosOsCamposRelevantes() {
+        Etapa etapa = etapaComWorkflow(0, workflow(), false);
+        Tarefa tarefa = tarefa(etapa, workflow(), true);
+        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+
+        TarefaAuditoria registroTitulo = new TarefaAuditoria();
+        registroTitulo.setAutor(usuarioAutenticado);
+        registroTitulo.setCampo("titulo");
+        registroTitulo.setValorAnterior("Antigo");
+        registroTitulo.setValorNovo("Novo");
+        registroTitulo.setDataHora(OffsetDateTime.now().minusHours(3));
+
+        TarefaAuditoria registroResponsavel = new TarefaAuditoria();
+        registroResponsavel.setAutor(usuarioAutenticado);
+        registroResponsavel.setCampo("responsavel");
+        registroResponsavel.setValorAnterior(null);
+        registroResponsavel.setValorNovo(UUID.randomUUID().toString());
+        registroResponsavel.setDataHora(OffsetDateTime.now().minusHours(2));
+
+        TarefaAuditoria registroEtapa = new TarefaAuditoria();
+        registroEtapa.setAutor(usuarioAutenticado);
+        registroEtapa.setCampo("etapa");
+        registroEtapa.setValorAnterior(UUID.randomUUID().toString());
+        registroEtapa.setValorNovo(UUID.randomUUID().toString());
+        registroEtapa.setDataHora(OffsetDateTime.now().minusHours(1));
+
+        TarefaAuditoria registroImpedimento = new TarefaAuditoria();
+        registroImpedimento.setAutor(usuarioAutenticado);
+        registroImpedimento.setCampo("impedimento");
+        registroImpedimento.setValorAnterior(null);
+        registroImpedimento.setValorNovo("marcado");
+        registroImpedimento.setDataHora(OffsetDateTime.now());
+
+        when(tarefaAuditoriaRepository.findByTarefaIdOrderByDataHora(tarefa.getId()))
+                .thenReturn(List.of(registroTitulo, registroResponsavel, registroEtapa, registroImpedimento));
+
+        List<TarefaAuditoriaResponse> resultado = service.auditoria(tarefa.getId());
+
+        assertThat(resultado).hasSize(4);
+        assertThat(resultado).extracting(TarefaAuditoriaResponse::campo)
+                .containsExactly("titulo", "responsavel", "etapa", "impedimento");
+        assertThat(resultado.get(0).autorId()).isEqualTo(usuarioAutenticado.getId());
+        assertThat(resultado.get(0).valorAnterior()).isEqualTo("Antigo");
+        assertThat(resultado.get(0).valorNovo()).isEqualTo("Novo");
     }
 
     private Usuario usuarioAutenticado() {

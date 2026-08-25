@@ -11,6 +11,7 @@ import com.crudao.kanban.domain.tarefa.TarefaEtapaHistorico;
 import com.crudao.kanban.domain.tarefa.TarefaEtapaHistoricoRepository;
 import com.crudao.kanban.domain.tarefa.TarefaImpedimentoHistorico;
 import com.crudao.kanban.domain.tarefa.TarefaImpedimentoHistoricoRepository;
+import com.crudao.kanban.domain.tarefa.TarefaObservadorRepository;
 import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.domain.usuario.Usuario;
@@ -54,11 +55,15 @@ public class TarefaService {
     private static final String PERMISSAO_GERENCIAR = "tarefa:gerenciar";
     private static final String PERMISSAO_FINALIZAR = "tarefa:finalizar";
     private static final String PERMISSAO_IMPEDIMENTO = "tarefa:impedimento";
+    private static final String PERMISSAO_EXCLUIR = "tarefa:excluir";
+    private static final String PERMISSAO_AUDITORIA = "tarefa:auditoria";
+    private static final String PAPEL_DEV = "dev";
 
     private final TarefaRepository tarefaRepository;
     private final TarefaEtapaHistoricoRepository tarefaEtapaHistoricoRepository;
     private final TarefaImpedimentoHistoricoRepository tarefaImpedimentoHistoricoRepository;
     private final TarefaAuditoriaRepository tarefaAuditoriaRepository;
+    private final TarefaObservadorRepository tarefaObservadorRepository;
     private final ProjetoRepository projetoRepository;
     private final WorkflowRepository workflowRepository;
     private final EtapaRepository etapaRepository;
@@ -73,6 +78,7 @@ public class TarefaService {
             TarefaEtapaHistoricoRepository tarefaEtapaHistoricoRepository,
             TarefaImpedimentoHistoricoRepository tarefaImpedimentoHistoricoRepository,
             TarefaAuditoriaRepository tarefaAuditoriaRepository,
+            TarefaObservadorRepository tarefaObservadorRepository,
             ProjetoRepository projetoRepository,
             WorkflowRepository workflowRepository,
             EtapaRepository etapaRepository,
@@ -85,6 +91,7 @@ public class TarefaService {
         this.tarefaEtapaHistoricoRepository = tarefaEtapaHistoricoRepository;
         this.tarefaImpedimentoHistoricoRepository = tarefaImpedimentoHistoricoRepository;
         this.tarefaAuditoriaRepository = tarefaAuditoriaRepository;
+        this.tarefaObservadorRepository = tarefaObservadorRepository;
         this.projetoRepository = projetoRepository;
         this.workflowRepository = workflowRepository;
         this.etapaRepository = etapaRepository;
@@ -389,6 +396,68 @@ public class TarefaService {
                 tarefa, UsuarioAutenticadoHolder.get(), "impedimento", historico.getMarcadoEm(), "desmarcado", agora);
 
         return toResponse(tarefa);
+    }
+
+    /**
+     * Exclui o card do board (RF-019). Requer {@code tarefa:gerenciar} (RN-CB-001) e, se o
+     * usuário for do papel {@code dev} no projeto, adicionalmente {@code tarefa:excluir}
+     * habilitada (RN-CB-002 — toggle dedicado, não flag de contexto sobre {@code
+     * tarefa:gerenciar}, decisão do Comitê de Análise). Bloqueada em projeto finalizado
+     * (RN-CB-003). Registros filhos (histórico de etapa/impedimento, observadores, auditoria) são
+     * removidos antes da tarefa — as FKs não têm {@code ON DELETE CASCADE}.
+     *
+     * <p>Publicação do evento {@code TAREFA_EXCLUIDA} via STOMP (RNF-001) fica a cargo do
+     * publisher introduzido em TASK-05.1 — mesmo estado dos demais endpoints desta classe.
+     */
+    @Transactional
+    public void excluir(UUID tarefaId) {
+        Tarefa tarefa = buscarTarefa(tarefaId);
+        UUID projetoId = tarefa.getProjeto().getId();
+        exigirProjetoAtivoParaTarefa(projetoId);
+        permissaoGuard.exigir(projetoId, PERMISSAO_GERENCIAR);
+        if (usuarioEhDev(projetoId)) {
+            permissaoGuard.exigir(projetoId, PERMISSAO_EXCLUIR);
+        }
+
+        tarefaEtapaHistoricoRepository.deleteByTarefaId(tarefaId);
+        tarefaImpedimentoHistoricoRepository.deleteByTarefaId(tarefaId);
+        tarefaObservadorRepository.deleteByTarefaId(tarefaId);
+        tarefaAuditoriaRepository.deleteByTarefaId(tarefaId);
+        tarefaRepository.delete(tarefa);
+    }
+
+    /**
+     * Histórico de auditoria da tarefa (RF-017) — responsável, título, etapa e impedimento.
+     * Requer {@code tarefa:auditoria}, permissão dedicada (não {@code tarefa:gerenciar} — dev
+     * tipicamente também a possui, mas o contrato restringe a "papel gestor ou admin"; achado de
+     * code review, agent QA, TASK-04.4).
+     */
+    public List<TarefaAuditoriaResponse> auditoria(UUID tarefaId) {
+        Tarefa tarefa = buscarTarefa(tarefaId);
+        UUID projetoId = tarefa.getProjeto().getId();
+        permissaoGuard.exigir(projetoId, PERMISSAO_AUDITORIA);
+
+        return tarefaAuditoriaRepository.findByTarefaIdOrderByDataHora(tarefaId).stream()
+                .map(
+                        a ->
+                                new TarefaAuditoriaResponse(
+                                        a.getAutor().getId(),
+                                        a.getCampo(),
+                                        a.getValorAnterior(),
+                                        a.getValorNovo(),
+                                        a.getDataHora()))
+                .toList();
+    }
+
+    /** {@code true} se o usuário autenticado tem o papel {@code dev} vinculado a este projeto. */
+    private boolean usuarioEhDev(UUID projetoId) {
+        Usuario autor = UsuarioAutenticadoHolder.get();
+        if (autor == null) {
+            return false;
+        }
+        return usuarioProjetoPapelRepository.findByUsuarioIdAndProjetoId(autor.getId(), projetoId).stream()
+                .anyMatch(
+                        vinculo -> vinculo.getPapel() != null && PAPEL_DEV.equals(vinculo.getPapel().getChave()));
     }
 
     private long tempoImpedimento(TarefaImpedimentoHistorico impedimento, OffsetDateTime agora) {

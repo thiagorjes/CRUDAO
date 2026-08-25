@@ -1,5 +1,6 @@
 package com.crudao.kanban.tarefa;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,5 +55,16 @@ public class TarefaController {
     @DeleteMapping("/api/tarefas/{id}/impedimento")
     public ResponseEntity<TarefaResponse> desmarcarImpedimento(@PathVariable UUID id) {
         return ResponseEntity.ok(tarefaService.desmarcarImpedimento(id));
+    }
+
+    @DeleteMapping("/api/tarefas/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable UUID id) {
+        tarefaService.excluir(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/api/tarefas/{id}/auditoria")
+    public ResponseEntity<List<TarefaAuditoriaResponse>> auditoria(@PathVariable UUID id) {
+        return ResponseEntity.ok(tarefaService.auditoria(id));
     }
 }

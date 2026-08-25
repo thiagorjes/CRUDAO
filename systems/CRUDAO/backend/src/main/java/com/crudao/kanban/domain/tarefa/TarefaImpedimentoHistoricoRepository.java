@@ -8,4 +8,7 @@ public interface TarefaImpedimentoHistoricoRepository
         extends JpaRepository<TarefaImpedimentoHistorico, UUID> {
 
     List<TarefaImpedimentoHistorico> findByTarefaId(UUID tarefaId);
+
+    /** Usado na exclusão da tarefa (RF-019) — FK não tem cascade. */
+    void deleteByTarefaId(UUID tarefaId);
 }

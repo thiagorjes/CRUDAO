@@ -11,4 +11,7 @@ public interface TarefaEtapaHistoricoRepository extends JpaRepository<TarefaEtap
     Optional<TarefaEtapaHistorico> findByTarefaIdAndSaidaEmIsNull(UUID tarefaId);
 
     List<TarefaEtapaHistorico> findByTarefaIdOrderByEntradaEm(UUID tarefaId);
+
+    /** Usado na exclusão da tarefa (RF-019) — FK não tem cascade. */
+    void deleteByTarefaId(UUID tarefaId);
 }

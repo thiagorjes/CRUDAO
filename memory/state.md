@@ -61,6 +61,17 @@ _Atualizado em: 2026-08-24_
 
 ## kanban-tarefas
 
+- **Etapa concluída:** /implement TASK-04.4 — 2026-08-25 — **Epic 04 (Tarefas core) concluído.**
+- **Task implementada:** TASK-04.4 — Excluir tarefa + leitura de auditoria (RF-019, RF-017, RN-CB-001/002/003) — 2026-08-25
+- **Arquivos:** systems/CRUDAO/backend/src/main/resources/db/migration/V10__tarefa_auditoria_permissao.sql (novo); .../tarefa/{TarefaService,TarefaController}.java (métodos/endpoints `excluir`/`auditoria`, `DELETE`/`GET /api/tarefas/{id}` e `/auditoria`); .../tarefa/TarefaAuditoriaResponse.java (novo); .../domain/tarefa/{TarefaAuditoriaRepository,TarefaEtapaHistoricoRepository,TarefaImpedimentoHistoricoRepository,TarefaObservadorRepository}.java (+`deleteByTarefaId`, +`findByTarefaIdOrderByDataHora`); teste .../tarefa/TarefaServiceTest.java (+13 casos: excluir, auditoria)
+- **Decisões:** exclusão apaga em cascata (código, não FK — migrations V5/V6 sem `ON DELETE CASCADE`) os registros filhos de etapa/impedimento/observador/auditoria antes da tarefa. `tarefa:excluir` já estava no catálogo desde a V2 (TASK-01.2), confirmado sem alteração. Emissão de `TAREFA_EXCLUIDA` via STOMP não implementada (fica para TASK-05.1) — mesmo padrão documentacional dos demais métodos de `TarefaService`.
+- **Achado de code review corrigido com migration nova:** `GET /auditoria` exigia inicialmente `tarefa:gerenciar`, mas o contrato pede "papel gestor ou admin" — como dev tipicamente também tem `tarefa:gerenciar`, criada permissão dedicada `tarefa:auditoria` (migration **V10**, nova — V2 já aplicada não foi editada).
+- **Testes:** `mvn test` (sem ITs) — **125/125 verdes** (49 em `TarefaServiceTest`, incl. 13 novos desta task).
+- **Code review:** agent QA (contexto fresco, persona via general-purpose) — 0 findings 🔴. 3 findings 🟡, todos corrigidos: (1) permissão de `GET /auditoria` divergente do contrato → permissão dedicada `tarefa:auditoria` (V10); (2) teste de auditoria cobrindo só `titulo` → teste novo com os 4 campos (`responsavel`, `titulo`, `etapa`, `impedimento`); (3) faltava teste de IDOR cross-projeto em `auditoria` → adicionado.
+- **Próxima task:** TASK-04.5 (GET board + GET detalhe) — fecha o Epic 04; ou TASK-05.1 (EventoBoardPublisher — resolve os stubs de emissão de evento acumulados em TASK-04.1 a TASK-04.4)
+
+_Etapa anterior:_
+
 - **Etapa concluída:** /implement TASK-04.3 — 2026-08-25
 - **Task implementada:** TASK-04.3 — Impedimento: marcar/desmarcar + histórico (RF-004, RN-013) — 2026-08-25
 - **Arquivos:** systems/CRUDAO/backend/src/main/java/com/crudao/kanban/tarefa/{TarefaService,TarefaController}.java (métodos/endpoints `marcarImpedimento`/`desmarcarImpedimento`, `POST`/`DELETE /api/tarefas/{id}/impedimento`); teste .../tarefa/TarefaServiceTest.java (+11 casos)
