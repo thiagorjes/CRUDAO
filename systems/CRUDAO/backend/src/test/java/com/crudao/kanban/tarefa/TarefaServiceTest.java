@@ -76,6 +76,8 @@ class TarefaServiceTest {
     @Mock private UsuarioProjetoPapelRepository usuarioProjetoPapelRepository;
     @Mock private PermissaoGuard permissaoGuard;
     @Mock private EventoBoardPublisher eventoBoardPublisher;
+    @Mock private com.crudao.kanban.notificacao.NotificacaoService notificacaoService;
+    @Mock private com.crudao.kanban.domain.notificacao.NotificacaoRepository notificacaoRepository;
 
     private TarefaService service;
 
@@ -92,6 +94,7 @@ class TarefaServiceTest {
                         tarefaImpedimentoHistoricoRepository,
                         tarefaAuditoriaRepository,
                         tarefaObservadorRepository,
+                        notificacaoRepository,
                         projetoRepository,
                         workflowRepository,
                         etapaRepository,
@@ -100,7 +103,8 @@ class TarefaServiceTest {
                         usuarioRepository,
                         usuarioProjetoPapelRepository,
                         permissaoGuard,
-                        eventoBoardPublisher);
+                        eventoBoardPublisher,
+                        notificacaoService);
         UsuarioAutenticadoHolder.set(usuarioAutenticado);
     }
 
@@ -337,6 +341,12 @@ class TarefaServiceTest {
 
         verify(eventoBoardPublisher)
                 .publicar(projetoId, com.crudao.kanban.evento.TipoEventoBoard.TAREFA_MOVIDA, tarefa.getId());
+        verify(notificacaoService)
+                .notificarObservadores(
+                        org.mockito.ArgumentMatchers.eq(tarefa),
+                        org.mockito.ArgumentMatchers.eq(
+                                com.crudao.kanban.notificacao.NotificacaoService.TIPO_TRANSICAO_ETAPA),
+                        org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
@@ -644,6 +654,12 @@ class TarefaServiceTest {
         var auditoriaCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
         verify(tarefaAuditoriaRepository).save(auditoriaCaptor.capture());
         assertThat(auditoriaCaptor.getValue().getCampo()).isEqualTo("impedimento");
+        verify(notificacaoService)
+                .notificarObservadores(
+                        org.mockito.ArgumentMatchers.eq(tarefa),
+                        org.mockito.ArgumentMatchers.eq(
+                                com.crudao.kanban.notificacao.NotificacaoService.TIPO_IMPEDIMENTO_MARCADO),
+                        org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
@@ -699,6 +715,12 @@ class TarefaServiceTest {
         var auditoriaCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
         verify(tarefaAuditoriaRepository).save(auditoriaCaptor.capture());
         assertThat(auditoriaCaptor.getValue().getCampo()).isEqualTo("impedimento");
+        verify(notificacaoService)
+                .notificarObservadores(
+                        org.mockito.ArgumentMatchers.eq(tarefa),
+                        org.mockito.ArgumentMatchers.eq(
+                                com.crudao.kanban.notificacao.NotificacaoService.TIPO_IMPEDIMENTO_DESMARCADO),
+                        org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
@@ -827,6 +849,7 @@ class TarefaServiceTest {
         verify(tarefaImpedimentoHistoricoRepository).deleteByTarefaId(tarefa.getId());
         verify(tarefaObservadorRepository).deleteByTarefaId(tarefa.getId());
         verify(tarefaAuditoriaRepository).deleteByTarefaId(tarefa.getId());
+        verify(notificacaoRepository).deleteByTarefaId(tarefa.getId());
         verify(tarefaRepository).delete(tarefa);
         verify(eventoBoardPublisher)
                 .publicar(projetoId, com.crudao.kanban.evento.TipoEventoBoard.TAREFA_EXCLUIDA, tarefa.getId());

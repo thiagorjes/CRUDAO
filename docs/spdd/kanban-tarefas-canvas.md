@@ -76,6 +76,11 @@ _Atualizado por: /techspec v1.0 — 2026-08-25_
 **Arquitetura:**
 Backend em camadas (Controller → Service → Repository → DTO/Mapper via MapStruct). Componentes principais: `TarefaService` (transições, congelamento, impedimento), `PermissaoService` (RBAC/toggles), listener LISTEN/NOTIFY + publisher STOMP para eventos de board/notificações. Frontend Next.js consumindo REST + STOMP.
 
+_Atualizado por: /implement TASK-05.2 — 2026-08-25_
+> Decisões: —
+
+**Notificações (RF-005) — decisão revisada, substitui "broadcast amplo + filtro client-side" da TechSpec Seção 5 original:** replica a arquitetura do board (ADR-004) em canal próprio — `NOTIFY notificacao_events` + `NotificacaoEventListener` por pod, retransmitindo localmente via STOMP para `/topic/notificacoes/{usuarioId}`. O `NOTIFY` alcança todos os pods; o pod que detém a sessão WebSocket do usuário-alvo entrega a mensagem ao retransmitir para o mesmo destino determinístico — sem tabela `usuarioId → pod` e sem filtro client-side. Motivo: `dashboard-notificacoes.md` já exige autorização de `SUBSCRIBE` por `usuarioId` no tópico per-user, incompatível com canal amplo.
+
 **Dependências externas:**
 - Keycloak (OIDC) — autenticação, sem fallback (ADR-006)
 - PostgreSQL — persistência e broadcast de eventos (ADR-004)

@@ -11,6 +11,7 @@ import com.crudao.kanban.domain.tarefa.TarefaEtapaHistorico;
 import com.crudao.kanban.domain.tarefa.TarefaEtapaHistoricoRepository;
 import com.crudao.kanban.domain.tarefa.TarefaImpedimentoHistorico;
 import com.crudao.kanban.domain.tarefa.TarefaImpedimentoHistoricoRepository;
+import com.crudao.kanban.domain.notificacao.NotificacaoRepository;
 import com.crudao.kanban.domain.tarefa.TarefaObservadorRepository;
 import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
@@ -24,6 +25,7 @@ import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.evento.EventoBoardPublisher;
 import com.crudao.kanban.evento.TipoEventoBoard;
+import com.crudao.kanban.notificacao.NotificacaoService;
 import com.crudao.kanban.rbac.PermissaoGuard;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -66,6 +68,7 @@ public class TarefaService {
     private final TarefaImpedimentoHistoricoRepository tarefaImpedimentoHistoricoRepository;
     private final TarefaAuditoriaRepository tarefaAuditoriaRepository;
     private final TarefaObservadorRepository tarefaObservadorRepository;
+    private final NotificacaoRepository notificacaoRepository;
     private final ProjetoRepository projetoRepository;
     private final WorkflowRepository workflowRepository;
     private final EtapaRepository etapaRepository;
@@ -75,6 +78,7 @@ public class TarefaService {
     private final UsuarioProjetoPapelRepository usuarioProjetoPapelRepository;
     private final PermissaoGuard permissaoGuard;
     private final EventoBoardPublisher eventoBoardPublisher;
+    private final NotificacaoService notificacaoService;
 
     public TarefaService(
             TarefaRepository tarefaRepository,
@@ -82,6 +86,7 @@ public class TarefaService {
             TarefaImpedimentoHistoricoRepository tarefaImpedimentoHistoricoRepository,
             TarefaAuditoriaRepository tarefaAuditoriaRepository,
             TarefaObservadorRepository tarefaObservadorRepository,
+            NotificacaoRepository notificacaoRepository,
             ProjetoRepository projetoRepository,
             WorkflowRepository workflowRepository,
             EtapaRepository etapaRepository,
@@ -90,12 +95,14 @@ public class TarefaService {
             UsuarioRepository usuarioRepository,
             UsuarioProjetoPapelRepository usuarioProjetoPapelRepository,
             PermissaoGuard permissaoGuard,
-            EventoBoardPublisher eventoBoardPublisher) {
+            EventoBoardPublisher eventoBoardPublisher,
+            NotificacaoService notificacaoService) {
         this.tarefaRepository = tarefaRepository;
         this.tarefaEtapaHistoricoRepository = tarefaEtapaHistoricoRepository;
         this.tarefaImpedimentoHistoricoRepository = tarefaImpedimentoHistoricoRepository;
         this.tarefaAuditoriaRepository = tarefaAuditoriaRepository;
         this.tarefaObservadorRepository = tarefaObservadorRepository;
+        this.notificacaoRepository = notificacaoRepository;
         this.projetoRepository = projetoRepository;
         this.workflowRepository = workflowRepository;
         this.etapaRepository = etapaRepository;
@@ -105,6 +112,7 @@ public class TarefaService {
         this.usuarioProjetoPapelRepository = usuarioProjetoPapelRepository;
         this.permissaoGuard = permissaoGuard;
         this.eventoBoardPublisher = eventoBoardPublisher;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional
@@ -227,6 +235,10 @@ public class TarefaService {
                 tarefa, UsuarioAutenticadoHolder.get(), "etapa", etapaAnteriorId, etapaDestino.getId().toString(), agora);
 
         eventoBoardPublisher.publicar(projetoId, TipoEventoBoard.TAREFA_MOVIDA, tarefa.getId());
+        notificacaoService.notificarObservadores(
+                tarefa,
+                NotificacaoService.TIPO_TRANSICAO_ETAPA,
+                "Tarefa \"" + tarefa.getTitulo() + "\" movida para " + etapaDestino.getNome());
 
         return toResponse(tarefa);
     }
@@ -365,6 +377,10 @@ public class TarefaService {
         tarefa = tarefaRepository.save(tarefa);
 
         registrarAuditoria(tarefa, UsuarioAutenticadoHolder.get(), "impedimento", null, "marcado", agora);
+        notificacaoService.notificarObservadores(
+                tarefa,
+                NotificacaoService.TIPO_IMPEDIMENTO_MARCADO,
+                "Tarefa \"" + tarefa.getTitulo() + "\" foi marcada como impedida");
 
         return toResponse(tarefa);
     }
@@ -403,6 +419,10 @@ public class TarefaService {
 
         registrarAuditoria(
                 tarefa, UsuarioAutenticadoHolder.get(), "impedimento", historico.getMarcadoEm(), "desmarcado", agora);
+        notificacaoService.notificarObservadores(
+                tarefa,
+                NotificacaoService.TIPO_IMPEDIMENTO_DESMARCADO,
+                "Tarefa \"" + tarefa.getTitulo() + "\" não está mais impedida");
 
         return toResponse(tarefa);
     }
@@ -432,6 +452,9 @@ public class TarefaService {
         tarefaImpedimentoHistoricoRepository.deleteByTarefaId(tarefaId);
         tarefaObservadorRepository.deleteByTarefaId(tarefaId);
         tarefaAuditoriaRepository.deleteByTarefaId(tarefaId);
+        // FK nova da V7 (Notificacao.tarefaId, sem cascade) — achado de code review, TASK-05.2:
+        // uma tarefa que já gerou notificação (mover/impedimento) quebrava a exclusão sem isto.
+        notificacaoRepository.deleteByTarefaId(tarefaId);
         tarefaRepository.delete(tarefa);
 
         eventoBoardPublisher.publicar(projetoId, TipoEventoBoard.TAREFA_EXCLUIDA, tarefaId);

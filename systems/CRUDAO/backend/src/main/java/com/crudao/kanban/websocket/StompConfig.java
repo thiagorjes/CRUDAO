@@ -19,12 +19,15 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
     private final AutenticacaoHandshakeInterceptor autenticacaoHandshakeInterceptor;
     private final BoardChannelInterceptor boardChannelInterceptor;
+    private final NotificacaoChannelInterceptor notificacaoChannelInterceptor;
 
     public StompConfig(
             AutenticacaoHandshakeInterceptor autenticacaoHandshakeInterceptor,
-            BoardChannelInterceptor boardChannelInterceptor) {
+            BoardChannelInterceptor boardChannelInterceptor,
+            NotificacaoChannelInterceptor notificacaoChannelInterceptor) {
         this.autenticacaoHandshakeInterceptor = autenticacaoHandshakeInterceptor;
         this.boardChannelInterceptor = boardChannelInterceptor;
+        this.notificacaoChannelInterceptor = notificacaoChannelInterceptor;
     }
 
     @Override
@@ -40,6 +43,6 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(boardChannelInterceptor);
+        registration.interceptors(boardChannelInterceptor, notificacaoChannelInterceptor);
     }
 }
