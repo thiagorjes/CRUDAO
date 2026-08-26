@@ -71,3 +71,7 @@ Login OIDC + chamada autenticada real funcionando de ponta a ponta dentro do Doc
 
 
 ```
+
+14- não tinha botão de "novo projeto" nem rota no frontend.
+15- não usou os protótipos como referencia para garantir que criou tudo.
+16- o que faltou: criar fluxo mais flexível, foi feito somente saida e não retorno (n x n)

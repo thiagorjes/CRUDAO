@@ -60,6 +60,7 @@ public class PapelService {
         this.permissaoGuard = permissaoGuard;
     }
 
+    @Transactional(readOnly = true)
     public List<PapelResponse> listarPorProjeto(UUID projetoId) {
         return papelRepository.findByProjetoId(projetoId).stream().map(this::toResponse).toList();
     }

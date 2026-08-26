@@ -7,6 +7,7 @@ export type MeResponse = {
   id: string;
   nome: string;
   email: string;
+  adminGlobal: boolean;
   projetos: { projetoId: string; papeis: string[] }[];
 };
 

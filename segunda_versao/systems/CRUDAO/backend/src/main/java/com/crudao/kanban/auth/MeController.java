@@ -49,6 +49,11 @@ public class MeController {
                         .collect(Collectors.toList());
 
         return ResponseEntity.ok(
-                new MeResponse(usuario.getId(), usuario.getNome(), usuario.getEmail(), projetos));
+                new MeResponse(
+                        usuario.getId(),
+                        usuario.getNome(),
+                        usuario.getEmail(),
+                        usuario.isAdminGlobal(),
+                        projetos));
     }
 }
