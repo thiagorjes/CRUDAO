@@ -28,7 +28,9 @@ Nenhum.
 
 ## 🟡 Importante
 
-#### I1 — Endpoint/mecanismo `POST /api/ws-ticket` não documentado em nenhum contrato
+> **Atualização pós-review (2026-08-26):** os 3 achados abaixo foram corrigidos a pedido do usuário. Ver `memory/state.md` (handoff TASK-07.2) para o resumo.
+
+#### I1 — Endpoint/mecanismo `POST /api/ws-ticket` não documentado em nenhum contrato — ✅ corrigido
 Arquivo: `docs/techspec/kanban-tarefas/contracts/` (pasta inteira — não há `websocket.md` nem menção em `tarefas.md`)
 Problema: a task introduz uma peça nova de API pública (`POST /api/ws-ticket`, resposta `{ticket, expiraEm}`) e um novo parâmetro de handshake (`/ws?ticket=...`), mas nenhum arquivo em `contracts/` reflete isso. TASK-04.5 fixou o precedente de manter os contratos como fonte de verdade sincronizada com o código (achado daquela review: `RaiaResponse.global` fora do contrato foi corrigido documentando o campo).
 Como corrigir:
@@ -36,7 +38,7 @@ Como corrigir:
   Correto: adicionar seção (novo arquivo `contracts/websocket.md` ou seção em `tarefas.md`) documentando `POST /api/ws-ticket`, TTL, uso único e o parâmetro `?ticket=` do handshake `/ws`.
 Guideline violado: não coberto explicitamente por um guideline de "contratos sempre atualizados", mas é convenção já estabelecida em code review anterior (TASK-04.5) — recomendo formalizar em `guidelines/spdd-integration.md` ou similar.
 
-#### I2 — Sem teste automatizado para os componentes novos do board (frontend)
+#### I2 — Sem teste automatizado para os componentes novos do board (frontend) — ✅ corrigido
 Arquivo: `components/board/{BoardClient,useBoardRealtime,NovoCardModal,ConfirmExcluirModal}.tsx`
 Problema: `testing.md` exige "Framework: Jest/Vitest + Testing Library" no frontend e que "Toda RF Must Have do PRD deve ter cenário de teste correspondente antes de considerar a task concluída" — RF-001/002/004/018/019 (Must Have) são exatamente o escopo desta task, mas a suíte vitest não ganhou nenhum arquivo novo (`vitest run` continua em 9/9, os mesmos 2 arquivos pré-existentes de TASK-07.1). Lógica não trivial sem cobertura: `transicaoPermitida`, `mensagemErro` (mapeamento 409/403), fluxo de criar/excluir/mover, e o backoff/reconexão de `useBoardRealtime`.
 Como corrigir:
@@ -44,7 +46,7 @@ Como corrigir:
   Correto: ao menos testes de unidade para as funções puras extraíveis (`transicaoPermitida`, `mensagemErro`, `classeDestaque`) e um teste de integração de componente (Testing Library) cobrindo criar/excluir/mover com mocks de `fetch`.
 Guideline violado: `guidelines/testing.md` — seções "Frontend" e "Obrigatoriedade".
 
-#### I3 — `ws_ticket` sem rotina de limpeza (crescimento ilimitado da tabela)
+#### I3 — `ws_ticket` sem rotina de limpeza (crescimento ilimitado da tabela) — ✅ corrigido
 Arquivo: `V12__ws_ticket.sql`, `WsTicketService.java`
 Problema: cada tentativa de conexão (inicial + toda reconexão do frontend) gera uma linha nova em `ws_ticket` que nunca é removida — `usado=true`/expirado permanece indefinidamente. O índice `idx_ws_ticket_expira_em` sugere que uma rotina de purga era esperada, mas não existe (nem `@Scheduled`, nem job, nem `DELETE` em lote). Em uso normal (reconexões por queda de rede, múltiplas abas) a tabela cresce sem limite.
 Como corrigir:

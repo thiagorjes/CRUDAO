@@ -107,6 +107,15 @@ class WsTicketServiceTest {
         verify(wsTicketRepository, times(2)).save(ticket);
     }
 
+    @Test
+    void limparExpirados_delegaAoRepositorioComInstanteAtual() {
+        when(wsTicketRepository.deleteByExpiraEmBefore(any())).thenReturn(3L);
+
+        service.limparExpirados();
+
+        verify(wsTicketRepository).deleteByExpiraEmBefore(any(OffsetDateTime.class));
+    }
+
     private WsTicket ticketValido() {
         WsTicket ticket = new WsTicket();
         ticket.setId(UUID.randomUUID());

@@ -1,3 +1,8 @@
+// @vitest-environment node
+//
+// jsdom (padrão do projeto para testes de componente) substitui `crypto.subtle` por uma
+// implementação incompatível com o `jose` (achado: "plaintext must be an instance of Uint8Array")
+// — este módulo é server-only de qualquer forma, então roda no ambiente Node real.
 import { beforeAll, describe, expect, it } from "vitest";
 
 beforeAll(() => {
