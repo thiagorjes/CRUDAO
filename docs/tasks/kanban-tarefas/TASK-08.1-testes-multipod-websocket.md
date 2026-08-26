@@ -1,5 +1,6 @@
 # TASK-08.1 — Testes multi-pod e WebSocket (RNF-001/RNF-002)
 
+**Status:** Concluída
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RNF-001, RNF-002
@@ -12,10 +13,10 @@ Validação formal do requisito de escalabilidade horizontal sem inconsistência
 
 ## O que deve ser feito
 
-- [ ] Teste de integração com 2 instâncias Spring Boot compartilhando o mesmo PostgreSQL Testcontainer — evento publicado via pod A deve chegar ao cliente STOMP conectado ao pod B.
-- [ ] Teste de integração com 2 conexões WebSocket simuladas validando propagação do evento em <2s (`Awaitility`).
-- [ ] Teste de resincronização client-side por gap de `seq`.
-- [ ] Teste de notificação multi-pod: `Notificacao` gerada por evento processado no pod A chega ao cliente STOMP conectado ao pod B em `/topic/notificacoes/{usuarioId}` (RF-005 sob RNF-002).
+- [x] Teste de integração com 2 instâncias Spring Boot compartilhando o mesmo PostgreSQL Testcontainer — evento publicado via pod A deve chegar ao cliente STOMP conectado ao pod B.
+- [x] Teste de integração com 2 conexões WebSocket simuladas validando propagação do evento em <2s (`Awaitility`).
+- [x] Teste de resincronização client-side por gap de `seq`.
+- [x] Teste de notificação multi-pod: `Notificacao` gerada por evento processado no pod A chega ao cliente STOMP conectado ao pod B em `/topic/notificacoes/{usuarioId}` (RF-005 sob RNF-002).
 
 ## Guia técnico
 

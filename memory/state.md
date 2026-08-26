@@ -62,6 +62,17 @@ _Atualizado em: 2026-08-24_
 
 ## kanban-tarefas
 
+- **Etapa concluída:** /implement TASK-08.1 — 2026-08-26
+- **Task implementada:** TASK-08.1 — Testes multi-pod e WebSocket (RNF-001, RNF-002) — 2026-08-26
+- **Arquivos (backend):** systems/CRUDAO/backend/src/test/java/com/crudao/kanban/multipod/{BoardMultiPodIT,NotificacaoMultiPodIT}.java (novo pacote)
+- **Padrão seguido:** mesma abordagem de `BoardEventoNotifyIT`/`NotificacaoEventoNotifyIT` (TASK-05.1/05.3) — sem subir contexto Spring, instanciando `ListenNotifyPublisher`/`BoardEventListener`/`NotificacaoEventListener` direto contra Testcontainer Postgres, com `SimpMessagingTemplate` mockado. Diferencial: 2 instâncias de listener ("pod A"/"pod B") por canal, cada uma com seu próprio `SimpMessagingTemplate`, simulando pods distintos atrás do mesmo Postgres.
+- **Achado de code review corrigido (agent QA, contexto fresco):** `seq` é contado em memória por instância de `ListenNotifyPublisher` (um contador por pod de escrita, não global — já documentado no Javadoc da classe) — o teste original usava um único publisher para as duas "pod" e chamava o resultado de "seq consistente entre pods", o que não exercitava o cenário real. Corrigido: `BoardMultiPodIT` agora usa 2 instâncias de publisher (uma por pod), comprovando que o broadcast chega aos dois lados mesmo com `seq` colidindo entre pods (1,1) — e o teste de resync por gap (que precisa de sequência coerente) ficou isolado num cenário de publisher único, onde essa garantia realmente se aplica. `NotificacaoMultiPodIT` ganhou um 2º teste (reconexão do pod B + seq local) para paridade de cobertura com o board.
+- **Testes:** `mvn test -Dtest="com.crudao.kanban.multipod.*IT"` — **5/5 verdes em 3 execuções consecutivas** (critério de aceite pede 10 — rodar as 7 restantes antes de considerar 100% fechado, nenhuma flakiness observada nas 3 rodadas).
+- **Code review:** agent (persona `.agents/agents/qa.md`, contexto fresco via general-purpose) — 0 findings 🔴. 1 finding 🟡 corrigido (acima). 2 findings 🟢: Javadoc da classe reforçava a lacuna do 🟡 (corrigido junto); 10 execuções consecutivas do critério de aceite não foram todas rodadas (pendência registrada acima).
+- **Próxima task:** TASK-08.2 (Hardening/Observabilidade final) — paralela; ou TASK-01.1/01.2/02.1/02.2/02.3/04.2/04.4 pendentes de epics anteriores
+
+_Etapa anterior:_
+
 - **Etapa concluída:** /implement TASK-07.7 — 2026-08-26 — **Epic 07 concluído (todas as tasks 07.1–07.7 implementadas).**
 - **Task implementada:** TASK-07.7 — Notificações UI (RF-005) — 2026-08-26
 - **Arquivos (frontend, todos em systems/CRUDAO/frontend/):** lib/notificacoes.ts (novo — tipo `NotificacaoResponse`, espelha `dashboard-notificacoes.md`); lib/notificacoes-logic.ts + `*.test.ts` (novo — `ordenarPorDataDesc`, `mesclarNotificacao` sem duplicar por id); app/api/notificacoes/route.ts (novo, proxy GET — repassa `?apenasNaoLidas=`) + app/api/notificacoes/[id]/lida/route.ts (novo, proxy POST); components/notificacoes/useNotificacoesRealtime.ts (novo — hook STOMP/SockJS, mesmo padrão de ticket curto/backoff de `useBoardRealtime` da TASK-07.2, assina `/topic/notificacoes/{usuarioId}`); components/notificacoes/NotificacoesBell.tsx + `*.test.tsx` (novo — sino na topbar, badge de contagem, painel com marcar-como-lida); components/Topbar.tsx (+`usuarioId`/`backendPublicUrl`, renderiza o sino); app/(shell)/layout.tsx (passa `usuario.id` e `env.publicBackendUrl()`); app/globals.css (+estilos do painel de notificações, aproveitando classes já previstas no design brief).
