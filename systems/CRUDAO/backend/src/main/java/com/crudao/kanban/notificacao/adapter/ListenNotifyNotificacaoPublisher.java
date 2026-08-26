@@ -54,31 +54,41 @@ public class ListenNotifyNotificacaoPublisher implements NotificacaoPublisher {
     public void publicar(Notificacao notificacao) {
         UUID usuarioId = notificacao.getUsuario().getId();
         long seq = sequenciasPorUsuario.computeIfAbsent(usuarioId, id -> new AtomicLong()).incrementAndGet();
-        NotificacaoPayload payload =
-                new NotificacaoPayload(
-                        notificacao.getId(),
-                        usuarioId,
-                        notificacao.getTarefa().getId(),
-                        notificacao.getTipo(),
-                        notificacao.getMensagem(),
-                        notificacao.isLida(),
-                        notificacao.getCriadoEm(),
-                        seq);
+        UUID id = notificacao.getId();
+        UUID tarefaId = notificacao.getTarefa().getId();
+        String tipo = notificacao.getTipo();
+        String mensagem = notificacao.getMensagem();
+        boolean lida = notificacao.isLida();
+        var criadoEm = notificacao.getCriadoEm();
 
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            notificar(payload);
+                            notificar(id, usuarioId, tarefaId, tipo, mensagem, lida, criadoEm, seq);
                         }
                     });
         } else {
-            notificar(payload);
+            notificar(id, usuarioId, tarefaId, tipo, mensagem, lida, criadoEm, seq);
         }
     }
 
-    private void notificar(NotificacaoPayload payload) {
+    private void notificar(
+            UUID id,
+            UUID usuarioId,
+            UUID tarefaId,
+            String tipo,
+            String mensagem,
+            boolean lida,
+            java.time.OffsetDateTime criadoEm,
+            long seq) {
+        // publicadoEmEpochMillis estampado aqui, no instante real do pg_notify — mesma decisão de
+        // ListenNotifyPublisher (board, TASK-05.3): não usar criadoEm da entidade, que é anterior ao
+        // commit e distorceria a latência NOTIFY→broadcast.
+        NotificacaoPayload payload =
+                new NotificacaoPayload(
+                        id, usuarioId, tarefaId, tipo, mensagem, lida, criadoEm, seq, System.currentTimeMillis());
         try {
             String json = objectMapper.writeValueAsString(payload);
             try (Connection connection = DriverManager.getConnection(url, username, password);

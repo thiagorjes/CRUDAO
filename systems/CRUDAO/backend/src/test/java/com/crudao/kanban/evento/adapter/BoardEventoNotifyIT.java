@@ -10,7 +10,7 @@ import static org.mockito.Mockito.verify;
 import com.crudao.kanban.evento.EventoBoardPayload;
 import com.crudao.kanban.evento.TipoEventoBoard;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.sql.Connection;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -41,6 +41,7 @@ class BoardEventoNotifyIT {
     private ListenNotifyPublisher publisher;
     private BoardEventListener listener;
     private SimpMessagingTemplate messagingTemplate;
+    private SimpleMeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
@@ -49,10 +50,12 @@ class BoardEventoNotifyIT {
                 new ListenNotifyPublisher(
                         objectMapper, POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
         messagingTemplate = mock(SimpMessagingTemplate.class);
+        meterRegistry = new SimpleMeterRegistry();
         listener =
                 new BoardEventListener(
                         messagingTemplate,
                         objectMapper,
+                        meterRegistry,
                         POSTGRES.getJdbcUrl(),
                         POSTGRES.getUsername(),
                         POSTGRES.getPassword());
@@ -103,11 +106,9 @@ class BoardEventoNotifyIT {
 
     @Test
     void reconectaAposQuedaDeConexaoEVoltaAReceberEventos() throws Exception {
-        Connection conexaoOriginal = listener.conexaoAtual;
-
         // Simula uma queda de conexão externa (ex.: restart do Postgres) fechando a conexão por
         // baixo do listener — o Postgres em si continua no ar, então a reconexão deve suceder.
-        conexaoOriginal.close();
+        listener.fecharConexaoAtualParaTeste();
 
         await().atMost(Duration.ofSeconds(2)).until(() -> !listener.isConectado());
         await().atMost(Duration.ofSeconds(10)).until(listener::isConectado);
@@ -122,5 +123,23 @@ class BoardEventoNotifyIT {
                                 verify(messagingTemplate)
                                         .convertAndSend(
                                                 eq("/topic/board/" + projetoId), any(EventoBoardPayload.class)));
+
+        assertThat(meterRegistry.counter("kanban.evento.listener.reconexoes", "canal", "board_events").count())
+                .isEqualTo(1.0);
+    }
+
+    @Test
+    void latenciaNotifyBroadcastEhRegistradaComoMetrica() {
+        publisher.publicar(UUID.randomUUID(), TipoEventoBoard.TAREFA_MOVIDA, UUID.randomUUID());
+
+        await()
+                .atMost(Duration.ofSeconds(2))
+                .untilAsserted(
+                        () ->
+                                assertThat(
+                                                meterRegistry
+                                                        .timer("kanban.evento.listener.latencia", "canal", "board_events")
+                                                        .count())
+                                        .isEqualTo(1L));
     }
 }

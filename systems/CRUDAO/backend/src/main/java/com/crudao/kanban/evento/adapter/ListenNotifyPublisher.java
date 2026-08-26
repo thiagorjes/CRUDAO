@@ -61,22 +61,26 @@ public class ListenNotifyPublisher implements EventoBoardPublisher {
     @Override
     public void publicar(UUID projetoId, TipoEventoBoard tipo, UUID tarefaId) {
         long seq = sequenciasPorProjeto.computeIfAbsent(projetoId, id -> new AtomicLong()).incrementAndGet();
-        EventoBoardPayload payload = new EventoBoardPayload(tipo, projetoId, tarefaId, seq);
 
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            notificar(payload);
+                            notificar(tipo, projetoId, tarefaId, seq);
                         }
                     });
         } else {
-            notificar(payload);
+            notificar(tipo, projetoId, tarefaId, seq);
         }
     }
 
-    private void notificar(EventoBoardPayload payload) {
+    private void notificar(TipoEventoBoard tipo, UUID projetoId, UUID tarefaId, long seq) {
+        // publicadoEmEpochMillis estampado aqui (não em publicar()) — é o instante do pg_notify de
+        // fato, base para a latência NOTIFY→broadcast medida pelo listener (TASK-05.3); marcar em
+        // publicar() incluiria o tempo em fila até o afterCommit, distorcendo a métrica.
+        EventoBoardPayload payload =
+                new EventoBoardPayload(tipo, projetoId, tarefaId, seq, System.currentTimeMillis());
         try {
             String json = objectMapper.writeValueAsString(payload);
             try (Connection connection = DriverManager.getConnection(url, username, password);

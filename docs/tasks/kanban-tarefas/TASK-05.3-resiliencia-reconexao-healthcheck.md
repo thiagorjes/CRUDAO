@@ -12,11 +12,11 @@ Mitiga o trade-off aceito de LISTEN/NOTIFY (sem replay de eventos perdidos, payl
 
 ## O que deve ser feito
 
-- [ ] Implementar reconexão automática com backoff da conexão JDBC do listener em caso de queda.
-- [ ] Confirmar o `seq` incremental no payload do evento (já incluído em TASK-05.1); documentar contrato de resincronização client-side (frontend detecta gap ou reconexão de WebSocket e refaz `GET /board` — implementação de frontend em TASK-07.2).
-- [ ] Readiness probe (Actuator) reflete listener desconectado como não saudável.
-- [ ] Métricas Micrometer: contador de reconexões do listener por pod, latência entre `NOTIFY` e broadcast STOMP.
-- [ ] Logs progressivos (`WARN`→`ERROR`) em falha de reconexão.
+- [x] Implementar reconexão automática com backoff da conexão JDBC do listener em caso de queda. (já em TASK-05.1, confirmado)
+- [x] Confirmar o `seq` incremental no payload do evento (já incluído em TASK-05.1); documentar contrato de resincronização client-side (frontend detecta gap ou reconexão de WebSocket e refaz `GET /board` — implementação de frontend em TASK-07.2).
+- [x] Readiness probe (Actuator) reflete listener desconectado como não saudável.
+- [x] Métricas Micrometer: contador de reconexões do listener por pod, latência entre `NOTIFY` e broadcast STOMP.
+- [x] Logs progressivos (`WARN`→`ERROR`) em falha de reconexão. (já em TASK-05.1, confirmado)
 
 ## Guia técnico
 

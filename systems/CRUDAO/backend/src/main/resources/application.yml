@@ -23,3 +23,13 @@ management:
       probes:
         enabled: true
       show-details: always
+      group:
+        # RNF-001/002 (TASK-05.3): pod com listener LISTEN/NOTIFY desconectado (board ou
+        # notificações) não deve ser considerado pronto para receber tráfego — sem isso, os
+        # HealthIndicator custom ficam visíveis só em /actuator/health, não em /readiness.
+        readiness:
+          # Nomes sem o sufixo "HealthIndicator" — o Spring Boot registra cada HealthIndicator como
+          # HealthContributor sob o nome do bean com esse sufixo removido (achado ao rodar a suíte:
+          # "boardEventListenerHealthIndicator" com o sufixo faz o context refresh falhar com
+          # NoSuchHealthContributorException).
+          include: readinessState,boardEventListener,notificacaoEventListener
