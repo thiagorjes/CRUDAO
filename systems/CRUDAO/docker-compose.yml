@@ -21,13 +21,17 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-      # Sem isso, o Keycloak "adivinha" seu próprio issuer pela primeira request recebida (frágil e
-      # não-determinístico — dependia de qual serviço batia nele primeiro). Fixo aqui para sempre
-      # ser o issuer PÚBLICO (browser), consistente com KEYCLOAK_ISSUER_PUBLIC do frontend e
-      # app.keycloak.issuer-uri/APP_KEYCLOAK_ISSUER-URI usados na validação do id_token/introspection
-      # (achado de execução real, TASK-08.3): sem isso, chamadas server-to-server feitas via
-      # `keycloak:8080` (nome interno) recebiam tokens com `iss` divergente do esperado.
+      # Fixa o issuer do Keycloak sempre como o público, independente de qual caminho de rede fez a
+      # request (achado crítico de execução real, TASK-08.3): sem isso, um token emitido durante o
+      # fluxo de autorização do browser (localhost:8080) falhava a introspection quando o backend
+      # consultava via o nome de serviço interno (keycloak:8080) — "active": false para um token
+      # válido e não expirado, porque o Keycloak tratava os dois caminhos como contextos de emissão
+      # diferentes. Só foi possível fixar isso depois de remover o client-registration OIDC morto
+      # do backend (SecurityConfig/application-dev.yml) — ele exigia que o issuer-uri configurado
+      # batesse exatamente com o discovery document da URL usada para alcançá-lo, o que teria
+      # quebrado o boot do backend com KC_HOSTNAME fixo (introspection não tem essa exigência).
       KC_HOSTNAME: http://localhost:8080
+
     ports:
       - "8080:8080"
     volumes:
@@ -50,10 +54,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/kanban
       SPRING_DATASOURCE_USERNAME: kanban
       SPRING_DATASOURCE_PASSWORD: kanban
-      # Client OIDC (login/discovery na subida do contexto) e resource server (introspection a
-      # cada request) precisam falar com o Keycloak pelo nome do serviço na rede do compose —
-      # "localhost" dentro do container do backend seria o próprio container.
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER-URI: http://keycloak:8080/realms/kanban-dev
+      # Resource server (introspection a cada request) precisa falar com o Keycloak pelo nome do
+      # serviço na rede do compose — "localhost" dentro do container do backend seria o próprio
+      # container. Sem client-registration OIDC (removido, TASK-08.3 — era código morto desde
+      # TASK-07.1), não há mais discovery eager no boot exigindo que essa URL bata com KC_HOSTNAME.
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_INTROSPECTION-URI: http://keycloak:8080/realms/kanban-dev/protocol/openid-connect/token/introspect
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_CLIENT-ID: kanban-frontend
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_CLIENT-SECRET: kanban-dev-secret

@@ -52,4 +52,22 @@ Atenção: isso pode quebrar a resolução OIDC do client registration do backen
 
 Confirmado o efeito colateral: fixar KC_HOSTNAME quebrou a resolução OIDC do client registration do backend (que exige que o discovery document bata exatamente com o issuer-uri interno usado para alcançá-lo). O comportamento padrão do Keycloak já era o correto — o iss do token de um fluxo de autorização iniciado pelo browser (localhost:8080) fica travado nesse host durante todo aquele fluxo, mesmo que a troca de código seja feita internamente. Só a checagem do frontend estava errada. Revertendo o KC_HOSTNAME:
 
+
+
+Resumo do que foi corrigido nesta investigação (além do escopo original de dockerização):
+
+iss do id_token vs. issuer checado — verificarIdToken comparava contra o issuer interno; corrigido para usar o público (lib/oidc.ts).
+Cookie de sessão > 4KB — descartado silenciosamente pela maioria dos browsers; removido idToken do cookie persistido (só é necessário no momento do login).
+KC_HOSTNAME fixo no Keycloak — sem isso, introspection rejeitava tokens emitidos pelo fluxo do browser quando consultados via nome interno de rede.
+Client-registration OIDC morto removido (SecurityConfig.java) — bloqueava o passo 3 (exigia discovery-issuer batendo com URL interna) e já era código sem uso real desde TASK-07.1.
+Bug crítico de ordenação de filtro (AtivoUsuarioFilter rodava antes do BearerTokenAuthenticationFilter) — nenhuma chamada autenticada real jamais funcionou antes, mascarado porque nenhum teste exercitava esse caminho ponta a ponta.
+
+
+Login OIDC + chamada autenticada real funcionando de ponta a ponta dentro do Docker
+6 bugs pré-existentes corrigidos (o mais crítico: AtivoUsuarioFilter rodando antes da autenticação — nenhuma chamada autenticada real jamais teria funcionado, em nenhum ambiente)
+165/165 testes unitários verdes, sem regressão
+5 falhas de IT identificadas como pré-existentes e não relacionadas (confirmado via git stash)
+
+
+
 ```

@@ -8,6 +8,13 @@ function obrigatoria(nome: string, valor: string | undefined): string {
 
 export const env = {
   keycloakIssuer: () => obrigatoria("KEYCLOAK_ISSUER", process.env.KEYCLOAK_ISSUER),
+  /**
+   * Issuer do Keycloak alcançável pelo BROWSER (redirect da tela de login) — em Docker, o
+   * container do frontend fala com o Keycloak via nome de serviço interno (`KEYCLOAK_ISSUER`),
+   * mas o browser do usuário só alcança a porta publicada no host (TASK-08.3, ADR-008). Fora de
+   * Docker (dev local), os dois valores coincidem — cai no fallback.
+   */
+  keycloakIssuerPublic: () => process.env.KEYCLOAK_ISSUER_PUBLIC || env.keycloakIssuer(),
   keycloakClientId: () => obrigatoria("KEYCLOAK_CLIENT_ID", process.env.KEYCLOAK_CLIENT_ID),
   keycloakClientSecret: () =>
     obrigatoria("KEYCLOAK_CLIENT_SECRET", process.env.KEYCLOAK_CLIENT_SECRET),

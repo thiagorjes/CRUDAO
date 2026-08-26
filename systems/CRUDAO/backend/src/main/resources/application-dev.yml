@@ -13,17 +13,17 @@ spring:
     locations: classpath:db/migration
   security:
     oauth2:
-      client:
-        registration:
-          keycloak:
-            client-id: kanban-frontend
-            client-secret: kanban-dev-secret
-            authorization-grant-type: authorization_code
-            redirect-uri: "http://localhost:3000/login/oauth2/code/keycloak"
-            scope: openid,profile,email
-        provider:
-          keycloak:
-            issuer-uri: http://localhost:8080/realms/kanban-dev
+      # spring.security.oauth2.client.{registration,provider} removido (achado de execução real,
+      # TASK-08.3): o oauth2Login()/OidcLoginSuccessHandler que dependiam dessa config nunca tinham
+      # uso real (Next.js BFF assumiu o Authorization Code Flow desde TASK-07.1, ver
+      # memory/state.md) — mas o client-registration ainda era resolvido eagerly na subida do
+      # contexto (discovery OIDC), exigindo que o issuer-uri configurado batesse exatamente com o
+      # campo "issuer" do discovery document da URL usada para alcançá-lo. Isso é incompatível com
+      # Keycloak sem KC_HOSTNAME fixo rodando atrás de nomes diferentes para browser (localhost)
+      # e containers (nome de serviço) — e KC_HOSTNAME fixo é necessário para o resource server
+      # (introspection) validar corretamente tokens emitidos pelo fluxo real do browser (achado
+      # crítico: token válido, não expirado, introspection retornava "active: false" quando
+      # consultado por um caminho de rede diferente do que emitiu o token).
       resourceserver:
         opaquetoken:
           introspection-uri: http://localhost:8080/realms/kanban-dev/protocol/openid-connect/token/introspect

@@ -25,10 +25,12 @@ export async function middleware(req: NextRequest) {
       return limparSessaoERedirecionar(req);
     }
 
+    // idToken não é persistido (achado de execução real, TASK-08.3 — cookie passava de 4KB, o
+    // limite prático por cookie na maioria dos browsers, e era silenciosamente descartado; ver
+    // login/oauth2/code/keycloak/route.ts).
     const novaSessaoCifrada = await cifrarSessao({
       accessToken: renovado.access_token,
       refreshToken: renovado.refresh_token ?? sessao.refreshToken,
-      idToken: renovado.id_token ?? sessao.idToken,
       expiresAt: Date.now() + renovado.expires_in * 1000,
     });
 

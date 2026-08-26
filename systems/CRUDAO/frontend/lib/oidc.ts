@@ -8,7 +8,7 @@ export function redirectUriCallback(): string {
 }
 
 function endpointAutorizacao(): string {
-  return `${env.keycloakIssuer()}/protocol/openid-connect/auth`;
+  return `${env.keycloakIssuerPublic()}/protocol/openid-connect/auth`;
 }
 
 function endpointToken(): string {
@@ -90,7 +90,9 @@ export async function trocarCodigoPorTokens(params: {
  */
 export async function verificarIdToken(idToken: string, nonceEsperado: string): Promise<void> {
   const { payload } = await jwtVerify(idToken, jwks(), {
-    issuer: env.keycloakIssuer(),
+    // `iss` do token é sempre o issuer PÚBLICO do Keycloak (KC_HOSTNAME fixo, docker-compose.yml,
+    // TASK-08.3) — independe de qual URL (interna ou pública) foi usada para pedir o token/JWKS.
+    issuer: env.keycloakIssuerPublic(),
     audience: env.keycloakClientId(),
   });
   if (payload.nonce !== nonceEsperado) {

@@ -1,4 +1,5 @@
 import { apiFetchJson } from "@/lib/api";
+import { env } from "@/lib/env";
 import { BoardResponse, MembroProjeto } from "@/lib/board";
 import { BoardClient } from "@/components/board/BoardClient";
 
@@ -35,7 +36,12 @@ export default async function BoardPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      <BoardClient projetoId={projetoId} board={board} membros={membros} />
+      <BoardClient
+        projetoId={projetoId}
+        board={board}
+        membros={membros}
+        backendPublicUrl={env.publicBackendUrl()}
+      />
     </>
   );
 }

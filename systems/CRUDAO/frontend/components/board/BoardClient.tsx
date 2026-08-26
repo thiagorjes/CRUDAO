@@ -22,13 +22,15 @@ export function BoardClient({
   projetoId,
   board,
   membros,
+  backendPublicUrl,
 }: {
   projetoId: string;
   board: BoardResponse;
   membros: MembroProjeto[];
+  backendPublicUrl: string;
 }) {
   const router = useRouter();
-  useBoardRealtime(projetoId, process.env.NEXT_PUBLIC_BACKEND_URL!);
+  useBoardRealtime(projetoId, backendPublicUrl);
 
   const [erro, setErro] = useState<string | null>(null);
   const [modalNovoCardAberto, setModalNovoCardAberto] = useState(false);

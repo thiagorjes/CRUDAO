@@ -66,10 +66,17 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // idToken não é persistido no cookie (achado de execução real, TASK-08.3): access+refresh+id
+  // tokens do Keycloak juntos passam de 4KB, o limite prático por cookie na maioria dos browsers
+  // (RFC 6265 recomenda suportar >= 4096 bytes, mas não obriga mais que isso) — o cookie era
+  // silenciosamente descartado (confirmado via curl: "oversized cookie dropped"), a sessão nunca
+  // gravava e o login parecia falhar mesmo com o Keycloak/OIDC funcionando corretamente. idToken só
+  // era necessário aqui (verificarIdToken, acima) e opcionalmente no RP-Initiated Logout
+  // (idTokenHint) — sem ele, o logout ainda revoga o access token no Keycloak (LogoutController),
+  // só não dispara o front-channel logout da sessão do IdP.
   const sessaoCifrada = await cifrarSessao({
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
-    idToken: tokens.id_token,
     expiresAt: Date.now() + tokens.expires_in * 1000,
   });
 
