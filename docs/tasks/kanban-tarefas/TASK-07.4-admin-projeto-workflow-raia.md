@@ -22,3 +22,7 @@ Configuração do board por projeto.
 ## Critérios de aceite
 
 - Todas as operações de CRUD refletem corretamente as respostas de erro do backend (403, 422, bloqueio por tarefas ativas).
+
+## Status: Concluída — 2026-08-26
+
+_Marcação retroativa — implementação já registrada em `memory/state.md` (entrada "/implement TASK-07.4") e no commit `5f924df fix: findings TASK-07.4`; só o marcador estava ausente neste arquivo._
