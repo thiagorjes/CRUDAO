@@ -39,3 +39,5 @@ Teste com segunda versão ajustados os problemas detectados na V1.
 8- solicitei a escrita de histórias.
 9- observei que depois do techspec o contexto ficou em torno de 170k tokens, antes não passava de 90k.
 10- sequencia de perguntas do tasks se manteve igual e iniciou escrita.
+11- implementação encontrando alguns erros, que estão sendo corrigidos ao final antes de seguir para a próxima.
+12- 

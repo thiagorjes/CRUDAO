@@ -1,5 +1,7 @@
 # TASK-06.1 — Migration V7 + agregação de lead-time médio
 
+**Status:** Concluída — 2026-08-26
+
 **Tamanho:** [G] 1-2 dias
 **Sistema:** CRUDAO
 **RF de origem:** RF-007
@@ -12,9 +14,9 @@ Visibilidade para gestores sem necessidade de acompanhar a execução diretament
 
 ## O que deve ser feito
 
-- [ ] Criar migration V7 (Notificacao). **Não criar V8** — `PapelPermissaoAuditoria` é de responsabilidade exclusiva de TASK-02.3.
-- [ ] Implementar `GET /api/projetos/{projetoId}/dashboard`: lead-time médio por etapa + tempo médio de impedimento agregado (RN-001, RN-002), a partir de `TarefaEtapaHistorico`/`TarefaImpedimentoHistorico`, usando os índices já criados em `data-model.md`.
-- [ ] Garantir acessibilidade do dashboard mesmo com projeto finalizado (RN-015 — leitura permitida).
+- [x] ~~Criar migration V7 (Notificacao)~~ — já criada em TASK-05.2; nome desatualizado no texto original desta task. Migration nova desta task: **V11** (adiciona `etapa_id` a `tarefa_impedimento_historico`).
+- [x] Implementar `GET /api/projetos/{projetoId}/dashboard`: lead-time médio por etapa + tempo médio de impedimento agregado (RN-001, RN-002), a partir de `TarefaEtapaHistorico`/`TarefaImpedimentoHistorico`.
+- [x] Garantir acessibilidade do dashboard mesmo com projeto finalizado (RN-015 — leitura permitida, sem `exigirProjetoAtivo`).
 
 ## Guia técnico
 

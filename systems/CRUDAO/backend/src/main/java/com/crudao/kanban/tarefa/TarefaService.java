@@ -369,6 +369,7 @@ public class TarefaService {
         TarefaImpedimentoHistorico historico = new TarefaImpedimentoHistorico();
         historico.setTarefa(tarefa);
         historico.setMarcadoEm(agora);
+        historico.setEtapa(tarefa.getEtapaAtual());
         tarefaImpedimentoHistoricoRepository.save(historico);
 
         tarefa.setImpedida(true);

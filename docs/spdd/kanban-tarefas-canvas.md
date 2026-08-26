@@ -109,7 +109,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [ ] TASK-05.1 — EventoBoardPublisher + LISTEN/NOTIFY + STOMP
 - [ ] TASK-05.2 — Notificações internas
 - [ ] TASK-05.3 — Resiliência: reconexão, resync, health-check
-- [ ] TASK-06.1 — Migration V7 + dashboard lead-time
+- [x] TASK-06.1 — Migration V7 + dashboard lead-time
 - [ ] TASK-07.1 — Shell Next.js + auth
 - [ ] TASK-07.2 — Board: colunas, raias, cards, mover
 - [ ] TASK-07.3 — Detalhe da tarefa

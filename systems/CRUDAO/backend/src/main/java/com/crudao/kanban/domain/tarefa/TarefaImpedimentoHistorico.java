@@ -1,5 +1,6 @@
 package com.crudao.kanban.domain.tarefa;
 
+import com.crudao.kanban.domain.workflow.Etapa;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,4 +40,12 @@ public class TarefaImpedimentoHistorico {
 
     @Column(name = "desmarcado_em")
     private OffsetDateTime desmarcadoEm;
+
+    /**
+     * Etapa em que o impedimento ocorreu (V11, RF-007) — permite agregar tempo médio de
+     * impedimento por etapa no dashboard. Nulo em registros anteriores à migration.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "etapa_id")
+    private Etapa etapa;
 }

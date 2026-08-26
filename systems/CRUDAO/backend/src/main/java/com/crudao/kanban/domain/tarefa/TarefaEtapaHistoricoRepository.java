@@ -22,4 +22,12 @@ public interface TarefaEtapaHistoricoRepository extends JpaRepository<TarefaEtap
 
     /** Usado na exclusão da tarefa (RF-019) — FK não tem cascade. */
     void deleteByTarefaId(UUID tarefaId);
+
+    /**
+     * Base para o dashboard de lead-time por etapa (RF-007, TASK-06.1) — só ciclos fechados
+     * ({@code saidaEm} preenchido) entram na média; etapa em andamento não tem lead-time definitivo
+     * ainda. {@code etapa} pré-carregada, mesmo motivo de {@link #findByTarefaIdOrderByEntradaEm}.
+     */
+    @EntityGraph(attributePaths = "etapa")
+    List<TarefaEtapaHistorico> findByTarefaProjetoIdAndSaidaEmIsNotNull(UUID projetoId);
 }
