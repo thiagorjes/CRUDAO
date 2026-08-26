@@ -40,6 +40,12 @@ Associa usuário ao projeto com um papel (RF-015). `{ "usuarioId": "uuid", "pape
 
 Remove associação (não exclui o `Usuario`, apenas o vínculo `UsuarioProjetoPapel`).
 
+## GET /api/projetos/{projetoId}/usuarios/buscar?q= (novo — TASK-07.5)
+
+Autocomplete de usuários **ainda não associados** ao projeto, para a UI de associação (RF-015). Mesma permissão de `POST /usuarios` (`papel:administrar`) — nunca uma listagem global de usuários do sistema (achado do Comitê de Análise, Architect+Security). `q` com menos de 3 caracteres retorna `[]` sem consultar o banco. Resultado limitado a 20, ordenado por nome, exclui usuários inativos (`ativo=false`) e já vinculados ao projeto.
+
+`[{ "id": "uuid", "nome": "string", "email": "string" }]` — nunca expõe `keycloakSub`/`adminGlobal`/`ativo`.
+
 ## Erros
 
 | Código | Situação |

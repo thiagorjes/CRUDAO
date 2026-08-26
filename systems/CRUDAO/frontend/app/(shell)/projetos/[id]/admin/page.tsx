@@ -24,9 +24,14 @@ export default async function AdminPage({ params }: { params: Promise<{ id: stri
   }
 
   const voltar = (
-    <a href={`/projetos/${projetoId}/board`} className="btn btn-text" style={{ paddingLeft: 0 }}>
-      ← Board
-    </a>
+    <div className="page-header" style={{ marginBottom: 0 }}>
+      <a href={`/projetos/${projetoId}/board`} className="btn btn-text" style={{ paddingLeft: 0 }}>
+        ← Board
+      </a>
+      <a href={`/projetos/${projetoId}/admin/papeis`} className="btn btn-outline">
+        Papéis, permissões e usuários
+      </a>
+    </div>
   );
 
   if (workflowsRes.status === 403) {

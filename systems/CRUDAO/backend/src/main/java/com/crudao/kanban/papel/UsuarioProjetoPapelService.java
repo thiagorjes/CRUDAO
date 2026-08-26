@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,6 +97,22 @@ public class UsuarioProjetoPapelService {
         List<UsuarioProjetoPapel> vinculos =
                 usuarioProjetoPapelRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId);
         usuarioProjetoPapelRepository.deleteAll(vinculos);
+    }
+
+    /**
+     * Busca usuários ainda não associados ao projeto, para o autocomplete de "associar usuário"
+     * (RF-015, TASK-07.5). Escopada por {@code projetoId} (nunca lista a base global de usuários —
+     * decisão de arquitetura/segurança desta task) e exige {@code q} com ao menos 3 caracteres para
+     * não virar um dump completo da tabela via wildcard vazio.
+     */
+    public List<UsuarioResumoResponse> buscar(UUID projetoId, String q) {
+        String termo = q == null ? "" : q.trim();
+        if (termo.length() < 3) {
+            return List.of();
+        }
+        return usuarioRepository.buscarNaoAssociados(projetoId, termo, PageRequest.of(0, 20)).stream()
+                .map(u -> new UsuarioResumoResponse(u.getId(), u.getNome(), u.getEmail()))
+                .toList();
     }
 
     private static final class UsuarioProjetoResponseBuilder {

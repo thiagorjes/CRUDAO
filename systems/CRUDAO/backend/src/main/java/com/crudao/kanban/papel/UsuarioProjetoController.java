@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Associação usuário↔projeto↔papel (RF-015, TL-10). */
@@ -43,5 +44,16 @@ public class UsuarioProjetoController {
             @PathVariable("projetoId") UUID projetoId, @PathVariable("usuarioId") UUID usuarioId) {
         usuarioProjetoPapelService.remover(projetoId, usuarioId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Autocomplete de usuários ainda não associados ao projeto (RF-015, TASK-07.5) — mesma
+     * permissão de {@link #associar}, nunca uma listagem global de usuários.
+     */
+    @GetMapping("/api/projetos/{projetoId}/usuarios/buscar")
+    @PreAuthorize("@permissaoGuard.permitido(#projetoId, 'papel:administrar')")
+    public List<UsuarioResumoResponse> buscar(
+            @PathVariable("projetoId") UUID projetoId, @RequestParam(name = "q", required = false) String q) {
+        return usuarioProjetoPapelService.buscar(projetoId, q);
     }
 }

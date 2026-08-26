@@ -14,8 +14,10 @@ import com.crudao.kanban.domain.usuario.Projeto;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.domain.usuario.Usuario;
 import com.crudao.kanban.domain.usuario.UsuarioRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.mockito.ArgumentMatchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -91,5 +93,31 @@ class UsuarioProjetoPapelServiceTest {
         service.associar(projetoId, new AssociarUsuarioRequest(usuarioId, papelDoProjeto.getId()));
 
         verify(usuarioProjetoPapelRepository, org.mockito.Mockito.times(1)).save(any());
+    }
+
+    @Test
+    void buscar_comMenosDeTresCaracteres_retornaVazioSemConsultarRepositorio() {
+        assertThat(service.buscar(projetoId, "ab")).isEmpty();
+        assertThat(service.buscar(projetoId, null)).isEmpty();
+        verify(usuarioRepository, never())
+                .buscarNaoAssociados(any(), any(), ArgumentMatchers.any());
+    }
+
+    @Test
+    void buscar_comTermoValido_retornaResumoSemDadosSensiveis() {
+        Usuario usuario = new Usuario();
+        usuario.setId(usuarioId);
+        usuario.setNome("Ana Silva");
+        usuario.setEmail("ana@exemplo.com");
+        usuario.setKeycloakSub("sub-123");
+        usuario.setAdminGlobal(true);
+
+        when(usuarioRepository.buscarNaoAssociados(
+                        org.mockito.Mockito.eq(projetoId), org.mockito.Mockito.eq("ana"), ArgumentMatchers.any()))
+                .thenReturn(List.of(usuario));
+
+        List<UsuarioResumoResponse> resultado = service.buscar(projetoId, "ana");
+
+        assertThat(resultado).containsExactly(new UsuarioResumoResponse(usuarioId, "Ana Silva", "ana@exemplo.com"));
     }
 }
