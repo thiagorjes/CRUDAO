@@ -469,3 +469,19 @@ textarea {
   gap: var(--space-sm);
   margin-top: var(--space-sm);
 }
+
+/* TL-04 — Detalhe da Tarefa (TASK-07.3) */
+.field-locked {
+  background: #f1f3f5;
+  color: var(--color-text-secondary);
+  padding: 8px 12px;
+  border-radius: var(--radius-button);
+  border: 1px solid var(--color-border);
+}
+
+.history-item {
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  font-size: 13px;
+}

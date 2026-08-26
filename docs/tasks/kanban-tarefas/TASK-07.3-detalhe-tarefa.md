@@ -1,5 +1,7 @@
 # TASK-07.3 — Detalhe da tarefa
 
+**Status:** Concluída — 2026-08-26
+
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RF-003, RF-006, RF-017

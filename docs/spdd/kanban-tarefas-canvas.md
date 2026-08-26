@@ -112,7 +112,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [x] TASK-06.1 — Migration V7 + dashboard lead-time
 - [ ] TASK-07.1 — Shell Next.js + auth
 - [ ] TASK-07.2 — Board: colunas, raias, cards, mover
-- [ ] TASK-07.3 — Detalhe da tarefa
+- [x] TASK-07.3 — Detalhe da tarefa
 - [ ] TASK-07.4 — Admin projeto/workflow/raia
 - [ ] TASK-07.5 — Admin papéis/permissões
 - [ ] TASK-07.6 — Dashboard UI
@@ -179,3 +179,10 @@ _Atualizado por: /code-review TASK-07.2 v1.0 — 2026-08-26_
 **O que NÃO fazer:**
 - Não deixar uma tabela de tickets/tokens de curta duração (`ws_ticket`) sem rotina de purga — cada tentativa de conexão/reconexão gera uma linha nova que nunca é removida; se o índice de expiração já foi criado, o job de limpeza deveria ter sido criado junto (achado 🟡 I3 da review TASK-07.2).
 - Não confiar apenas no comportamento do HTML5 drag-and-drop (`onDragOver`/`preventDefault`) como única barreira contra mover para uma etapa sem transição configurada — repetir a checagem explicitamente em `onDrop`, mesmo com o backend validando (defesa em profundidade barata).
+
+_Atualizado por: /code-review TASK-07.3 v1.0 — 2026-08-26_
+> Decisões: —
+
+**O que NÃO fazer:**
+- Não usar `campo.trim() || undefined` para decidir o que enviar num `PUT`/`PATCH` parcial — `JSON.stringify` omite `undefined`, que o backend trata como "campo não enviado" (não "limpar o campo"). Um campo opcional que o usuário pode esvaziar precisa ser enviado como string vazia explicitamente quando o formulário permite editá-lo (achado de code review TASK-07.3 — `descricaoEscopo` não podia ser limpo).
+- Não considerar a infraestrutura de teste de componente (Testing Library, TASK-07.2) "opcional" para telas novas do Epic 07 — RFs Must Have exigem cenário de teste automatizado (`testing.md`), e o custo de replicar o padrão já existente é baixo; revisado a cada task de UI até o fechamento do Epic 07.

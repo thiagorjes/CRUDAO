@@ -154,7 +154,12 @@ export function BoardClient({
                         }
                         onDragEnd={() => setArrastando(null)}
                       >
-                        <p style={{ margin: "0 0 8px", fontSize: "14px" }}>{tarefa.titulo}</p>
+                        <a
+                          href={`/projetos/${projetoId}/tarefas/${tarefa.id}`}
+                          style={{ display: "block", margin: "0 0 8px", fontSize: "14px", color: "inherit" }}
+                        >
+                          {tarefa.titulo}
+                        </a>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           {responsavel ? (
                             <span className="avatar" style={{ width: 20, height: 20, fontSize: 10 }}>
