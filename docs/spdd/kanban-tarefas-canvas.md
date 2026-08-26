@@ -116,7 +116,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [x] TASK-07.4 — Admin projeto/workflow/raia
 - [ ] TASK-07.5 — Admin papéis/permissões
 - [ ] TASK-07.6 — Dashboard UI
-- [ ] TASK-07.7 — Notificações UI
+- [x] TASK-07.7 — Notificações UI
 - [ ] TASK-08.1 — Testes multi-pod / WebSocket
 - [ ] TASK-08.2 — Observabilidade final
 
@@ -193,3 +193,9 @@ _Atualizado por: /code-review TASK-07.4 v1.0 — 2026-08-26_
 **O que NÃO fazer:**
 - Não assumir que uma leitura (`GET`) é sempre permitida a qualquer membro do projeto — `contracts/workflows.md` exige `workflow:administrar` até para o `GET` de workflows; toda página que consome um endpoint assim precisa tratar `403` explicitamente (mensagem "sem permissão"), nunca deixar cair no error boundary genérico do shell.
 - Não deixar um branch de exclusão (proxy + handler de UI) implementado sem o botão que o aciona — código morto que mascara um critério de aceite (RF-009, excluir workflow) como "feito" quando não está exposto ao usuário.
+
+_Atualizado por: /code-review TASK-07.7 v1.0 — 2026-08-26_
+> Decisões: —
+
+**O que NÃO fazer:**
+- Não assumir que `forwardToBackend` repassa a query string do request original — ele encaminha só o `backendPath` literal passado pelo proxy. Todo proxy de rota `GET` que depende de query params (`?apenasNaoLidas=true`, `?q=`) precisa montá-la explicitamente a partir de `req.nextUrl.searchParams`, como já feito em `app/api/projetos/[id]/usuarios/buscar/route.ts` (TASK-07.5) — achado repetido em TASK-07.7 (`app/api/notificacoes/route.ts` descarta `apenasNaoLidas=true` silenciosamente; mitigado hoje só porque o backend também já ignora esse parâmetro, débito registrado em TASK-05.2).

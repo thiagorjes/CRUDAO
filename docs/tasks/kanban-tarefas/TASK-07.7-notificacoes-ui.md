@@ -12,8 +12,8 @@ Fecha o ciclo de visibilidade de impedimento — objetivo central do PRD.
 
 ## O que deve ser feito
 
-- [ ] Lista de notificações não lidas, conectada a `/topic/notificacoes/{usuarioId}` (com filtro client-side por `usuarioId`, conforme decisão da TechSpec).
-- [ ] Ação de marcar como lida.
+- [x] Lista de notificações não lidas, conectada a `/topic/notificacoes/{usuarioId}` (com filtro client-side por `usuarioId`, conforme decisão da TechSpec).
+- [x] Ação de marcar como lida.
 
 ## Guia técnico
 
@@ -23,3 +23,5 @@ Fecha o ciclo de visibilidade de impedimento — objetivo central do PRD.
 
 - Notificação aparece em tempo real quando o usuário é observador de uma tarefa alterada.
 - Marcar como lida reflete no backend e na UI.
+
+## Status: Concluída — 2026-08-26

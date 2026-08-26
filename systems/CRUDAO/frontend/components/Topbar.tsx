@@ -1,9 +1,18 @@
 import { iniciais } from "@/lib/format";
+import { NotificacoesBell } from "@/components/notificacoes/NotificacoesBell";
 
-/** Notificações (RF-005) ficam para TASK-07.7 — topbar hoje só identifica o usuário e faz logout. */
-export function Topbar({ nome }: { nome: string }) {
+export function Topbar({
+  nome,
+  usuarioId,
+  backendPublicUrl,
+}: {
+  nome: string;
+  usuarioId: string;
+  backendPublicUrl: string;
+}) {
   return (
     <header className="topbar">
+      <NotificacoesBell usuarioId={usuarioId} backendPublicUrl={backendPublicUrl} />
       <div className="topbar__user">
         <span className="avatar">{iniciais(nome)}</span>
         {nome}

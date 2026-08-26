@@ -138,6 +138,59 @@ textarea {
   padding: 1px 5px;
 }
 
+.topbar__notif-wrapper {
+  position: relative;
+}
+
+.topbar__notif-painel {
+  position: absolute;
+  top: calc(100% + var(--space-xs));
+  right: 0;
+  width: 320px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding: var(--space-sm);
+  z-index: 10;
+}
+
+.topbar__notif-vazio {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  margin: var(--space-sm);
+}
+
+.topbar__notif-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.topbar__notif-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border-radius: var(--radius-button);
+  background: var(--color-background);
+  font-size: 13px;
+}
+
+.topbar__notif-item button {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  text-decoration: underline;
+}
+
 .topbar__user {
   display: flex;
   align-items: center;

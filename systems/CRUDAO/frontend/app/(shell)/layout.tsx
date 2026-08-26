@@ -1,4 +1,5 @@
 import { obterMe } from "@/lib/me";
+import { env } from "@/lib/env";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 
@@ -10,7 +11,11 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   return (
     <div className="app-shell">
       <Sidebar mostrarAdmin={admin} />
-      <Topbar nome={usuario.nome} />
+      <Topbar
+        nome={usuario.nome}
+        usuarioId={usuario.id}
+        backendPublicUrl={env.publicBackendUrl()}
+      />
       <main className="main">{children}</main>
     </div>
   );
