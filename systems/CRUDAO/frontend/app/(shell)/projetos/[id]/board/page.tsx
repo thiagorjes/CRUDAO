@@ -25,9 +25,14 @@ export default async function BoardPage({ params }: { params: Promise<{ id: stri
           </a>
           <h1>Board — {projeto?.nome ?? "Projeto"}</h1>
         </div>
-        <a className="btn btn-outline" href={`/projetos/${projetoId}/dashboard`}>
-          Dashboard
-        </a>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <a className="btn btn-outline" href={`/projetos/${projetoId}/admin`}>
+            Admin
+          </a>
+          <a className="btn btn-outline" href={`/projetos/${projetoId}/dashboard`}>
+            Dashboard
+          </a>
+        </div>
       </div>
 
       <BoardClient projetoId={projetoId} board={board} membros={membros} />

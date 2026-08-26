@@ -485,3 +485,54 @@ textarea {
   margin-bottom: var(--space-sm);
   font-size: 13px;
 }
+
+/* TL-08 — Admin de Projeto (TASK-07.4) */
+.tabs {
+  display: flex;
+  gap: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-md);
+}
+.tabs button {
+  background: none;
+  border: none;
+  padding: 8px 4px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.tabs button[aria-selected="true"] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+table th,
+table td {
+  text-align: left;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+table th {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.checkbox-list label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: normal;
+}
