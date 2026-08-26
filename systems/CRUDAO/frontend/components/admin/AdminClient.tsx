@@ -209,20 +209,30 @@ export function AdminClient({
         </div>
       ) : (
         <>
-          <div className="tabs" role="tablist" aria-label="Configuração de workflow">
-            <button role="tab" aria-selected={aba === "colunas"} type="button" onClick={() => setAba("colunas")}>
-              Colunas
-            </button>
+          <div className="page-header" style={{ marginBottom: 0 }}>
+            <div className="tabs" role="tablist" aria-label="Configuração de workflow">
+              <button role="tab" aria-selected={aba === "colunas"} type="button" onClick={() => setAba("colunas")}>
+                Colunas
+              </button>
+              <button
+                role="tab"
+                aria-selected={aba === "transicoes"}
+                type="button"
+                onClick={() => setAba("transicoes")}
+              >
+                Transições
+              </button>
+              <button role="tab" aria-selected={aba === "raias"} type="button" onClick={() => setAba("raias")}>
+                Raias
+              </button>
+            </div>
             <button
-              role="tab"
-              aria-selected={aba === "transicoes"}
+              className="btn btn-text"
               type="button"
-              onClick={() => setAba("transicoes")}
+              disabled={finalizado}
+              onClick={() => setExcluir({ tipo: "workflow", id: workflow.id, nome: workflow.nome })}
             >
-              Transições
-            </button>
-            <button role="tab" aria-selected={aba === "raias"} type="button" onClick={() => setAba("raias")}>
-              Raias
+              Excluir workflow
             </button>
           </div>
 
