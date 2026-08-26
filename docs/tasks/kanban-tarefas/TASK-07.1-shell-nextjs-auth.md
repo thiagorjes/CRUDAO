@@ -1,5 +1,7 @@
 # TASK-07.1 — Shell Next.js + autenticação
 
+**Status:** Concluída — 2026-08-26
+
 **Tamanho:** [G] 1-2 dias
 **Sistema:** CRUDAO
 **RF de origem:** RF-014

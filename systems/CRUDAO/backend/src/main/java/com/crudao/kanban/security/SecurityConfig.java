@@ -1,5 +1,6 @@
 package com.crudao.kanban.security;
 
+import com.crudao.kanban.websocket.WsTicketAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -8,6 +9,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -34,18 +36,28 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain apiFilterChain(
-            HttpSecurity http, AtivoUsuarioFilter ativoUsuarioFilter) throws Exception {
+            HttpSecurity http,
+            AtivoUsuarioFilter ativoUsuarioFilter,
+            WsTicketAuthenticationFilter wsTicketAuthenticationFilter)
+            throws Exception {
         // /ws/** (handshake STOMP, TASK-05.1/ADR-004) protegido pelo mesmo resource server opaco —
         // o AtivoUsuarioFilter resolve o Usuario local no handshake, capturado por
-        // AutenticacaoHandshakeInterceptor para uso na sessão WebSocket.
+        // AutenticacaoHandshakeInterceptor para uso na sessão WebSocket. O browser não consegue
+        // enviar Bearer no handshake nativo de WebSocket (BFF do frontend nunca expõe o token ao
+        // JS) — WsTicketAuthenticationFilter autentica via ticket de curta duração nesse caso
+        // (TASK-07.2); /ws/info fica fora da autenticação porque só expõe capacidades de
+        // transporte do SockJS, sem dado sensível.
         http.securityMatcher("/api/**", "/ws/**")
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/ping").permitAll()
-                                        .anyRequest().authenticated())
+                                auth.requestMatchers("/api/ping", "/ws/info")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
+                .addFilterBefore(wsTicketAuthenticationFilter, BearerTokenAuthenticationFilter.class)
                 .addFilterAfter(ativoUsuarioFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

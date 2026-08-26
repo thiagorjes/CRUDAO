@@ -1,5 +1,7 @@
 # TASK-07.2 — Board: colunas, raias, cards, criar/excluir, mover
 
+**Status:** Concluída — 2026-08-26
+
 **Tamanho:** [G] 1-2 dias
 **Sistema:** CRUDAO
 **RF de origem:** RF-001, RF-002, RF-004, RF-011, RF-018, RF-019

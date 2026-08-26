@@ -166,3 +166,16 @@ _Atualizado por: /implement TASK-04.1 — 2026-08-25_
 - RN-005 real (não mais stub): "tarefa ativa" = `etapaAtual.etapaFinal=false`. Checagem via `TarefaRepository.existsBy{Workflow,EtapaAtual,Raia}IdAndEtapaAtualEtapaFinalFalse`, usada por `WorkflowService`/`RaiaService` na exclusão (409 se houver tarefa ativa vinculada).
 - **Um workflow por projeto passa a ser regra de serviço** (`WorkflowService.criar` bloqueia com `409` se o projeto já tiver workflow) — decisão fechada em code review (agent QA) para resolver a ambiguidade de "workflow ativo do projeto" citada em `contracts/tarefas.md`, já que o data-model não modela essa unicidade nem um flag de ativo. `TarefaService.criar` depende dessa garantia para escolher o workflow do projeto sem ambiguidade.
 - `TarefaService.resolverResponsavel` não valida vínculo do usuário com o projeto na criação (qualquer `usuarioId` existente no sistema pode virar responsável) — gap de integridade registrado em code review, não bloqueante para esta task; revisar junto de RN-012 em TASK-04.2.
+
+_Atualizado por: /code-review TASK-07.2 v1.0 — 2026-08-26_
+> Decisões: —
+
+**Restrições:**
+- Autenticação do handshake STOMP/SockJS (`/ws`) a partir do browser usa um ticket opaco de uso único, TTL de 20s (`POST /api/ws-ticket`, `WsTicketService`/`WsTicketAuthenticationFilter`) — a WebSocket API nativa não permite enviar Bearer no handshake, e o BFF Next.js nunca expõe o access token real ao JS do browser; toda reconexão pede um ticket novo (nunca reaproveitar).
+- `WsTicketAuthenticationFilter` roda antes de `BearerTokenAuthenticationFilter` e só age quando há `?ticket=` no request para `/ws/**` (`/ws/info` permanece fora, sem dado sensível) — não pode interferir no fluxo Bearer normal de `/api/**`.
+- Endpoints novos de API pública devem ser refletidos em `docs/techspec/kanban-tarefas/contracts/` no mesmo PR/task que os introduz (convenção já reforçada em TASK-04.5 e reaberta em TASK-07.2 — `POST /api/ws-ticket` ficou sem contrato documentado).
+- RFs Must Have exigem cenário de teste automatizado correspondente (`testing.md`) antes de a task ser considerada concluída — TASK-07.2 fechou sem testes de componente para o board (achado 🟡 I2 da review), revisar antes de fechar o Epic 07.
+
+**O que NÃO fazer:**
+- Não deixar uma tabela de tickets/tokens de curta duração (`ws_ticket`) sem rotina de purga — cada tentativa de conexão/reconexão gera uma linha nova que nunca é removida; se o índice de expiração já foi criado, o job de limpeza deveria ter sido criado junto (achado 🟡 I3 da review TASK-07.2).
+- Não confiar apenas no comportamento do HTML5 drag-and-drop (`onDragOver`/`preventDefault`) como única barreira contra mover para uma etapa sem transição configurada — repetir a checagem explicitamente em `onDrop`, mesmo com o backend validando (defesa em profundidade barata).

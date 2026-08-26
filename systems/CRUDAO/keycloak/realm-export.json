@@ -11,7 +11,7 @@
       "publicClient": false,
       "secret": "kanban-dev-secret",
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "redirectUris": [
         "http://localhost:3000/login/oauth2/code/keycloak"
       ],
