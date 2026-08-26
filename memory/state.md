@@ -62,6 +62,17 @@ _Atualizado em: 2026-08-24_
 
 ## kanban-tarefas
 
+- **Etapa concluída:** /implement TASK-07.6 — 2026-08-26
+- **Task implementada:** TASK-07.6 — Dashboard UI (RF-007) — 2026-08-26
+- **Arquivos (frontend, todos em systems/CRUDAO/frontend/):** lib/dashboard.ts (novo — tipos `DashboardResponse`/`DashboardEtapaResponse`, espelha `dashboard-notificacoes.md`); lib/dashboard-logic.ts + dashboard-logic.test.ts (novo — `formatarDuracao`, `ordenarPorLeadTimeDesc`); components/dashboard/DashboardClient.tsx + `*.test.tsx` (novo — tabela puramente apresentacional, sem estado); app/(shell)/projetos/[id]/dashboard/page.tsx (novo, Server Component — `apiFetch` direto ao backend, trata 403 explicitamente). Sem alterações no backend (endpoint já existia de TASK-06.1) nem proxy Next.js novo (leitura só server-side, sem mutação do browser). O link "Dashboard" no board já existia (deixado pronto em task anterior).
+- **Acesso a gestor sem execução:** página não adiciona nenhuma checagem de permissão além do 403 que o backend já devolve (`permissaoGuard.membro`, TASK-06.1) — qualquer vínculo ao projeto basta, sem checar papel/permissão específica no client.
+- **RN-015:** nenhum bloqueio client-side por `projeto.status=FINALIZADO` — leitura nunca é bloqueada (mesmo padrão do board/detalhe de tarefa).
+- **Testes:** `tsc --noEmit` limpo; Vitest **106/106 verdes** (10 novos: 7 em `dashboard-logic.test.ts` + 3 em `DashboardClient.test.tsx`).
+- **Code review:** agent QA (persona `.agents/agents/qa.md`, contexto fresco via general-purpose) — **APROVADO**, 0 findings 🔴/🟡. 3 sugestões 🔵 não corrigidas (decisão, baixo risco, mesmo padrão já aceito em outras páginas do Epic 07): página não trata explicitamente o caso teórico de vínculo ao projeto existir mas `GET /api/projetos` não listá-lo (cairia em "Projeto não encontrado" em vez de "sem acesso"); `dashboard-logic.ts` sem teste de borda para impedimento > lead-time; sem teste de página exercitando o branch 403 (só `DashboardClient` isolado testado).
+- **Próxima task:** TASK-07.7 (Notificações UI) — paralela; ou fechamento do Epic 07 se 07.7 já estiver concluída
+
+_Etapa anterior:_
+
 - **Etapa concluída:** /implement TASK-07.5 — 2026-08-26
 - **Task implementada:** TASK-07.5 — Admin: papéis/permissões/usuários (RF-013, RF-015, RF-016) — 2026-08-26
 - **Decisão de arquitetura (consultados architect + security antes de codificar):** RF-015 exige associar usuário↔projeto↔papel, mas `POST /api/projetos/{id}/usuarios` exige um `usuarioId` (UUID) e não existia nenhum endpoint de busca/listagem de usuários do sistema. Opções levantadas com o usuário: UUID manual (zero backend, UX ruim) vs. endpoint de busca (pequena extensão de backend). Architect e Security convergiram e o usuário aprovou: **`GET /api/projetos/{projetoId}/usuarios/buscar?q=`**, escopado por projeto (mesma autorização de `associar` — `papel:administrar`, nunca uma listagem global de usuários), mínimo 3 caracteres, top 20, só `id/nome/email` (nunca `keycloakSub`/`adminGlobal`/`ativo`), excluindo já-associados e inativos.
