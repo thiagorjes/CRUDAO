@@ -40,4 +40,16 @@ Teste com segunda versão ajustados os problemas detectados na V1.
 9- observei que depois do techspec o contexto ficou em torno de 170k tokens, antes não passava de 90k.
 10- sequencia de perguntas do tasks se manteve igual e iniciou escrita.
 11- implementação encontrando alguns erros, que estão sendo corrigidos ao final antes de seguir para a próxima.
-12- 
+12- foi necessário solicitar a criação do docker de back e front depois de finalizadas todas as tasks
+13- problema real de login ao testar o resultado.
+```
+
+o Keycloak emite o iss do token sempre com a URL pública (http://localhost:8080/...), mas a validação do id_token no frontend compara contra o issuer interno (http://keycloak:8080/...) — mismatch, jwtVerify lança, exceção é engolida silenciosamente e cai no erro genérico. Confirmei trocando o código manualmente de dentro do container (token exchange funcionou, iss veio como http://localhost:8080/realms/kanban-dev).
+
+Vou corrigir em duas frentes: fixar o hostname do Keycloak (comportamento hoje é "adivinhado" pela primeira request — frágil) e corrigir a checagem no frontend.
+
+Atenção: isso pode quebrar a resolução OIDC do client registration do backend (Spring exige que o issuer-uri configurado bata exatamente com o campo issuer do discovery document). Vou testar com tudo de pé antes de dar como resolvido
+
+Confirmado o efeito colateral: fixar KC_HOSTNAME quebrou a resolução OIDC do client registration do backend (que exige que o discovery document bata exatamente com o issuer-uri interno usado para alcançá-lo). O comportamento padrão do Keycloak já era o correto — o iss do token de um fluxo de autorização iniciado pelo browser (localhost:8080) fica travado nesse host durante todo aquele fluxo, mesmo que a troca de código seja feita internamente. Só a checagem do frontend estava errada. Revertendo o KC_HOSTNAME:
+
+```

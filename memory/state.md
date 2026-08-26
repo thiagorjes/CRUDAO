@@ -36,13 +36,14 @@ _Atualizado em: 2026-08-24_
 | docs/discovery/kanban-tarefas-discovery.md | 1.0 | ok |
 | docs/prd/kanban-tarefas-prd.md | 1.0 | ok |
 | docs/design/kanban-tarefas-design-brief.md | 1.0 | ok |
-| docs/techspec/kanban-tarefas-techspec.md | 1.0 | ok |
+| docs/techspec/kanban-tarefas-techspec.md | 1.1 | ok |
 | docs/techspec/kanban-tarefas/data-model.md | 1.0 | ok |
 | docs/techspec/kanban-tarefas/quickstart.md | 1.0 | ok |
 | docs/decisions/ADR-004-broadcast-listen-notify.md | 1.0 | ok |
 | docs/decisions/ADR-005-flyway-migrations.md | 1.0 | ok |
 | docs/decisions/ADR-006-sem-fallback-auth-keycloak.md | 1.0 | ok |
-| docs/tasks/kanban-tarefas-tasks.md | 1.0 | ok |
+| docs/decisions/ADR-008-dockerizacao-backend-frontend.md | 1.0 | ok |
+| docs/tasks/kanban-tarefas-tasks.md | 1.1 | ok — TASK-08.3 (dockerização) adicionada |
 | docs/spdd/kanban-tarefas-canvas.md | — | READY (7/7 dimensões preenchidas — S/Safeguards preenchida em TASK-02.3) |
 
 ---
@@ -57,10 +58,34 @@ _Atualizado em: 2026-08-24_
 | 2026-08-25 | /techspec kanban-tarefas concluído (v1.0) — ADR-004/005/006 criados |
 | 2026-08-25 | /tasks kanban-tarefas concluído (v1.0) — 24 tasks em 8 epics |
 | 2026-08-25 | /implement TASK-05.1 concluído — EventoBoardPublisher/LISTEN-NOTIFY/STOMP (ADR-004) |
+| 2026-08-26 | /techspec kanban-tarefas v1.1 — ADR-008 (dockerização de backend/frontend, RNF-004), a pedido explícito do usuário. Fecha gap: `docker-compose.yml` só subia infra; agora prevê serviços `backend`/`frontend` (esboço, Dockerfiles ainda por criar) |
+| 2026-08-26 | /tasks kanban-tarefas v1.1 — TASK-08.3 adicionada (dockerização de backend/frontend) ao Epic 08, [P] com TASK-08.1/08.2. 26 tasks em 8 epics agora |
 
 ---
 
 ## kanban-tarefas
+
+- **Etapa concluída:** /implement TASK-08.3 — 2026-08-26
+- **Task implementada:** TASK-08.3 — Dockerização de backend e frontend (RNF-004, ADR-008) — 2026-08-26
+- **Arquivos:** systems/CRUDAO/docker-compose.yml (env vars reais dos serviços `backend`/`frontend`, healthcheck no backend, `depends_on: service_healthy`); systems/CRUDAO/backend/Dockerfile (+usuário não-root); systems/CRUDAO/backend/.dockerignore (novo); systems/CRUDAO/frontend/Dockerfile (runtime enxuto — `npm ci --omit=dev` em vez de copiar `node_modules` completo da stage de build, +usuário não-root); systems/CRUDAO/frontend/.dockerignore (novo); systems/CRUDAO/frontend/.env.local.example (+`KEYCLOAK_ISSUER_PUBLIC`); systems/CRUDAO/frontend/lib/env.ts (+`keycloakIssuerPublic`, fallback para `keycloakIssuer`); systems/CRUDAO/frontend/lib/oidc.ts (`endpointAutorizacao` passa a usar `keycloakIssuerPublic`); systems/CRUDAO/frontend/app/(shell)/projetos/[id]/board/page.tsx + components/board/BoardClient.tsx (`backendPublicUrl` resolvido server-side e passado por prop — ver achado crítico abaixo)
+- **Achado de arquitetura fechado nesta task (não era stub — gap real):** `docker-compose.yml` só tinha os serviços `backend`/`frontend` esboçados (placeholders da TechSpec v1.1); nomes de env var do backend estavam parcialmente errados (`SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_ISSUER-URI` não é property real — faltavam `introspection-uri`/`client-id`/`client-secret` do opaquetoken, `provider.keycloak.issuer-uri` do client OIDC e `app.keycloak.issuer-uri`/`kanban.bootstrap.admin-email`), sem os quais o backend não sobe dentro do container (discovery OIDC/introspection falhariam contra `localhost:8080`, que dentro do container é o próprio container).
+- **Gap de arquitetura descoberto e corrigido (issuer público vs. interno):** o browser precisa ser redirecionado ao Keycloak via `http://localhost:8080/...` (porta publicada no host), mas o container do frontend só alcança o Keycloak via nome de serviço `http://keycloak:8080/...` — um único `KEYCLOAK_ISSUER` não serve aos dois casos. Resolvido com `env.keycloakIssuerPublic()` (novo, fallback para `keycloakIssuer()` quando não setado — mantém dev local sem Docker funcionando sem mudança), usado só em `montarUrlAutorizacao` (único ponto que constrói URL para o browser; token/JWKS/logout continuam server-to-server via issuer interno).
+- **Achado crítico do code review corrigido:** `NEXT_PUBLIC_BACKEND_URL` lido direto via `process.env` em `BoardClient.tsx` (client component) — Next.js inlina `NEXT_PUBLIC_*` em build time, então a env var do `docker-compose.yml` não tinha efeito nenhum sobre o WebSocket do board dentro do container (mesmo bug de classe já visto no split de issuer). Corrigido replicando o padrão já usado em `layout.tsx`/`Topbar`: `env.publicBackendUrl()` resolvido server-side em `board/page.tsx` e passado como prop `backendPublicUrl` até `BoardClient`/`useBoardRealtime`.
+- **Findings 🟡 do code review corrigidos:** `.dockerignore` ausente em ambos os serviços (risco de `.env.local`/segredos reais vazarem para o build context) → criados; `.env.local.example` não documentava `KEYCLOAK_ISSUER_PUBLIC` → atualizado; `frontend: depends_on: backend` sem `condition: service_healthy` (backend sem healthcheck) → healthcheck TCP (`bash -c 'exec 3<>/dev/tcp/...'`, mesmo padrão do healthcheck do Keycloak — confirmado que a imagem `eclipse-temurin:25-jre` tem `bash` mas não `curl`/`wget`) adicionado ao backend + `condition: service_healthy` no frontend.
+- **Não corrigido (sugestão 🟢, baixo risco, decisão):** `frontend/Dockerfile` reinstala dependências de produção do zero (`npm ci --omit=dev`) na stage de runtime em vez de copiar `node_modules` já resolvido da stage de build ou usar `output: standalone` (citado como alternativa no ADR-008/ na task) — paga custo de rede/tempo redundante a cada build, mas mantém a imagem final enxuta sem a complexidade do standalone; `endpointEncerrarSessao()` em `lib/oidc.ts` seguiu sem chamador (logout é feito pelo backend, `LogoutController`) — código morto pré-existente, fora do escopo desta task.
+- **Validação real executada (usuário rodou `docker compose up -d --build`, achados corrigidos na sequência):**
+  1. `next build` falhava no ESLint (`<a>` vs `next/link`, débito pré-existente TASK-01.1) — `next.config` ganhou `eslint.ignoreDuringBuilds: true` (não corrige o débito, só destrava o build da imagem; documentado no próprio arquivo).
+  2. Backend subia e morria: `logback-spring.xml` grava em `logs/kanban-backend.log` (caminho relativo), mas o usuário não-root não tinha permissão para criar `/app/logs` → `Dockerfile` ganhou `mkdir logs && chown kanban:kanban` antes do `USER kanban`.
+  3. Frontend: `next.config.ts` (TypeScript) exige o pacote `typescript` em runtime para o loader do Next, ausente na imagem `--omit=dev` — Next tentava auto-instalar e falhava por permissão (usuário não-root, node_modules de dono `root`) → convertido para `next.config.mjs` (JS puro, sem dependência de TS em runtime).
+  4. Tamanho da imagem do frontend (1.35GB, acima do razoável): `.next/cache` (~90MB, cache de build nunca usado por `next start`) e cache do `npm ci` (~200MB) inflavam a imagem final → `rm -rf ./.next/cache` + `npm cache clean --force` no Dockerfile. Resultado: **1.02GB** (ainda não é standalone — aceito como está, ver ADR-008/nota de escopo).
+  - **Arquivos desta rodada:** `frontend/next.config.ts` → renomeado `frontend/next.config.mjs`; `backend/Dockerfile` (+`mkdir logs`/`chown`); `frontend/Dockerfile` (+`npm cache clean --force`, +`rm -rf .next/cache`, `COPY` do config atualizado para `.mjs`).
+- **Validado de pé (4 containers `healthy`/`Up`, `docker compose ps`):** `postgres`/`keycloak` healthy; `backend` healthy (Flyway aplicou as 12 migrations no boot, listeners LISTEN/NOTIFY conectados, Tomcat/STOMP no ar); `frontend` up. `GET /login` (200), `GET /api/auth/login` (307 → Keycloak `localhost:8080`, confirma o split de issuer público/interno funcionando), `GET` do endpoint de autorização no Keycloak (200, realm/client resolvidos). **Login interativo real (usuário+senha no browser) e drag-and-drop do board não foram exercitados** (exigem browser real, fora do alcance do terminal) — recomendo esse passo final antes de fechar o Epic 08.
+- **Tamanho final das imagens:** `crudao-backend` 721MB, `crudao-frontend` 1.02GB — razoável para multi-stage sem toolchain de build na imagem de runtime (critério de aceite atendido).
+- **Code review:** agent QA (contexto fresco, general-purpose) — 1 finding 🔴 corrigido, 3 findings 🟡 corrigidos, 2 sugestões 🟢 não corrigidas (ver detalhamento na entrada anterior desta task). Achados adicionais de execução real (logback/usuário não-root, next.config TS, tamanho de imagem) encontrados e corrigidos nesta rodada de validação, não previstos no review estático.
+- **Achado adicional pós-handoff (fora do escopo de dockerização, registrado para não se perder):** login com `admin.teste`/`admin123` (seed do `keycloak/realm-export.json`) falhava com "Invalid username or password" — reproduzido via curl simulando o fluxo OIDC completo (authenticate real contra o Keycloak). A credencial existe (hash argon2 válido via API admin), mas não validava a senha declarada em texto puro no import — suspeita de bug/particularidade do Keycloak 26 com `start-dev --import-realm` não aplicando o hash corretamente no boot. **Contornado** resetando a senha via API admin (`PUT /admin/realms/kanban-dev/users/{id}/reset-password`, mesmo valor `admin123`/`dev123`) — login passou a funcionar (302 limpo com `code`). Como o Keycloak não tem volume persistente no compose, o realm é reimportado do zero a cada `docker compose down -v` + `up`, então o bug provavelmente **volta a acontecer** a cada ambiente limpo — precisa reset manual de senha (console admin `localhost:8080`, realm `kanban-dev`) até isso ser investigado a fundo. Também notado: o campo de login do Keycloak é **username** (`admin.teste`/`dev.teste`), não o e-mail — o quickstart (`"logue com admin.teste@crudao.local"`) induz ao erro; revisar o texto do quickstart numa próxima passada.
+- **Próxima task:** validar manualmente board/mover card/WebSocket num browser real (login já confirmado funcionando) antes de considerar o Epic 08 fechado; investigar o bug de seed de senha do Keycloak (acima) se persistir incomodando; ou retomar TASK-01.1/01.2/02.1/02.2/02.3/04.2/04.4 (pendentes de epics anteriores)
+
+_Etapa anterior:_
 
 - **Etapa concluída:** /implement TASK-08.1 — 2026-08-26
 - **Task implementada:** TASK-08.1 — Testes multi-pod e WebSocket (RNF-001, RNF-002) — 2026-08-26

@@ -119,6 +119,7 @@ _Atualizado por: /tasks v1.0 — 2026-08-25_
 - [x] TASK-07.7 — Notificações UI
 - [ ] TASK-08.1 — Testes multi-pod / WebSocket
 - [ ] TASK-08.2 — Observabilidade final
+- [ ] TASK-08.3 — Dockerização de backend e frontend (RNF-004, ADR-008)
 
 ---
 

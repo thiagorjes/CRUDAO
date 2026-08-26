@@ -21,6 +21,13 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      # Sem isso, o Keycloak "adivinha" seu próprio issuer pela primeira request recebida (frágil e
+      # não-determinístico — dependia de qual serviço batia nele primeiro). Fixo aqui para sempre
+      # ser o issuer PÚBLICO (browser), consistente com KEYCLOAK_ISSUER_PUBLIC do frontend e
+      # app.keycloak.issuer-uri/APP_KEYCLOAK_ISSUER-URI usados na validação do id_token/introspection
+      # (achado de execução real, TASK-08.3): sem isso, chamadas server-to-server feitas via
+      # `keycloak:8080` (nome interno) recebiam tokens com `iss` divergente do esperado.
+      KC_HOSTNAME: http://localhost:8080
     ports:
       - "8080:8080"
     volumes:
@@ -30,6 +37,67 @@ services:
       interval: 10s
       timeout: 5s
       retries: 15
+
+  # backend/frontend (TASK-08.3, ADR-008) — nomes de env var conferidos contra
+  # backend/src/main/resources/application-dev.yml e frontend/.env.local.example.
+  backend:
+    build:
+      context: ./backend
+    environment:
+      # spring.profiles.active=dev (application.yml) continua ativo dentro do container — os
+      # valores hardcoded de localhost em application-dev.yml são sobrescritos pelas env vars
+      # abaixo (precedência: env var > application-{profile}.yml, Spring Boot relaxed binding).
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/kanban
+      SPRING_DATASOURCE_USERNAME: kanban
+      SPRING_DATASOURCE_PASSWORD: kanban
+      # Client OIDC (login/discovery na subida do contexto) e resource server (introspection a
+      # cada request) precisam falar com o Keycloak pelo nome do serviço na rede do compose —
+      # "localhost" dentro do container do backend seria o próprio container.
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER-URI: http://keycloak:8080/realms/kanban-dev
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_INTROSPECTION-URI: http://keycloak:8080/realms/kanban-dev/protocol/openid-connect/token/introspect
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_CLIENT-ID: kanban-frontend
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_CLIENT-SECRET: kanban-dev-secret
+      APP_KEYCLOAK_ISSUER-URI: http://keycloak:8080/realms/kanban-dev
+      # RF-008/ADR-007 — sem isso, ninguém vira admin global no primeiro login.
+      KANBAN_BOOTSTRAP_ADMIN_EMAIL: admin.teste@crudao.local
+    ports:
+      - "8081:8081"
+    healthcheck:
+      # imagem eclipse-temurin:25-jre (Ubuntu) não tem curl/wget — /bin/sh (dash) não suporta
+      # /dev/tcp (bash-ismo); chamando bash explicitamente, mesmo truque do healthcheck do keycloak.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/8081'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      KEYCLOAK_CLIENT_ID: kanban-frontend
+      KEYCLOAK_CLIENT_SECRET: kanban-dev-secret
+      # Server-side (troca de código por token, JWKS) — o Node.js do container fala com o
+      # Keycloak pelo nome do serviço.
+      KEYCLOAK_ISSUER: http://keycloak:8080/realms/kanban-dev
+      # Browser-side — o navegador do usuário só alcança a porta publicada no host (env.ts).
+      KEYCLOAK_ISSUER_PUBLIC: http://localhost:8080/realms/kanban-dev
+      # Server-side (Server Components/Route Handlers chamando a API) — nome do serviço na rede.
+      BACKEND_URL: http://backend:8081
+      # Browser-side (conexão STOMP/SockJS do board via ticket de curta duração, TASK-07.2) — só
+      # a porta publicada no host é alcançável pelo browser.
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8081
+      APP_URL: http://localhost:3000
+      SESSION_SECRET: troque-por-um-segredo-forte-so-para-dev-local
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres-data:

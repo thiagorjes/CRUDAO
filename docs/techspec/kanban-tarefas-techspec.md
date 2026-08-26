@@ -1,6 +1,6 @@
 # TechSpec — Kanban de Tarefas
 
-_Versão: 1.0 | Status: Draft | Data: 2026-08-25 | Autor: Thiago Goncalves Cavalcante_
+_Versão: 1.1 | Status: Draft | Data: 2026-08-26 | Autor: Thiago Goncalves Cavalcante_
 
 > Referências: [PRD v1.0](prd/kanban-tarefas-prd.md) · [Design Brief v1.0](../design/kanban-tarefas-design-brief.md)
 
@@ -24,6 +24,7 @@ Escopo: 19 RFs Must/Should Have cobrindo board configurável, workflows/transiç
 | Broadcast multi-pod via PostgreSQL LISTEN/NOTIFY | [ADR-004](../decisions/ADR-004-broadcast-listen-notify.md) |
 | Flyway para versionamento de schema | [ADR-005](../decisions/ADR-005-flyway-migrations.md) |
 | Sem fallback de autenticação local | [ADR-006](../decisions/ADR-006-sem-fallback-auth-keycloak.md) |
+| Dockerização de backend e frontend (RNF-004) | [ADR-008](../decisions/ADR-008-dockerizacao-backend-frontend.md) |
 
 > **Nota:** ADR-001/002/003 são referenciados por `stack.md`/`architecture.md`/`security.md` mas os arquivos correspondentes não foram encontrados em `docs/decisions/` (apenas `.gitkeep`). Pré-existente ao escopo deste `/techspec` — não recriados aqui; revisar antes do `/tasks` se a ausência bloquear rastreabilidade.
 
@@ -82,6 +83,8 @@ Todos os endpoints de escrita retornam `403` se o usuário não possuir a permis
 **Autorização em WebSocket/STOMP:** subscrição (`SUBSCRIBE`) em `/topic/board/{projetoId}` e `/topic/notificacoes/{usuarioId}` é validada em um `ChannelInterceptor` no handshake — o usuário autenticado (principal do JWT) deve ter vínculo `UsuarioProjetoPapel` ativo com o `projetoId` (para board) ou ser o próprio `usuarioId` (para notificações); subscrição sem autorização é rejeitada com `ERROR` STOMP. Cobre RNF-003 também para o canal WebSocket, não apenas endpoints REST.
 
 **Multi-instância (RNF-002):** nenhum estado de sessão/negócio em memória não compartilhada — toda leitura de estado do board é servida do PostgreSQL; o listener LISTEN/NOTIFY é o único componente com estado de conexão por pod, e é stateless em relação ao dado (apenas retransmite). Resincronização client-side por `seq` (ADR-004) é a rede de segurança contra divergência residual sob falha de reconexão.
+
+**Empacotamento e execução (RNF-004, ADR-008):** backend e frontend rodam como imagens Docker multi-stage (`backend/Dockerfile`, `frontend/Dockerfile`), orquestradas junto com `postgres`/`keycloak` no mesmo `docker-compose.yml`. `docker compose up -d` sobe a stack completa (infra + app) — caminho padrão para homologação. Setup local sem Docker (`mvnw spring-boot:run` / `npm run dev`) continua válido como alternativa de desenvolvimento ativo com hot reload, apontando para a mesma infra (`docker compose up -d postgres keycloak`).
 
 ---
 
@@ -198,3 +201,4 @@ Verificação automatizada pendente de execução (`check_rf_coverage.py`) — v
 | Versão | Data | Autor | Alteração |
 |---|---|---|---|
 | 1.0 | 2026-08-25 | Thiago Goncalves Cavalcante | Versão inicial |
+| 1.1 | 2026-08-26 | Thiago Goncalves Cavalcante | ADR-008 — backend e frontend passam a rodar via Docker (fecha gap de RNF-004), Seções 2 e 5 atualizadas |
