@@ -26,3 +26,10 @@ Fecha os requisitos de `observability.md` não cobertos incrementalmente pelas t
 - Logs rotacionam conforme especificado.
 - Métricas visíveis via `/actuator/metrics`.
 - Runbook stub existe e cobre: sintoma, verificação, escalonamento.
+
+## Status: Concluída — 2026-08-26
+
+- `logback-spring.xml` criado (novo): appender de arquivo `RollingFileAppender` + `FixedWindowRollingPolicy` (maxIndex 10) + `SizeBasedTriggeringPolicy` (5MB), console mantido em paralelo.
+- `application.yml`: `management.endpoints.web.exposure.include` ganhou `metrics` (health/info já expostos desde TASK-02.1/05.3) — expõe os contadores/timers `kanban.evento.listener.reconexoes`/`kanban.evento.listener.latencia` já criados em `AbstractPgListener` (TASK-05.3), sem métrica nova nesta task.
+- `docs/runbooks/keycloak-indisponivel.md` criado (novo) — sintoma, verificação, escalonamento (ADR-006 referenciado).
+- Testes: `mvn test -Dtest="*Test"` — **165/165 verdes**, sem regressão.

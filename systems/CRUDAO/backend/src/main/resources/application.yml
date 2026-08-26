@@ -17,7 +17,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # RNF-002/RNF-004 (TASK-08.2): "metrics" exposto para tornar visíveis os contadores/timers
+        # de kanban.evento.listener.* (reconexões, latência NOTIFY→STOMP) criados na TASK-05.3.
+        include: health,info,metrics
   endpoint:
     health:
       probes:
