@@ -1,5 +1,7 @@
 # TASK-05.3 — Resiliência: reconexão do listener, resincronização client, health-check, métricas
 
+**Status:** Concluída — 2026-08-26
+
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RNF-001, RNF-002
