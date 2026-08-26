@@ -1,0 +1,218 @@
+---
+name: code-review
+description: Realiza code review integrado contra guidelines do projeto, TechSpec e critérios de aceite da task, com análise de segurança obrigatória. Findings de código puro entram em loop de auto-fix limitado (ADR-015); findings de spec são apenas reportados. Ao final, extrai guardrails para atualizar dimensão S (Safeguards) do canvas. Use após implementar uma task antes de mergar.
+canvas-dimensions: [S]
+input-artifacts:
+  - memory/state.md
+  - docs/tasks/{{FEATURE}}-tasks.md
+  - docs/techspec/{{FEATURE}}-techspec.md
+  - docs/spdd/{{FEATURE}}-canvas.md
+output-artifacts:
+  - docs/checklists/{{FEATURE}}-review.md
+  - docs/spdd/{{FEATURE}}-canvas.md
+---
+
+## Objetivo
+
+Revisar o código implementado contra: TechSpec, guidelines do sistema, critérios de aceite da task e padrões de segurança (OWASP Top 10 mínimo). Ao concluir, extrai guardrails descobertos durante a revisão e atualiza a dimensão S do canvas — podendo transitar o canvas para READY se S for a última dimensão faltante.
+
+## Argumentos recebidos
+
+- (sem argumento) — revisa as mudanças staged/unstaged atuais
+- `TASK-2.1` — revisa com foco nos critérios de aceite desta task
+- `--security` — aprofunda a categoria 3 (todas as categorias OWASP Top 10, análise de dependências, verificação de secrets hardcoded)
+- `--full` — revisão completa com todas as categorias em detalhe máximo
+
+## Pré-condições
+
+- Código implementado disponível (diff ou arquivos)
+- `docs/tasks/[feature]-tasks.md` com a task revisada
+- `docs/techspec/[feature]-techspec.md`
+- `docs/spdd/[feature]-canvas.md`
+- `systems/[sistema]/guidelines/` para referência de padrões
+
+## Workflow
+
+### Fase 0 — Leitura de contexto e gate de testes
+
+1. **Resolver o sistema em revisão**: pelo campo `Sistema:` da task, ou o repositório onde estão os arquivos alterados. O diff e os comandos git rodam **dentro de `systems/[sistema]/`** — nunca na raiz do workspace.
+2. Identificar a task sendo revisada (ID e critérios de aceite)
+3. Ler `docs/spdd/[feature]-canvas.md` — dimensão S atual (Safeguards já conhecidos)
+4. Ler `docs/techspec/[feature]-techspec.md` — seção de Segurança e Observabilidade
+5. Ler guidelines relevantes: `security.md`, `coding-standards.md`, `testing.md`
+6. **Gate obrigatório — executar a suíte de testes antes de revisar:**
+   - Se os testes **falharem**: reportar imediatamente como 🔴 CRÍTICO "Testes falhando" e encerrar com veredicto `❌ Requer alterações`. Não prosseguir para a Fase 1 — um código com testes falhando não está pronto para review.
+   - Se os testes **passarem**: prosseguir normalmente.
+   - Se não for possível executar os testes (ambiente sem runtime): sinalizar no relatório e continuar com revisão estática apenas.
+
+### Fase 1 — Revisão por categoria
+
+Revisar o código em **5 categorias obrigatórias**, documentando findings com localização. Com `--security`: aprofundar a categoria 3 cobrindo todo o OWASP Top 10 e análise de dependências (`npm audit`/`pip audit` ou equivalente). Com `--full`: aplicar o mesmo nível de detalhe às 5 categorias.
+
+**1. Critérios de aceite da task:**
+- Cada critério de aceite está implementado?
+- O comportamento corresponde ao especificado no Gherkin?
+
+**2. Qualidade de código:**
+- Nomenclatura segue as normas de N do canvas e guidelines?
+- Funções têm responsabilidade única e tamanho adequado?
+- Sem código duplicado que deveria ser abstraído?
+- Sem complexidade desnecessária ou over-engineering?
+- Cobertura de erros e edge cases adequada?
+
+**3. Segurança (obrigatória — nunca pular):**
+- Input validation presente em todos os pontos de entrada externos?
+- Sem secrets hardcoded (chaves, senhas, tokens)?
+- SQL injection / command injection / path traversal prevenidos?
+- Autenticação e autorização aplicadas corretamente?
+- Logging não expõe dados sensíveis?
+- Dependências sem vulnerabilidades conhecidas?
+
+**4. Arquitetura e TechSpec:**
+- Implementação segue a abordagem definida na TechSpec (dimensão A do canvas)?
+- Entidades e estrutura de dados consistentes com data-model.md?
+- Contratos de API respeitados?
+- Decisões arquiteturais (ADRs) respeitadas?
+
+**5. Observabilidade e operação:**
+- Logs estruturados nos pontos críticos?
+- Métricas instrumentadas se definido na TechSpec?
+- Tratamento de erros com contexto suficiente para debug?
+
+### Fase 1.5 — Verificação dos critérios de aceite (se task fornecida)
+
+Para cada critério de aceite da task, produzir uma linha de evidência — não apenas afirmar que foi atendido:
+
+| # | Critério de Aceite | Verificado? | Evidência |
+|---|---------------------|-------------|-----------|
+| 1 | [AC da task] | ✅ / ❌ / ⚠️ | [arquivo:linha ou "não encontrado"] |
+
+### Fase 1.6 — Auto-fix limitado para findings de código puro (ADR-015)
+
+Para cada finding 🟡/🔵 identificado nas categorias 2 (qualidade de código) e 5 (observabilidade), e para findings 🔴/🟡 de segurança que **não** exigem mudança de requisito (ex: input validation ausente, secret hardcoded, log expondo dado sensível — corrigíveis só no código):
+
+1. Classificar o finding como **código puro** (não altera comportamento especificado, não exige reescrever RF/RNF/critério de aceite) ou **revela problema de spec** (comportamento especificado é ambíguo, incompleto ou o próprio critério de aceite está errado).
+2. **Findings de spec puro:** nunca entram no loop de auto-fix — registrar normalmente no relatório (Fase 2) e sinalizar explicitamente que a causa raiz é de especificação, recomendando `/analyze` ou `/clarify` em vez de correção de código.
+3. **Findings de código puro:** tentar corrigir automaticamente, até **3 tentativas** por finding:
+   - Aplicar a correção no código de produção/teste
+   - Reexecutar a suíte de testes relevante
+   - Se passar e o finding não reaparecer na releitura: marcar como corrigido automaticamente
+   - Se falhar após 3 tentativas: reverter para o estado anterior, manter o finding como pendente no relatório (não deixar código quebrado por causa do loop)
+   - **Nunca editar, nesta fase, `docs/prd/`, `docs/techspec/`, `docs/spdd/*-canvas.md` ou `docs/tasks/`** — se a correção "óbvia" exigiria tocar algum desses, o finding é de spec, não de código, e cai na regra do item 2
+4. Registrar cada finding auto-corrigido com nota `[auto-fix aplicado — N tentativa(s)]` no relatório da Fase 2, mantendo a descrição do problema original para rastreabilidade.
+
+### Fase 2 — Geração do relatório
+
+Criar `docs/checklists/[feature]-[task-id]-review.md` com:
+
+**Formato de finding — cada um cita o guideline violado e mostra antes/depois quando aplicável:**
+```
+#### [C1|I1|S1] [Título conciso do problema]
+Arquivo: [caminho:linha]
+Problema: [o que está errado e por que é um problema]
+Como corrigir:
+  Atual:   [trecho problemático]
+  Correto: [como deve ficar]
+Guideline violado: [arquivo.md — seção específica] (obrigatório — se não houver guideline cobrindo o caso, dizer explicitamente "não coberto — recomendo adicionar")
+```
+
+**Seções obrigatórias do relatório:**
+- `## Critérios de Aceite` — tabela da Fase 1.5 (se task fornecida)
+- `## 🔴 Crítico` — bloqueiam o merge (vazio = "nenhum")
+- `## 🟡 Importante` — devem ser corrigidos antes do merge (vazio = "nenhum")
+- `## 🔵 Sugestão` — melhorias que não bloqueiam (vazio = "nenhuma")
+- `## ✅ Pontos Positivos` — algo bem feito no código revisado (cultura de feedback — nunca omitir, mesmo que curto)
+- `## Segurança` — findings de segurança (vazio = "Nenhum finding de segurança")
+- `## Conformidade com TechSpec` — desvios da especificação
+- `## Resultado` — APROVADO | APROVADO COM RESSALVAS | REPROVADO
+
+Salvar progressivamente por seção.
+
+### Fase 3 — Extração de Safeguards e atualização do Canvas
+
+**3.1 — Extrair guardrails da revisão:**
+Identificar restrições e padrões "o que NÃO fazer" descobertos durante a revisão.
+
+**3.2 — Atualizar dimensão S do canvas:**
+```markdown
+## S — Safeguards
+
+_Atualizado por: /code-review v1.0 — [data]_
+> Decisões: ADR-[NNN] (se houver ADR de debt técnico aceito)
+
+**Restrições:**
+- [guardrail 1 extraído da revisão]
+- [guardrail 2]
+
+**O que NÃO fazer:**
+- [padrão negativo identificado]
+```
+
+**3.3 — Verificar completude do canvas:**
+Após atualizar S, verificar se todas as 7 dimensões estão preenchidas:
+- Se R, E, A, S (Structure), O, N também preenchidas → atualizar `_Status: READY_`
+- Informar ao usuário: "Canvas transitou para READY — pronto para implementação paralela"
+
+**3.4 — Criar ADR se necessário:**
+Se durante a revisão foi aceita conscientemente uma dívida técnica ou refatoração foi adiada: criar ADR documentando a decisão.
+
+### Fase 4 — Feedback ao desenvolvedor
+
+Apresentar resumo estruturado:
+- Nº de findings por severidade
+- Nº de findings corrigidos automaticamente (Fase 1.6) vs. pendentes
+- Itens que BLOQUEIAM o merge (CRÍTICOS não resolvidos)
+- Itens que devem ser resolvidos antes do merge (IMPORTANTES)
+- Findings sinalizados como "problema de spec" — recomendar `/analyze` ou `/clarify`, nunca corrigidos aqui
+- Sugestões para iterações futuras
+
+Se REPROVADO: listar exatamente o que corrigir antes de re-review.
+Se APROVADO ou APROVADO COM RESSALVAS: sugerir próximos passos, incluindo `/spdd-sync` quando algum finding (auto-corrigido ou não) tocou entidade, dependência ou padrão de arquitetura fora do que o canvas já descrevia.
+
+Executar validação do relatório:
+```
+python .agents/scripts/validate.py --mode output \
+  --rules .agents/skills/code-review/validate-rules.json \
+  --artifact docs/checklists/[feature]-[task]-review.md
+```
+
+## Artefatos
+
+**Entrada:**
+- Código implementado (diff ou arquivos)
+- `docs/tasks/[feature]-tasks.md`
+- `docs/techspec/[feature]-techspec.md`
+- `docs/spdd/[feature]-canvas.md`
+- `systems/[sistema]/guidelines/security.md`, `coding-standards.md`
+
+**Saída:**
+- `docs/checklists/[feature]-[task-id]-review.md` — relatório de review
+- `docs/spdd/[feature]-canvas.md` — dimensão S atualizada; pode transitar para READY
+- `docs/decisions/ADR-[NNN]-*.md` — se debt técnico aceito conscientemente
+
+## Canvas
+
+Esta skill atualiza a dimensão **S — Safeguards**:
+
+- Guardrails extraídos da revisão de segurança e qualidade
+- Padrões negativos ("o que NÃO fazer") identificados durante o review
+- Referências a SDRs/ADRs criadas nesta fase: `> Decisões: SDR-001, ...` (ou `> Decisões: —` se nenhuma)
+- Ownership: `_Atualizado por: /code-review v1.0 — [data]_`
+
+**Transição para READY:** /code-review é tipicamente a última skill a preencher o canvas (S é a última dimensão). Quando S é preenchida e todas as outras 6 dimensões estão preenchidas, o canvas transita para `READY`.
+
+## Handoff
+
+Ao concluir, registrar em `memory/state.md`:
+
+```markdown
+- **Code review:** TASK-[ID] — [APROVADO|REPROVADO] — [data]
+- **Findings:** [N] críticos, [M] importantes, [K] sugestões
+- **Canvas:** [status após review]
+- **Próximo passo:** [corrigir findings | próxima task | /spdd-sync]
+```
+
+Artifact Registry:
+```
+| docs/checklists/[feature]-[task]-review.md | 1.0 | ok |
+```

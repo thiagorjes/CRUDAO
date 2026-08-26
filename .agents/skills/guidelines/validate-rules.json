@@ -1,0 +1,19 @@
+{
+  "skill": "guidelines",
+  "artifact_pattern": "systems/*/guidelines/*.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md"
+      ]
+    },
+    "output": {
+      "required_sections": [],
+      "id_patterns": {},
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": []
+    }
+  }
+}

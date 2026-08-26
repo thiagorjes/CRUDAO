@@ -1,0 +1,189 @@
+---
+description: Realiza análise cross-artefato entre PRD, TechSpec, artefatos de design e Tasks no processo SDD, detectando inconsistências, lacunas de cobertura, ambiguidades e contradições. Use ao validar a consistência entre artefatos, antes de gerar Tasks (gate --pre-tasks) ou antes de iniciar a implementação.
+---
+
+## Objetivo
+
+Verificar a consistência entre PRD, TechSpec, artefatos de design (`/designer`), Tasks e o REASONS Canvas de uma feature antes de gerar Tasks ou de iniciar a implementação. Detecta RFs sem task correspondente, tasks sem RF de origem, telas/estados do protótipo sem requisito ou decisão técnica correspondente, divergências entre o canvas e a TechSpec, contradições entre artefatos e riscos de segurança não endereçados. Gera relatório agrupado por severidade, com métricas de cobertura e remediação assistida que devolve o achado ao artefato de origem (PRD ou TechSpec).
+
+## Argumentos recebidos
+
+- (sem argumento) — analisa os artefatos mais recentes da feature ativa em `memory/state.md`; se `docs/tasks/[feature]-tasks.md` ainda não existe, roda automaticamente em modo `--pre-tasks`
+- `"nome-da-feature"` — analisa artefatos de uma feature específica
+- `--pre-tasks` — gate a ser executado **antes** do `/tasks`: analisa PRD × TechSpec × artefatos de `/designer` (screen-map, matriz de estados), sem exigir Tasks. É o modo indicado quando a feature tem front-end/UI, para evitar que lacunas de tela/estado só apareçam em homologação
+- `--security` — ativa a Fase 3.5 (passe de segurança) mesmo sem sinais óbvios no texto
+- `--prd-only` — limita a análise à consistência interna do PRD (sem TechSpec/Design/Tasks/Canvas)
+
+## Pré-condições
+
+- `docs/prd/[feature]-prd.md` deve existir
+- `docs/techspec/[feature]-techspec.md` deve existir
+- `docs/tasks/[feature]-tasks.md` deve existir — **exceto em `--pre-tasks`**, onde é ignorado
+- `docs/design/[feature]/screen-map.md` — opcional; se ausente (feature sem `/designer`), pular Fase 1.5 e informar no relatório
+- `docs/spdd/[feature]-canvas.md` — opcional; se ausente, pular verificação de divergência de canvas e informar no relatório
+
+## Workflow
+
+### Fase 0 — Leitura de contexto
+
+Ler nesta ordem, sem pular:
+
+1. `docs/prd/[feature]-prd.md` — extrair todos os RFs e RNFs
+2. `docs/techspec/[feature]-techspec.md` — extrair decisões técnicas e Matriz de Rastreabilidade
+3. `docs/tasks/[feature]-tasks.md` — extrair todas as TASKs e seus RFs de origem declarados
+4. `docs/spdd/[feature]-canvas.md`, se existir — extrair dimensões preenchidas
+
+### Fase 1 — Mapeamento RF → Task (gaps)
+
+**Pular esta fase em `--pre-tasks`** (Tasks ainda não existe — é exatamente o que este modo antecede).
+
+1. Construir o conjunto de RFs do PRD e o conjunto de RFs referenciados em tasks
+2. Identificar RFs do PRD sem nenhuma task correspondente (**gap de cobertura**)
+3. Identificar tasks sem RF de origem declarado (**task órfã**)
+4. Executar `check_rf_coverage.py` como verificação automatizada complementar (não substitui a leitura manual — RFs mencionados só no texto sem tag podem escapar ao regex)
+
+### Fase 1.5 — Mapeamento Tela/Estado → PRD/TechSpec (gaps de protótipo)
+
+Executar sempre que `docs/design/[feature]/screen-map.md` existir (obrigatório em `--pre-tasks` quando a feature tem UI; nas demais chamadas, best-effort).
+
+1. Ler o screen-map e a matriz de estados por tela (loading, erro, vazio, sucesso, variações de interação)
+2. Para cada tela e cada estado da matriz, verificar:
+   - Existe RF no PRD que cubra esse estado? Se não → **gap de cobertura de protótipo** (o estado existe visualmente mas não é requisito rastreável)
+   - Existe decisão técnica na TechSpec (componente, contrato, regra de validação) que sustente esse estado? Se não → **gap de cobertura de protótipo** (RF existe mas TechSpec não desceu ao nível de detalhe do protótipo)
+3. Verificar o inverso: RFs de UI no PRD sem tela correspondente no screen-map (**divergência protótipo-requisito** — pode indicar protótipo desatualizado)
+4. Este é o gate que evita o cenário "protótipo aprovado ≠ implementado": se um estado do protótipo não tem RF nem decisão técnica registrada antes do `/tasks`, nenhuma task nem BDD vai cobri-lo.
+
+### Fase 2 — Mapeamento Canvas ↔ TechSpec (divergências)
+
+Se o canvas existir, comparar dimensão por dimensão com a TechSpec:
+
+| Dimensão do canvas | Comparar com |
+|---|---|
+| E — Entities | Data model da TechSpec |
+| A — Approach | Seção de decisões de arquitetura |
+| S — Structure | Estrutura de módulos/componentes descrita |
+| O — Operations | Lista de tasks do documento de Tasks |
+| N — Norms | Guidelines referenciados |
+
+Registrar toda divergência encontrada como **divergência de canvas**.
+
+### Fase 3 — Contradições entre artefatos
+
+Verificar se PRD, TechSpec e Tasks se contradizem entre si (ex: RNF de performance no PRD não refletido em nenhuma decisão técnica; critério de aceite de task que conflita com regra de negócio do PRD). Registrar como **contradição**.
+
+### Fase 3.5 — Passe de segurança (`--security` ou quando encontrado em passagem normal)
+
+Verificar, sem duplicar o trabalho do `/code-review` (que audita código já escrito — aqui a checagem é sobre a **especificação**):
+- RFs com dados sensíveis (PII, financeiro, saúde) sem requisito de proteção declarado no PRD/TechSpec
+- Endpoints do TechSpec sem autenticação/autorização declaradas
+- Ausência de requisito de auditoria/log para operações críticas (criação, exclusão, mudança de permissão)
+- RNFs de segurança sem critério mensurável (ex: "dados criptografados" sem algoritmo/padrão)
+
+Registrar cada achado como **risco de segurança**.
+
+### Fase 4 — Atribuição de severidade
+
+Classificar cada achado das Fases 1-3.5:
+
+| Severidade | Critério |
+|---|---|
+| 🔴 CRÍTICO | RF sem cobertura de tasks; estado de tela do protótipo sem RF nem decisão técnica (gap de protótipo); violação de princípio DEVE da `constitution.md`; contradição direta entre documentos; dado sensível sem proteção declarada |
+| 🟡 ALTO | RNF sem métrica mensurável; divergência de canvas em dimensão crítica (E/A/S); endpoint sem contrato ou sem auth; RF de UI sem tela correspondente no screen-map |
+| 🟠 MÉDIO | Task órfã (sem RF rastreável); inconsistência terminológica em área não crítica |
+| 🔵 BAIXO | Melhoria de clareza; redundância não problemática |
+
+### Fase 5 — Geração do relatório
+
+Salvar progressivamente em `docs/analyze/[feature]-analysis.md`, agrupado por severidade:
+
+```markdown
+## Sumário
+- Findings: 🔴 N críticos | 🟡 N altos | 🟠 N médios | 🔵 N baixos
+- RFs com cobertura de tasks: N/N (N%)
+- Veredicto: ✅ Aprovado para implementação | ⚠️ Aprovado com ressalvas | ❌ Requer correções
+
+## Findings
+
+| ID | Tipo | Severidade | Localização | Resumo | Recomendação |
+|----|------|-----------|-------------|--------|-------------|
+| G1 | Gap de cobertura | 🔴 | PRD: RF-005 | RF sem task associada | Criar task para RF-005 em /tasks |
+| G2 | Gap de protótipo | 🔴 | screen-map: Tela Checkout, estado "erro de pagamento" | Estado sem RF nem decisão técnica | Devolver ao /prd (novo RF) ou /techspec (decisão técnica) |
+
+## Cobertura RF × Tasks
+
+| RF | Tasks | Status |
+|----|-------|--------|
+| RF-001 | TASK-1.1 | ✅ Coberto |
+| RF-002 | — | ❌ Sem cobertura |
+
+## Cobertura Tela/Estado × PRD/TechSpec (se screen-map existir)
+
+| Tela | Estado | RF | Decisão TechSpec | Status |
+|------|--------|----|--------------------|--------|
+| Checkout | erro de pagamento | — | — | ❌ Sem cobertura |
+| Checkout | sucesso | RF-010 | Seção 4.2 | ✅ Coberto |
+```
+
+Salvar o arquivo após concluir cada fase (0 findings ainda é resultado válido a persistir, não motivo para pular a seção).
+
+### Fase 6 — Remediação assistida (com roteamento ao artefato de origem)
+
+Ao final do relatório, perguntar:
+
+> "Deseja que eu encaminhe os findings 🔴/🟡 para correção? Informe quais (ex: 'G1, S2') ou 'todos os críticos'."
+
+Para cada finding aceito, rotear pelo tipo — **nunca editar Tasks/código para compensar um gap de especificação**:
+
+| Tipo de finding | Destino | Ação |
+|---|---|---|
+| Gap de cobertura (RF sem task) | `/tasks` | Reexecutar `/tasks` após o artefato de origem estar corrigido, se o gap vier de PRD/TechSpec incompletos |
+| Gap de protótipo (estado sem RF) | `/prd` (ou `/clarify`) | Devolver ao PRD para registrar o RF/critério de aceite faltante; se ambíguo, sugerir `/clarify` |
+| Gap de protótipo (RF existe, sem decisão técnica) | `/techspec` | Devolver à TechSpec para detalhar a decisão/componente que sustenta o estado |
+| Divergência de canvas | Skill dona da dimensão divergente | Apontar qual skill deve reexecutar (ex: divergência em E → `/designer`/`/techspec`) |
+| Contradição entre artefatos | Documento mais recente é considerado desatualizado | Perguntar ao usuário qual versão prevalece antes de editar |
+| Risco de segurança | `/prd` ou `/techspec`, conforme a lacuna | Requisito de proteção ausente → PRD; controle técnico ausente → TechSpec |
+
+Esta skill **nunca edita o artefato de origem sem confirmação explícita** por finding (ou grupo confirmado) — a análise em si é somente leitura até essa confirmação. Após aplicar a correção no artefato de origem, marcar o artefato correspondente como `stale` no Artifact Registry para os artefatos downstream (ex: corrigir PRD → TechSpec e Tasks ficam `stale:prd@[nova versão]`), forçando a checagem de stale já existente nas pré-condições de `/techspec` e `/tasks`.
+
+### Fase 7 — Validação e handoff
+
+```
+python .agents/scripts/validate.py --mode output \
+  --rules .agents/skills/analyze/validate-rules.json \
+  --artifact docs/analyze/[feature]-analysis.md
+```
+
+Se houver findings 🔴: alertar o usuário que `/implement` está bloqueado até resolução. Em modo `--pre-tasks`, alertar adicionalmente que **`/tasks` está bloqueado** até o veredicto ser ✅ ou ⚠️ (sem 🔴).
+
+## Artefatos
+
+**Entrada:**
+- `docs/prd/[feature]-prd.md` (obrigatório)
+- `docs/techspec/[feature]-techspec.md` (obrigatório)
+- `docs/tasks/[feature]-tasks.md` (obrigatório — dispensado em `--pre-tasks`)
+- `docs/design/[feature]/screen-map.md` (opcional; obrigatório de fato em `--pre-tasks` quando a feature tem UI)
+- `docs/spdd/[feature]-canvas.md` (opcional)
+
+**Saída:**
+- `docs/analyze/[feature]-analysis.md`
+
+## Canvas
+
+Esta skill **não atualiza** o canvas. Lê as dimensões preenchidas apenas para comparação com a TechSpec na Fase 2, sem assinar nenhuma dimensão como `_Atualizado por: /analyze_`.
+
+## Handoff
+
+Ao concluir, registrar em `memory/state.md`:
+
+```markdown
+- **Análise executada:** /analyze [--pre-tasks] — [data]
+- **Findings:** 🔴 [N] | 🟡 [N] | 🟠 [N] | 🔵 [N]
+- **Veredicto:** [✅|⚠️|❌]
+- **Artefato:** docs/analyze/[feature]-analysis.md
+- **Se `--pre-tasks` e veredicto ✅/⚠️:** liberado para `/tasks`
+```
+
+Artifact Registry:
+```
+| analyze/[feature]-analysis.md | 1.0 | ok |
+```

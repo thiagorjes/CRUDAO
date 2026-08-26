@@ -1,0 +1,169 @@
+---
+name: implement
+description: Executa uma task de implementação com precisão seguindo TechSpec, guidelines e canvas do projeto. Lê dimensões N (Norms) e S (Safeguards) do canvas como contexto. Use para implementar uma task específica do documento de tasks, produzindo código rastreável pronto para code review.
+canvas-dimensions: []
+input-artifacts:
+  - memory/state.md
+  - docs/tasks/{{FEATURE}}-tasks.md
+  - docs/spdd/{{FEATURE}}-canvas.md
+  - docs/techspec/{{FEATURE}}-techspec.md
+output-artifacts: []
+---
+
+## Objetivo
+
+Implementar uma task específica do documento de tasks com fidelidade à TechSpec e ao REASONS Canvas. O canvas fornece contexto crítico de Norms (padrões a seguir) e Safeguards (restrições a respeitar) antes de qualquer linha de código. Cada task implementada é rastreável aos RFs de origem.
+
+## Argumentos recebidos
+
+- `TASK-2.1` — implementa a task pelo ID (com decisão TDD automática)
+- `"Título da task"` — implementa pela descrição
+- (sem argumento) — lista as tasks disponíveis e pergunta qual executar
+- `TASK-2.1 --no-tdd` — implementação direta, sem ciclo TDD mesmo se os critérios da Fase 1 indicariam TDD
+
+## Pré-condições
+
+- `docs/tasks/[feature]-tasks.md` deve existir com a task solicitada
+- `docs/techspec/[feature]-techspec.md` deve existir com status `ok`
+- Canvas `docs/spdd/[feature]-canvas.md` deve existir
+  - Se status `READY`: prosseguir normalmente
+  - Se status `DRAFT`: **alertar o usuário**:
+    > "⚠️ Canvas em DRAFT — dimensão O (Operations) ainda não preenchida. Recomendo executar `/tasks [feature]` antes de implementar. Deseja continuar assim mesmo?"
+  - Se canvas não existe: alertar e sugerir `/spdd-canvas [feature]`
+
+## Workflow
+
+### Fase 0 — Leitura de contexto (obrigatória)
+
+**Regra fundamental de localização — todo trabalho desta skill acontece dentro de `systems/[sistema]/`:** criação/edição de arquivos de código, execução de testes e comandos git rodam nesse diretório, no repositório daquele sistema — nunca na raiz do workspace. Resolver `[sistema]` pelo campo `Sistema:` da task (ou o único da tabela Sistemas de `memory/state.md`, se houver apenas um). Os caminhos do "Guia técnico de implementação" da task são sempre relativos a `systems/[sistema]/`.
+
+**Ler nesta ordem, sem pular:**
+
+1. `docs/tasks/[feature]-tasks.md` — localizar a task solicitada pelo ID (ex: TASK-01.1)
+2. `docs/spdd/[feature]-canvas.md` — extrair:
+   - **N — Norms:** padrões e convenções obrigatórios para esta feature
+   - **S — Safeguards:** restrições, o que NÃO fazer, guardrails de segurança
+3. `docs/techspec/[feature]-techspec.md` — seções relevantes para a task
+4. `systems/[sistema]/guidelines/[arquivo].md` — guidelines específicos referenciados na task
+
+**Confirmar internamente antes de codificar:**
+- Qual é o critério de aceite desta task?
+- Quais normas de N se aplicam ao código que vou escrever?
+- Quais restrições de S devo respeitar?
+
+### Fase 1 — Decisão TDD (por tipo de task)
+
+Avaliar automaticamente se TDD é aplicável:
+
+| Tipo de task | TDD aplicável? |
+|---|---|
+| Lógica de negócio, validações, parsers | **Sim — usar TDD** |
+| Scripts de CLI, utilitários | **Sim — usar TDD** |
+| Configuração, templates, YAML/JSON | Não — criar e verificar manualmente |
+| Documentação, SKILL.md, templates Markdown | Não |
+| Migração de banco de dados | Não (testar integração separada) |
+
+Se TDD aplicável (e `--no-tdd` não foi passado): seguir ciclo Red → Green → Refactor antes de implementar.
+Se TDD não aplicável ou `--no-tdd`: implementar diretamente com verificação manual.
+
+### Fase 1.5 — Caminho rápido vs. completo
+
+Antes de codificar, decidir o nível de confirmação com base no tamanho da task:
+
+- **Caminho rápido (task `[P]` — até 4h)**: se os requisitos estão claros e sem ambiguidade, pular a confirmação de plano — implementar direto, mencionando em uma linha o que será feito antes de começar.
+- **Caminho completo (task `[M]`/`[G]` ou com ambiguidade)**: apresentar um plano de implementação em bullets (arquivo a criar/modificar → o que será feito) e aguardar confirmação antes de prosseguir.
+
+Se houver ambiguidade ou informação ausente na task que impeça implementar com segurança, perguntar ao usuário antes — em qualquer um dos dois caminhos. Não assumir.
+
+### Fase 2 — Implementação
+
+2.1. **Verificar se arquivo-alvo já existe (dentro de `systems/[sistema]/`):**
+   - Se sim: ler conteúdo antes de modificar (nunca sobrescrever cegamente)
+   - Se não: criar novo dentro de `systems/[sistema]/`, seguindo os padrões de N — nunca na raiz do workspace
+
+2.2. **Implementar seguindo os critérios de aceite da task:**
+   - Cada item do checklist "O que deve ser feito" deve ser implementado
+   - Respeitar todas as restrições de S (Safeguards)
+   - Seguir convenções de N (nomenclatura, estrutura, padrões)
+   - Usar os caminhos de arquivo exatos do guia técnico da task
+
+2.3. **Se TDD:** escrever testes antes de cada funcionalidade
+   - Red: escrever teste que falha
+   - Green: escrever código mínimo para passar
+   - Refactor: limpar sem quebrar
+
+2.4. **Rastreabilidade:** ao implementar, mapear mentalmente qual RF de origem cada trecho de código atende
+
+### Fase 3 — Verificação dos critérios de aceite
+
+Após implementar, verificar **cada critério de aceite** da task:
+- Executar testes se houver
+- Verificar comportamento esperado descrito nos critérios
+- Confirmar que nenhuma restrição de S foi violada
+- Confirmar que as normas de N foram respeitadas
+
+Se algum critério não for atendido: corrigir antes de reportar conclusão.
+
+### Fase 3.5 — Handoff de code review
+
+Task concluída — perguntar:
+
+> "Deseja submeter os arquivos a um code review antes de prosseguir? (a) Sim — agent QA revisa em contexto fresco [recomendado para tasks M/G] / (b) Inline — review rápido no contexto atual / (c) Não — seguir direto para o relatório"
+
+- **(a) Agent QA**: invocar `.agents/agents/qa.md` via ferramenta `Agent`, passando a lista de arquivos criados/modificados e a referência à task + critérios de aceite, instruindo-o explicitamente a **ler `.agents/skills/code-review/SKILL.md` e seguir o workflow integralmente** (não apenas "aplicar as dimensões") — incluindo o gate de testes, a taxonomia de severidade, o formato de finding, a Fase 1.6 de auto-fix limitado (ADR-015, com a fronteira de nunca editar `docs/prd/`, `docs/techspec/`, `docs/spdd/*-canvas.md`, `docs/tasks/`), a atualização da dimensão S do canvas e o artefato de saída em `docs/checklists/[feature]-[task-id]-review.md`. Apresentar o relatório recebido ao usuário.
+- **(b) Inline**: seguir o workflow completo de `.agents/skills/code-review/SKILL.md` no contexto atual (mesmas categorias, gate de testes, Fase 1.6 de auto-fix e atualização do canvas).
+- **(c)**: seguir direto para a Fase 4.
+
+Se houver findings 🟡/🔴 em (a) ou (b): aguardar decisão do usuário — (i) corrigir agora, (ii) criar task de bug-fix separada, (iii) ignorar e concluir mesmo assim — antes de avançar.
+
+### Fase 4 — Sugestão de validação e próximos passos
+
+Após implementação concluída, informar ao usuário:
+
+1. Arquivos criados/modificados (lista concisa)
+2. Critérios de aceite verificados
+3. Sugerir execução de validate.py se aplicável:
+   ```
+   python .agents/scripts/validate.py --mode output \
+     --rules .agents/skills/[skill]/validate-rules.json \
+     --artifact [artefato-gerado]
+   ```
+4. Sugerir próximos passos: `/code-review` (se não feito na Fase 3.5) ou próxima task; se a implementação introduziu entidade, dependência ou padrão de arquitetura não previstos no canvas, sugerir também `/spdd-sync` para verificar divergência
+
+**Atualizar status em todos os locais que rastreiam a task (nenhum é opcional — os três precisam ficar consistentes):**
+1. Marcar `Status: Concluída` no arquivo individual `docs/tasks/[feature]/TASK-[EPIC].[SEQ]-[slug].md` da task.
+2. Marcar o checkbox correspondente no documento consolidado `docs/tasks/[feature]-tasks.md` (`[ ] TASK-01.1` → `[x] TASK-01.1`) — é a lista que outras skills e o próprio usuário consultam para saber o que falta; deixar sem marcar aqui produz sugestões de "próxima atividade" incorretas mesmo com a task já concluída.
+3. Atualizar `memory/state.md` **a cada task concluída, não apenas na última do Epic** — adicionar/atualizar linha `- **Task implementada:** TASK-[EPIC].[SEQ] — [data]` na seção da feature ativa. Ao concluir a última task de um Epic, adicionalmente marcar o Epic como concluído no status da feature.
+
+## Artefatos
+
+**Entrada:**
+- `docs/tasks/[feature]-tasks.md` (obrigatório)
+- `docs/spdd/[feature]-canvas.md` (obrigatório — lê N e S)
+- `docs/techspec/[feature]-techspec.md` (obrigatório)
+- `systems/[sistema]/guidelines/*.md` (lidos conforme necessário)
+
+**Saída:**
+- Código implementado (fora do workspace de artefatos SDD)
+- Testes (se TDD aplicável)
+
+## Canvas
+
+Esta skill **não atualiza** o canvas diretamente.
+
+Lê as dimensões:
+- **N — Norms:** padrões obrigatórios lidos ANTES de escrever qualquer código
+- **S — Safeguards:** restrições e guardrails lidos ANTES de escrever qualquer código
+
+A leitura de N e S é obrigatória — pular esta etapa viola o princípio Canvas-as-prompt do SSPDD.
+
+## Handoff
+
+Ao concluir cada task, registrar progresso em `memory/state.md` (seção da feature ativa):
+
+```markdown
+- **Task implementada:** TASK-[EPIC].[SEQ] — [descrição breve] — [data]
+- **Arquivos:** [lista dos arquivos criados/modificados]
+- **Testes:** [passando | não aplicável]
+- **Próxima task:** TASK-[EPIC].[SEQ+1] ou /code-review
+```
