@@ -10,3 +10,8 @@ Artefatos:
 - systems/CRUDAO/guidelines
 
 Vou solicitar que a memoria, canvas etc sejam recriados.
+precisei recriar:
+- memory/state 
+- memory/constitution
+- ADRs 1, 2 e 3
+- reasons-canvas como docs/spdd/kanban-tarefas-canvas.md
