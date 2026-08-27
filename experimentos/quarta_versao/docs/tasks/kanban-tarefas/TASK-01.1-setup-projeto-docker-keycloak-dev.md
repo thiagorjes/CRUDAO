@@ -1,6 +1,6 @@
 # TASK-01.1 — Setup de projeto backend/frontend + docker-compose + Keycloak dev
 
-**Status:** Concluída — 2026-08-25
+**Status:** Concluída — 2026-08-27
 **Tamanho:** [G] 1-2 dias
 **Sistema:** CRUDAO
 **RF de origem:** RNF-004 (pré-requisito de todas as demais tasks)
@@ -13,12 +13,12 @@ Base de execução local para todo o desenvolvimento subsequente. Sem isso, nenh
 
 ## O que deve ser feito
 
-- [ ] Criar esqueleto Spring Boot 3.5.16 / Java 25 (`backend/`) com dependências: Web, Data JPA, OAuth2 Client/Resource Server, WebSocket, Validation, Flyway, Actuator, MapStruct.
-- [ ] Criar esqueleto Next.js (`frontend/`).
-- [ ] Criar `docker-compose.yml` na raiz do sistema com serviços `postgres` e `keycloak` (imagem oficial, modo dev).
-- [ ] Criar realm export do Keycloak (`keycloak/realm-export.json`) com client OIDC configurado, redirect URI `http://localhost:3000/login/oauth2/code/keycloak`, e ao menos 2 usuários de teste (um por papel dev/admin) — importado automaticamente no boot do container.
-- [ ] Configurar `application.yml` (dev profile) apontando para Postgres/Keycloak locais.
-- [ ] Configurar Dockerfile do backend e do frontend (RNF-004).
+- [x] Criar esqueleto Spring Boot 3.5.16 / Java 25 (`backend/`) com dependências: Web, Data JPA, OAuth2 Client/Resource Server, WebSocket, Validation, Flyway, Actuator, MapStruct.
+- [x] Criar esqueleto Next.js (`frontend/`).
+- [x] Criar `docker-compose.yml` na raiz do sistema com serviços `postgres` e `keycloak` (imagem oficial, modo dev).
+- [x] Criar realm export do Keycloak (`keycloak/realm-export.json`) com client OIDC configurado, redirect URI `http://localhost:3000/login/oauth2/code/keycloak`, e ao menos 2 usuários de teste (um por papel dev/admin) — importado automaticamente no boot do container.
+- [x] Configurar `application.yml` (dev profile) apontando para Postgres/Keycloak locais.
+- [x] Configurar Dockerfile do backend e do frontend (RNF-004).
 
 ## Guia técnico
 

@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kanban
+    username: kanban
+    password: kanban
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        opaquetoken:
+          introspection-uri: http://localhost:8080/realms/kanban-dev/protocol/openid-connect/token/introspect
+          client-id: kanban-frontend
+          client-secret: kanban-dev-secret

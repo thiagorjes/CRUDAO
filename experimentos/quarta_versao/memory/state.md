@@ -45,6 +45,7 @@ _Atualizado em: 2026-08-27_
 | docs/decisions/ADR-002-postgresql-sem-cache-tempo-real.md | 1.0 | ok |
 | docs/decisions/ADR-003-rbac-hibrido-keycloak.md | 1.0 | ok |
 | docs/tasks/kanban-tarefas-tasks.md | 1.1 | ok |
+| docs/checklists/kanban-tarefas-safeguards.md | 1.0 | draft - candidatos extraidos, aguardando /code-review |
 | docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards aguardando /code-review |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
@@ -56,6 +57,8 @@ _Atualizado em: 2026-08-27_
 | 2026-08-27 | Estado e constituicao reconstruidos para retomada do pipeline |
 | 2026-08-27 | PRD, Design Brief e TechSpec 1.1 conferidos como entradas de /tasks |
 | 2026-08-27 | /tasks kanban-tarefas concluido: 26 tasks em 8 epics; dimensao O do canvas preenchida |
+| 2026-08-27 | Inventario de safeguards extraido dos guidelines e artefatos; validacao de codigo pendente |
+| 2026-08-27 | /implement TASK-01.1 concluido: esqueleto backend/frontend, Compose, realm Keycloak e Dockerfiles validados |
 
 ## kanban-tarefas
 
@@ -65,4 +68,7 @@ _Atualizado em: 2026-08-27_
 - **Artefato:** docs/tasks/kanban-tarefas-tasks.md
 - **Total de tasks:** 26 tasks em 8 epics
 - **Canvas:** DRAFT (Safeguards aguarda /code-review)
-- **Proximo comando:** `/implement TASK-01.1` ou `/tdd` para lógica de maior risco
+- **Safeguards:** docs/checklists/kanban-tarefas-safeguards.md (inventario normativo, nao validado contra codigo)
+- **Task concluida:** TASK-01.1 - setup de projeto, Docker Compose, Keycloak dev e Dockerfiles
+- **Validacao:** frontend smoke/build e backend em imagem Docker Java 25; Maven local bloqueado por JDK 21
+- **Proximo comando:** `/code-review TASK-01.1`

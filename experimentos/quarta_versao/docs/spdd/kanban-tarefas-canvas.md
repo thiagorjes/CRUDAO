@@ -119,6 +119,7 @@ _Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
 
 Pendente de validacao e preenchimento formal pela skill `/code-review`. Ate la, devem ser preservadas estas restricoes conhecidas:
 
+- Inventario normativo detalhado: [kanban-tarefas-safeguards.md](../checklists/kanban-tarefas-safeguards.md).
 - O papel `admin` protegido nao pode ser editado, excluido, ter toggles alterados ou ser associado por um administrador local.
 - Um usuario nao pode alterar permissoes do proprio papel; alteracoes geram auditoria.
 - Projeto finalizado e somente leitura, inclusive para `adminGlobal`.
