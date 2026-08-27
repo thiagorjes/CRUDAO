@@ -41,4 +41,8 @@ Usando o NEMOTRON 3 Ultra (free)
 2- não foi capaz de inferir que parte das respostas de uma pergunta também respondiam as outras.
 3- houve maior recorrência de falhas de comunicação.
 4- muito lento para consolidar documento. demorando demais para gerar/salvar o PRD. iniciou 9:18. as 9:57 solicitei "crie o arquivo no disco e vá editando diretamente lá sessão por sessão para eu acompanhar a evolução." e 9:58 ainda não salvou o arquivo prd. 10:18 tentou criar o diretorio docs/prd, conseguiu e criou o arquivo, mas preencheu apenas as 2 primeiras sessões (seguindo as instruções). tentou editar as 10:40 e falhou 4x. as 11:11 ele terminou o PRD.
-5- as 11:32 iniciei o "/designer kanban-configuravel". interrompi por 1h para almoçar. respondi a ultima pergunta (9/9) as 13:38. iniciou a fase 3 as 13:39. terminou de gerar o design-brief em 13:40, começou a gravar nessa hora.finalizou as 13:41. as 13:48 começou a gravar o brief atualizado e deveria prototipar. ainda aguardo. às 13:59 finalizou de gerar o screen-map e design-tokens. 
+5- as 11:32 iniciei o "/designer kanban-configuravel". interrompi por 1h para almoçar. respondi a ultima pergunta (9/9) as 13:38. iniciou a fase 3 as 13:39. terminou de gerar o design-brief em 13:40, começou a gravar nessa hora.finalizou as 13:41. as 13:48 começou a gravar o brief atualizado e deveria prototipar. ainda aguardo. às 13:59 finalizou de gerar o screen-map e design-tokens. 143:23 salvou DDRs, atualizou constitution etc.
+
+desisti as 14:30. muitas falhas, desconexões etc.
+
+possivelmente por ser gratuito.
