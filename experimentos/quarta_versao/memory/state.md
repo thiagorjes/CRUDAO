@@ -24,7 +24,7 @@ _Atualizado em: 2026-08-27_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-tarefas | CRUDAO | 1.0 | 1.1 | — | Pronto para /tasks |
+| kanban-tarefas | CRUDAO | 1.0 | 1.1 | 1.1 | Pronto para implementação |
 
 ## Artifact Registry
 
@@ -44,8 +44,8 @@ _Atualizado em: 2026-08-27_
 | docs/decisions/ADR-001-stack-backend-java-spring.md | 1.0 | ok |
 | docs/decisions/ADR-002-postgresql-sem-cache-tempo-real.md | 1.0 | ok |
 | docs/decisions/ADR-003-rbac-hibrido-keycloak.md | 1.0 | ok |
-| docs/tasks/kanban-tarefas-tasks.md | — | pendente - proximo comando /tasks |
-| docs/spdd/kanban-tarefas-canvas.md | — | draft - dimensao O aguardando /tasks |
+| docs/tasks/kanban-tarefas-tasks.md | 1.1 | ok |
+| docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards aguardando /code-review |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
 
@@ -55,10 +55,14 @@ _Atualizado em: 2026-08-27_
 |---|---|
 | 2026-08-27 | Estado e constituicao reconstruidos para retomada do pipeline |
 | 2026-08-27 | PRD, Design Brief e TechSpec 1.1 conferidos como entradas de /tasks |
+| 2026-08-27 | /tasks kanban-tarefas concluido: 26 tasks em 8 epics; dimensao O do canvas preenchida |
 
 ## kanban-tarefas
 
 - **Etapa concluida:** /techspec v1.1
 - **Entradas aprovadas:** PRD v1.0, TechSpec v1.1, data model, contratos, quickstart e guidelines do sistema
-- **Proximo comando:** `/tasks kanban-tarefas`
-- **Regra de retomada:** gerar o documento consolidado e um arquivo individual para cada TASK; depois preencher a dimensao O do canvas.
+- **Etapa concluida:** /tasks v1.1 — 2026-08-27
+- **Artefato:** docs/tasks/kanban-tarefas-tasks.md
+- **Total de tasks:** 26 tasks em 8 epics
+- **Canvas:** DRAFT (Safeguards aguarda /code-review)
+- **Proximo comando:** `/implement TASK-01.1` ou `/tdd` para lógica de maior risco

@@ -62,10 +62,39 @@ Dependencias externas: Keycloak/OIDC e PostgreSQL. Backend e frontend rodam como
 
 ## O — Operations
 
-_Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
+_Atualizado por: /tasks v1.0 - 2026-08-27_
 > Decisoes: —
 
-Pendente de preenchimento pela skill `/tasks`. O documento de tasks deve registrar dependencias, paralelismo, backlog priorizado e um arquivo autocontido por task. Enquanto O nao for preenchida, o canvas permanece DRAFT.
+**Tasks ordenadas por dependência (26 tasks em 8 epics):**
+- [ ] TASK-01.1 — Setup de projeto, Docker Compose e Keycloak dev
+- [ ] TASK-01.2 — Migrations V1-V2 de identidade e RBAC
+- [ ] TASK-02.1 — OIDC, provisioning JIT, `/api/me` e logout
+- [ ] TASK-02.2 — Motor de permissões efetivas e guard (TDD)
+- [ ] TASK-02.3 — CRUD de papéis, permissões e usuários
+- [ ] TASK-03.1 — CRUD de projeto
+- [ ] TASK-03.2 — CRUD de workflow, etapas e transições
+- [ ] TASK-03.3 — CRUD de raias
+- [ ] TASK-04.1 — Migrations de tarefas e criação de card
+- [ ] TASK-04.2 — Movimentação, congelamento e lead-time
+- [ ] TASK-04.3 — Marcação e desmarcação de impedimento
+- [ ] TASK-04.4 — Exclusão e auditoria de tarefa
+- [ ] TASK-04.5 — Board e detalhe em DTO
+- [ ] TASK-05.1 — Eventos de board, LISTEN/NOTIFY e STOMP
+- [ ] TASK-05.2 — Notificações internas
+- [ ] TASK-05.3 — Reconexão, ressincronização e health-check
+- [ ] TASK-06.1 — Dashboard de lead-time
+- [ ] TASK-07.1 — Shell Next.js e autenticação
+- [ ] TASK-07.2 — Board UI
+- [ ] TASK-07.3 — Detalhe da tarefa UI
+- [ ] TASK-07.4 — Administração de projeto/workflow/raia
+- [ ] TASK-07.5 — Administração de papéis/permissões
+- [ ] TASK-07.6 — Dashboard UI
+- [ ] TASK-07.7 — Notificações UI
+- [ ] TASK-08.1 — Testes multi-pod e WebSocket
+- [ ] TASK-08.2 — Observabilidade final
+- [ ] TASK-08.3 — Dockerização de backend e frontend
+
+O detalhamento completo, o grafo de dependências e o backlog priorizado estão em [kanban-tarefas-tasks.md](../tasks/kanban-tarefas-tasks.md). Cada task possui também um arquivo autocontido em `docs/tasks/kanban-tarefas/`.
 
 ---
 
