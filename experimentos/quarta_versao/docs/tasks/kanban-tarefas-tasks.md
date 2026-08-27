@@ -1,13 +1,13 @@
 # Tasks — Kanban de Tarefas
 
-_Versão: 1.1 | Status: Ready | Data: 2026-08-27 | Autor: Thiago Goncalves Cavalcante_
+_Versão: 1.2 | Status: Ready | Data: 2026-08-27 | Autor: Thiago Goncalves Cavalcante_
 
-> Referências: [PRD v1.0](../prd/kanban-tarefas-prd.md) · [TechSpec v1.1](../techspec/kanban-tarefas-techspec.md) · [Data Model](../techspec/kanban-tarefas/data-model.md)
+> Referências: [PRD v1.0](../prd/kanban-tarefas-prd.md) · [TechSpec v1.2](../techspec/kanban-tarefas-techspec.md) · [Data Model](../techspec/kanban-tarefas/data-model.md)
 > Sistema: CRUDAO (único sistema no workspace — sem Plano Git Multi-Sistema)
 > Granularidade: maior (tasks G, poucas P/M) — decisão do usuário na Fase 1, prioriza menos overhead de coordenação sobre paralelismo máximo.
-> Nota de escopo (Fase 1): setup do Keycloak (realm/client) para ambiente **local de desenvolvimento** está em escopo desta feature (TASK-01.1, conforme `quickstart.md`) — Keycloak em si (servidor/IdP) é premissa externa já disponível (PRD Seção 7, ADR-006), mas o container/realm de dev precisa ser provisionado pela equipe. Confirmado sem menção de time externo responsável na TechSpec.
+> Nota de execução: backend, frontend, Keycloak e PostgreSQL devem ser executados pela stack Docker. `docker compose up -d` é o único fluxo suportado para validação e homologação; não criar critérios de aceite que dependam de JDK, Node ou Keycloak instalados no host.
 >
-> **Revisão pós-geração (Comitê de Análise Assíncrono — Architect + QA, 2026-08-25):** aplicadas correções de 3 achados críticos e 1 alto — ver seção "Revisão do Comitê" ao final. TASK-02.2 foi desmembrada em TASK-02.2 (motor RBAC) + TASK-02.3 (CRUD papéis/permissões, dona da migration V8) para não bloquear paralelismo de 03.x; RN-005 (exclusão com tarefas ativas) e RN-012 (autoatribuição de responsável) passaram a ter task dona explícita; TDD obrigatório adicionado a TASK-02.2. **Total revisado: 25 tasks em 8 epics.**
+> **Revisão pós-geração (Comitê de Análise Assíncrono — Architect + QA, 2026-08-25):** aplicadas correções de 3 achados críticos e 1 alto — ver seção "Revisão do Comitê" ao final. TASK-02.2 foi desmembrada em TASK-02.2 (motor RBAC) + TASK-02.3 (CRUD papéis/permissões, dona da migration V8) para não bloquear paralelismo de 03.x; RN-005 (exclusão com tarefas ativas) e RN-012 (autoatribuição de responsável) passaram a ter task dona explícita; TDD obrigatório adicionado a TASK-02.2. **Total revisado: 26 tasks em 8 epics.**
 
 ---
 
@@ -59,7 +59,7 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
 | 07 | Frontend | 07.1–07.7 | Todas as telas |
 | 08 | Hardening | 08.1, 08.2 | Testes multi-pod, observabilidade |
 
-**Total:** 26 tasks em 8 epics (revisado pelo Comitê de Análise — TASK-02.2 original desmembrada em 02.2 + 02.3; TASK-08.3 adicionada pela TechSpec 1.1).
+**Total:** 26 tasks em 8 epics (revisado pelo Comitê de Análise — TASK-02.2 original desmembrada em 02.2 + 02.3; TASK-08.3 adicionada e atualizada pela TechSpec 1.2).
 
 ---
 
@@ -80,9 +80,9 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
   - [ ] Configurar Dockerfile do backend e do frontend (RNF-004).
 - **Guia técnico:** `backend/pom.xml`, `backend/src/main/resources/application.yml`, `docker-compose.yml`, `keycloak/realm-export.json`, `frontend/package.json`. Seguir `stack.md`/`architecture.md` para versões e estrutura de pacotes.
 - **Critérios de aceite:**
-  - `docker compose up postgres keycloak` sobe os dois serviços saudáveis.
-  - Backend inicia (`./mvnw spring-boot:run`) e conecta ao Postgres sem erro.
-  - Frontend inicia (`npm run dev`) servindo página padrão.
+  - `docker compose up -d` sobe PostgreSQL, Keycloak, backend e frontend como serviços saudáveis, sem depender de componentes instalados no host.
+  - Backend inicia dentro do container Docker e conecta ao Postgres sem erro.
+  - Frontend inicia dentro do container Docker e serve a página padrão.
   - Realm importado automaticamente contém client e usuários de teste — validado por login manual no Keycloak admin console.
 
 ---
@@ -585,20 +585,20 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
 - **RF de origem:** RNF-004
 - **Dependências:** nenhuma (não depende de código funcional — só empacota o que já existe)
 - **[P] com:** TASK-08.1, TASK-08.2
-- **Contexto:** Débito técnico registrado desde a TechSpec inicial (RNF-004/`stack.md` já previam containerização, mas `docker-compose.yml` só subia infra `postgres`/`keycloak` — backend/frontend continuavam rodando local via `mvnw spring-boot:run`/`npm run dev`). Formalizado como requisito explícito pelo usuário em 2026-08-26 (ADR-008): homologação deve ser possível com `docker compose up -d` único, sem instalar JDK 25/Node na máquina de quem valida.
+- **Contexto:** Débito técnico registrado desde a TechSpec inicial (RNF-004/`stack.md` já previam containerização, mas `docker-compose.yml` só subia infra `postgres`/`keycloak`). Formalizado como requisito explícito pelo usuário em 2026-08-26 (ADR-008) e ampliado em 2026-08-27: backend, frontend, Keycloak e PostgreSQL devem ser executados pela stack Docker, sem instalar JDK 25/Node/Keycloak na máquina de quem valida.
 - **O que deve ser feito:**
   - [ ] Criar `backend/Dockerfile` multi-stage: stage de build `maven:3.9-eclipse-temurin-25` (`mvn dependency:go-offline` antes de copiar o código-fonte, para cache de camada), stage de runtime `eclipse-temurin:25-jre` copiando só o jar final, rodando como usuário não-root.
-  - [ ] Criar `frontend/Dockerfile` multi-stage: stage de build `node:20-alpine` (`npm ci && npm run build`), stage de runtime enxuto servindo o build (avaliar `output: standalone` do Next.js para reduzir a imagem final).
-  - [ ] Ajustar `docker-compose.yml` (`systems/CRUDAO/`) — os serviços `backend`/`frontend` já foram esboçados na TechSpec v1.1 (build context, portas 8081/3000, `depends_on` com healthcheck do Postgres/Keycloak); conferir e corrigir os nomes reais de variável de ambiente (`SPRING_DATASOURCE_*`, `SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_ISSUER-URI` — validar contra `application.yml`/`application-dev.yml`) e as variáveis do frontend (`NEXT_PUBLIC_BACKEND_URL`, `SESSION_SECRET`, URL interna do Keycloak) contra `.env.local.example`.
+  - [ ] Criar `frontend/Dockerfile` multi-stage com runtime Node LTS dentro da imagem (`npm ci && npm run build`), stage de runtime enxuto servindo o build (avaliar `output: standalone` do Next.js para reduzir a imagem final).
+  - [ ] Ajustar `docker-compose.yml` (`systems/CRUDAO/`) — os serviços `backend`/`frontend` devem seguir a TechSpec v1.2 (build context, portas 8081/3000, `depends_on` com healthchecks do Postgres/Keycloak); conferir e corrigir os nomes reais de variável de ambiente (`SPRING_DATASOURCE_*`, `SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_ISSUER-URI` — validar contra `application.yml`/`application-dev.yml`) e as variáveis do frontend (`NEXT_PUBLIC_BACKEND_URL`, `SESSION_SECRET`, URL interna do Keycloak) contra `.env.local.example`.
   - [ ] Validar que o backend, dentro do container, resolve `postgres`/`keycloak` pelo nome do serviço na rede do compose (não `localhost`) — e que o frontend, no browser, ainda usa `localhost:8081`/`localhost:8080` (URLs client-side não resolvem nome de serviço Docker).
   - [ ] `docker compose up -d` de ponta a ponta: subir a stack completa do zero (sem volumes/imagens pré-existentes) e confirmar login OIDC + board funcionando via `http://localhost:3000`.
-  - [ ] Atualizar `README.md`/`quickstart.md` se o comportamento real divergir do que já foi documentado na TechSpec v1.1.
+  - [ ] Atualizar `README.md`/`quickstart.md` se o comportamento real divergir do que já foi documentado na TechSpec v1.2.
 - **Guia técnico:** `backend/Dockerfile` (novo), `frontend/Dockerfile` (novo), `docker-compose.yml` (ajustar serviços já esboçados). Seguir a convenção de multi-stage já documentada em `guidelines/stack.md`. Referência de decisão: [ADR-008](../decisions/ADR-008-dockerizacao-backend-frontend.md).
 - **Critérios de aceite:**
   - `docker compose up -d` (sem nenhum outro comando) sobe `postgres`, `keycloak`, `backend`, `frontend` e a aplicação fica utilizável em `http://localhost:3000` — login, board, mover card.
   - Nenhuma credencial/URL sensível hardcoded na imagem — tudo via `environment:`/`.env` do compose.
   - Backend continua aplicando migrations Flyway automaticamente no boot do container (sem mudança de comportamento, ADR-005).
-  - Setup local sem Docker (`mvnw spring-boot:run`/`npm run dev` apontando para `docker compose up -d postgres keycloak`) continua funcionando, sem regressão para quem desenvolve ativamente.
+  - Backend, frontend, Keycloak e PostgreSQL são executados exclusivamente pela stack Docker; não há dependência de JDK, Node ou Keycloak instalados no host.
 
 ---
 
@@ -646,3 +646,4 @@ Executada conforme Fase 3.5 da skill, sobre os 24 arquivos originalmente gerados
 |---|---|---|---|
 | 1.0 | 2026-08-25 | Thiago Goncalves Cavalcante | Versão inicial — 24 tasks em 8 epics; revisada pelo Comitê de Análise (Architect+QA) no mesmo dia — TASK-02.2 desmembrada em 02.2+02.3, correções de RN-005/RN-012/TDD/RNF-005/grafo — total final 25 tasks |
 | 1.1 | 2026-08-26 | Thiago Goncalves Cavalcante | TASK-08.3 adicionada (dockerização de backend/frontend, RNF-004/ADR-008) — débito técnico registrado a pedido do usuário; total 26 tasks |
+| 1.2 | 2026-08-27 | Thiago Goncalves Cavalcante | Docker tornou-se requisito obrigatório de execução para backend, frontend, Keycloak e PostgreSQL; TASK-01.1 e TASK-08.3 atualizadas; execução local removida dos critérios de aceite |

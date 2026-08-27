@@ -1,6 +1,6 @@
 # TechSpec — Kanban de Tarefas
 
-_Versão: 1.1 | Status: Draft | Data: 2026-08-26 | Autor: Thiago Goncalves Cavalcante_
+_Versão: 1.2 | Status: Draft | Data: 2026-08-27 | Autor: Thiago Goncalves Cavalcante_
 
 > Referências: [PRD v1.0](prd/kanban-tarefas-prd.md) · [Design Brief v1.0](../design/kanban-tarefas-design-brief.md)
 
@@ -8,7 +8,7 @@ _Versão: 1.1 | Status: Draft | Data: 2026-08-26 | Autor: Thiago Goncalves Caval
 
 ## 1. Visão Geral Técnica
 
-Aplicação web com backend **Spring Boot 3.5.16 / Java 25** (API REST + WebSocket/STOMP) e frontend **Next.js**, autenticação via **Keycloak (OIDC)**, persistência em **PostgreSQL**, sem fallback de auth local ([ADR-006](../decisions/ADR-006-sem-fallback-auth-keycloak.md)). Broadcast de eventos em tempo real entre pods via **PostgreSQL LISTEN/NOTIFY** ([ADR-004](../decisions/ADR-004-broadcast-listen-notify.md)), sem broker dedicado (ADR-002). Schema versionado via **Flyway** ([ADR-005](../decisions/ADR-005-flyway-migrations.md)). Deploy containerizado (Docker/OpenShift/Kubernetes, RNF-004).
+Aplicação web com backend **Spring Boot 3.5.16 / Java 25** (API REST + WebSocket/STOMP) e frontend **Next.js**, autenticação via **Keycloak (OIDC)**, persistência em **PostgreSQL**, sem fallback de auth local ([ADR-006](../decisions/ADR-006-sem-fallback-auth-keycloak.md)). Broadcast de eventos em tempo real entre pods via **PostgreSQL LISTEN/NOTIFY** ([ADR-004](../decisions/ADR-004-broadcast-listen-notify.md)), sem broker dedicado (ADR-002). Todos os componentes executáveis — backend, frontend, Keycloak e PostgreSQL — devem ser executados como serviços Docker; não há execução local de componentes como modo suportado de validação. Deploy containerizado (Docker/OpenShift/Kubernetes, RNF-004).
 
 Escopo: 19 RFs Must/Should Have cobrindo board configurável, workflows/transições, CRUD de tarefas com congelamento pós-início, impedimentos, notificações internas, lead-time (por etapa e agregado em dashboard), RBAC configurável por projeto com toggles, SSO e auditoria.
 
@@ -24,7 +24,7 @@ Escopo: 19 RFs Must/Should Have cobrindo board configurável, workflows/transiç
 | Broadcast multi-pod via PostgreSQL LISTEN/NOTIFY | [ADR-004](../decisions/ADR-004-broadcast-listen-notify.md) |
 | Flyway para versionamento de schema | [ADR-005](../decisions/ADR-005-flyway-migrations.md) |
 | Sem fallback de autenticação local | [ADR-006](../decisions/ADR-006-sem-fallback-auth-keycloak.md) |
-| Dockerização de backend e frontend (RNF-004) | [ADR-008](../decisions/ADR-008-dockerizacao-backend-frontend.md) |
+| Execução integral em Docker (backend, frontend, Keycloak e PostgreSQL) | [ADR-008](../decisions/ADR-008-dockerizacao-backend-frontend.md) |
 
 > **Nota:** ADR-001/002/003 são referenciados por `stack.md`/`architecture.md`/`security.md` mas os arquivos correspondentes não foram encontrados em `docs/decisions/` (apenas `.gitkeep`). Pré-existente ao escopo deste `/techspec` — não recriados aqui; revisar antes do `/tasks` se a ausência bloquear rastreabilidade.
 
@@ -84,7 +84,7 @@ Todos os endpoints de escrita retornam `403` se o usuário não possuir a permis
 
 **Multi-instância (RNF-002):** nenhum estado de sessão/negócio em memória não compartilhada — toda leitura de estado do board é servida do PostgreSQL; o listener LISTEN/NOTIFY é o único componente com estado de conexão por pod, e é stateless em relação ao dado (apenas retransmite). Resincronização client-side por `seq` (ADR-004) é a rede de segurança contra divergência residual sob falha de reconexão.
 
-**Empacotamento e execução (RNF-004, ADR-008):** backend e frontend rodam como imagens Docker multi-stage (`backend/Dockerfile`, `frontend/Dockerfile`), orquestradas junto com `postgres`/`keycloak` no mesmo `docker-compose.yml`. `docker compose up -d` sobe a stack completa (infra + app) — caminho padrão para homologação. Setup local sem Docker (`mvnw spring-boot:run` / `npm run dev`) continua válido como alternativa de desenvolvimento ativo com hot reload, apontando para a mesma infra (`docker compose up -d postgres keycloak`).
+**Empacotamento e execução (RNF-004, ADR-008):** backend e frontend rodam como imagens Docker multi-stage (`backend/Dockerfile`, `frontend/Dockerfile`), orquestradas junto com `postgres` e `keycloak` no mesmo `docker-compose.yml`. `docker compose up -d` é o único caminho suportado para subir, validar e homologar a aplicação completa. Backend, frontend, Keycloak e PostgreSQL devem estar na rede Docker do Compose, com resolução por nome de serviço e configuração injetada por ambiente. Execução direta via `mvnw`, `npm run dev` ou instalação local de Keycloak não é modo suportado de execução ou aceite.
 
 ---
 
@@ -92,8 +92,8 @@ Todos os endpoints de escrita retornam `403` se o usuário não possuir a permis
 
 | Dependência | Tipo | Status |
 |---|---|---|
-| Keycloak (OIDC) | Autenticação | Externo, assumido disponível (premissa do PRD). Sem mock — integração via Spring Security OAuth2/OIDC padrão. Sem fallback se indisponível (ADR-006). |
-| PostgreSQL | Persistência + broadcast (LISTEN/NOTIFY) | Interno ao deploy, sem mock necessário. |
+| Keycloak (OIDC) | Autenticação | Serviço Docker obrigatório no ambiente de desenvolvimento/homologação; em produção, fornecido pela plataforma, sem mock e sem fallback se indisponível (ADR-006). |
+| PostgreSQL | Persistência + broadcast (LISTEN/NOTIFY) | Serviço Docker obrigatório no ambiente de desenvolvimento/homologação; interno ao deploy, sem mock necessário. |
 
 Nenhum mock contract foi necessário — não há integração com sistema de terceiros indisponível para consulta.
 
@@ -101,7 +101,7 @@ Nenhum mock contract foi necessário — não há integração com sistema de te
 
 ## 7. Estratégia de Testes
 
-Conforme `testing.md`: **JUnit 5 + Testcontainers** (backend, com PostgreSQL real — crítico para validar `LISTEN/NOTIFY` e Flyway), **Jest/Vitest + Testing Library** (frontend). Cobertura: 80% TDD geral, 100% dos cenários Gherkin do PRD (BDD).
+Conforme `testing.md`: **JUnit 5 + Testcontainers** (backend, com PostgreSQL real — crítico para validar `LISTEN/NOTIFY` e Flyway), **Jest/Vitest + Testing Library** (frontend). Testes de aceitação e smoke devem executar contra a stack Docker do Compose, incluindo Keycloak; Testcontainers pode ser usado para testes isolados de integração. Cobertura: 80% TDD geral, 100% dos cenários Gherkin do PRD (BDD).
 
 **Cobertura por RF — todos os 19 RFs Must/Should Have têm cenário mapeado (100% exigido por `testing.md`; detalhamento Dado/Quando/Então em [quickstart.md](kanban-tarefas/quickstart.md)):**
 - RF-001: board retorna etapas na ordem configurada, cada uma com as tarefas correspondentes — teste de integração de serialização do board.
@@ -202,3 +202,4 @@ Verificação automatizada pendente de execução (`check_rf_coverage.py`) — v
 |---|---|---|---|
 | 1.0 | 2026-08-25 | Thiago Goncalves Cavalcante | Versão inicial |
 | 1.1 | 2026-08-26 | Thiago Goncalves Cavalcante | ADR-008 — backend e frontend passam a rodar via Docker (fecha gap de RNF-004), Seções 2 e 5 atualizadas |
+| 1.2 | 2026-08-27 | Thiago Goncalves Cavalcante | Docker passa a ser obrigatório para backend, frontend, Keycloak e PostgreSQL; removido o modo suportado de execução local |

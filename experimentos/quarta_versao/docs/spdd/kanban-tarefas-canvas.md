@@ -114,20 +114,27 @@ _Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
 
 ## S — Safeguards
 
-_Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
-> Decisoes: ADR-006, ADR-007
+_Atualizado por: /code-review v1.0 - 2026-08-27_
+> Decisoes: ADR-006, ADR-007, ADR-008
 
-Pendente de validacao e preenchimento formal pela skill `/code-review`. Ate la, devem ser preservadas estas restricoes conhecidas:
+Guardrails consolidados a partir dos artefatos e confirmados como requisitos de revisão. A implementação da feature ainda deve ser verificada task a task.
 
 - Inventario normativo detalhado: [kanban-tarefas-safeguards.md](../checklists/kanban-tarefas-safeguards.md).
 - O papel `admin` protegido nao pode ser editado, excluido, ter toggles alterados ou ser associado por um administrador local.
 - Um usuario nao pode alterar permissoes do proprio papel; alteracoes geram auditoria.
 - Projeto finalizado e somente leitura, inclusive para `adminGlobal`.
 - Testes que sobem o contexto de seguranca exigem Keycloak e PostgreSQL disponiveis.
+- O setup deve ser reproduzivel com Java 25 e runtime frontend alinhado a versao decidida na task; divergencias devem ser corrigidas ou documentadas.
+- Credenciais presentes no realm sao somente de desenvolvimento e nao podem ser promovidas para producao.
+
+**Findings desta revisão:**
+
+- A validação ponta a ponta da stack Docker (backend e frontend incluídos no Compose) permanece pendente.
 
 ---
 
 ## Handoff
 
 - **Proximo comando:** `/tasks kanban-tarefas`
-- **Transicao esperada:** `/tasks` preenche O e muda para READY somente apos as demais dimensoes serem confirmadas.
+- **Review:** docs/checklists/kanban-tarefas-TASK-01.1-review.md — REPROVADO/BLOQUEADO
+- **Proximo comando:** implementar TASK-08.3 para completar a stack Docker e então reexecutar `/code-review TASK-01.1`.

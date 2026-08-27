@@ -28,18 +28,15 @@ frontend/
 
 ## Setup mínimo
 
-**Via Docker (ADR-008, padrão para homologação):**
+**Via Docker (ADR-008, único modo suportado):**
 1. `docker compose up -d` (sobe `postgres`, `keycloak`, `backend`, `frontend` — Flyway aplica migrations automaticamente no boot do backend).
 2. Acessar `http://localhost:3000`.
 
-**Setup local (dev ativo, hot reload):**
-1. `docker compose up -d postgres keycloak`.
-2. Backend: `./mvnw spring-boot:run` — Flyway aplica migrations automaticamente no boot.
-3. Frontend: `npm install && npm run dev`.
+Keycloak: realm/client pré-configurado com redirect URI `http://localhost:3000/login/oauth2/code/keycloak`.
 
-**Comum aos dois modos:**
-4. Keycloak: realm/client pré-configurado com redirect URI `http://localhost:3000/login/oauth2/code/keycloak`.
-5. Admin global (ADR-007): logue com `admin.teste@crudao.local` / `admin123` (já cadastrado no realm dev) — vira `adminGlobal=true` no primeiro login (property `kanban.bootstrap.admin-email`, já setada em `application-dev.yml`), única forma de criar o primeiro projeto e configurar papéis/usuários.
+Admin global (ADR-007): logue com `admin.teste@crudao.local` / `admin123` (já cadastrado no realm dev) — vira `adminGlobal=true` no primeiro login (property `kanban.bootstrap.admin-email`, já setada em `application-dev.yml`), única forma de criar o primeiro projeto e configurar papéis/usuários.
+
+Não executar backend, frontend ou Keycloak diretamente no host. `mvnw` e `npm run dev` não são caminhos de validação desta especificação.
 
 ## Cenários principais por RF (Dado/Quando/Então)
 

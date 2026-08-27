@@ -17,7 +17,7 @@ _Versão: 1.0 | Data: 2026-08-22_
 ## Frontend
 
 - **Framework:** Next.js.
-- **Runtime:** Node.js LTS mais recente.
+- **Runtime:** Node.js LTS mais recente, exclusivamente dentro da imagem Docker do frontend.
 
 ## Banco de dados
 
@@ -26,5 +26,5 @@ _Versão: 1.0 | Data: 2026-08-22_
 
 ## Infraestrutura
 
-- **Deploy:** containerizado via Docker, ambiente on-premise. OpenShift/Kubernetes como alvo futuro de orquestração (mencionado no PRD como requisito de portabilidade).
+- **Execução e deploy:** todos os componentes executáveis (backend, frontend, Keycloak e PostgreSQL) devem rodar em containers Docker no desenvolvimento e homologação. OpenShift/Kubernetes são alvos futuros de orquestração (mencionados no PRD como requisito de portabilidade).
 - **CI/CD:** nenhum pipeline automatizado nesta fase — build, testes e lint executados localmente antes de commit/push.
