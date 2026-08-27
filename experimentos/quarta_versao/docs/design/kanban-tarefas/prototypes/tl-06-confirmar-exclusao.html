@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-06 — Confirmação de Exclusão | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  body { background: rgba(33,37,41,0.5); min-height: 100vh; display:flex; align-items:center; justify-content:center; }
+  .modal-actions { display:flex; gap: var(--space-sm); justify-content:flex-end; margin-top: var(--space-lg); }
+</style>
+</head>
+<body>
+<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
+  <h1 id="modal-title" style="font-size:18px;">Excluir card</h1>
+
+  <!-- estado: idle -->
+  <section aria-label="Confirmação">
+    <p id="modal-desc">Tem certeza de que deseja excluir o card <strong>"Corrigir timeout no gateway de pagamento"</strong>? Esta ação não pode ser desfeita.</p>
+    <div class="modal-actions">
+      <a href="tl-03-board-compacto.html" class="btn btn-outline">Cancelar</a>
+      <button class="btn btn-danger" type="button">Excluir</button>
+    </div>
+  </section>
+
+  <!-- estado: loading (submit) -->
+  <section class="state-section">
+    <span class="state-label">Loading — excluindo</span>
+    <div class="modal-actions">
+      <button class="btn btn-outline" type="button" disabled>Cancelar</button>
+      <button class="btn btn-danger" type="button" disabled aria-busy="true">Excluindo…</button>
+    </div>
+  </section>
+
+  <!-- estado: erro (sem permissão / devPodeExcluirTarefa desabilitado) -->
+  <section class="state-section">
+    <span class="state-label">Erro — sem permissão</span>
+    <div class="toast toast-error" role="alert">Você não tem permissão para excluir este card. A opção "dev pode excluir tarefa" está desabilitada neste projeto.</div>
+    <div class="modal-actions">
+      <a href="tl-03-board-compacto.html" class="btn btn-outline">Fechar</a>
+      <button class="btn btn-danger" type="button" disabled>Excluir</button>
+    </div>
+  </section>
+
+  <!-- estado: sucesso (excluído) -->
+  <section class="state-section">
+    <span class="state-label">Sucesso — excluído</span>
+    <div class="toast toast-success" role="status" aria-live="polite">Card excluído com sucesso. <a href="tl-03-board-compacto.html">Voltar ao board</a></div>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "skill": "analyze",
+  "artifact_pattern": "docs/analyze/*-analysis.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md",
+        "docs/prd/{{FEATURE}}-prd.md",
+        "docs/techspec/{{FEATURE}}-techspec.md",
+        "docs/tasks/{{FEATURE}}-tasks.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## Sumário",
+        "## Gaps",
+        "## Divergências",
+        "## Contradições"
+      ],
+      "id_patterns": {
+        "RF": "RF-\\d{3}"
+      },
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": true,
+      "custom_steps": [
+        {
+          "name": "check_rf_coverage",
+          "script": ".agents/skills/analyze/scripts/check_rf_coverage.py",
+          "args": ["--prd", "{{INPUT_ARTIFACT}}"],
+          "on_failure": "warning"
+        }
+      ]
+    }
+  }
+}

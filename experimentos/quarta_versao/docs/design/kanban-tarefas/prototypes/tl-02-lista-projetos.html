@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-02 — Lista de Projetos | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-md); }
+  .project-card h3 { margin: 0 0 4px; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" aria-label="Navegação principal">
+    <div class="sidebar__brand">Kanban</div>
+    <nav aria-label="Menu">
+      <a href="tl-02-lista-projetos.html" aria-current="page">Projetos</a>
+      <a href="tl-07-dashboard.html">Dashboard</a>
+      <a href="tl-08-admin-projeto.html">Admin</a>
+    </nav>
+  </aside>
+
+  <header class="topbar">
+    <button class="topbar__notif" aria-label="Notificações (2 não lidas)">
+      🔔<span class="topbar__notif-badge">2</span>
+    </button>
+    <div class="topbar__user"><span class="avatar">TC</span> Thiago Cavalcante</div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Projetos</h1>
+      <button class="btn btn-primary" type="button">+ Novo projeto</button>
+    </div>
+
+    <!-- estado: idle / preenchido -->
+    <section aria-label="Lista de projetos" class="project-grid">
+      <a class="card project-card" href="tl-03-board-compacto.html" style="text-decoration:none; color:inherit;">
+        <h3>Plataforma de Pagamentos</h3>
+        <p class="text-secondary">12 tarefas ativas · 3 impedidas</p>
+        <span class="badge badge-success">Ativo</span>
+      </a>
+      <a class="card project-card" href="tl-03b-board-expandido.html" style="text-decoration:none; color:inherit;">
+        <h3>Portal do Cliente</h3>
+        <p class="text-secondary">5 tarefas ativas</p>
+        <span class="badge badge-success">Ativo</span>
+      </a>
+      <div class="card project-card">
+        <h3>App Legado</h3>
+        <p class="text-secondary">Somente leitura</p>
+        <span class="badge" style="background:#e9ecef; color:var(--color-text-secondary);">Finalizado</span>
+      </div>
+    </section>
+
+    <!-- estado: loading -->
+    <section class="state-section">
+      <span class="state-label">Loading</span>
+      <div class="project-grid">
+        <div class="skeleton" style="height:96px;"></div>
+        <div class="skeleton" style="height:96px;"></div>
+        <div class="skeleton" style="height:96px;"></div>
+      </div>
+    </section>
+
+    <!-- estado: erro -->
+    <section class="state-section">
+      <span class="state-label">Erro</span>
+      <div class="toast toast-error" role="alert">Não foi possível carregar os projetos. <button class="btn btn-outline" type="button">Tentar novamente</button></div>
+    </section>
+
+    <!-- estado: vazio -->
+    <section class="state-section">
+      <span class="state-label">Vazio — sem projetos</span>
+      <div class="empty-state">
+        <p>Você ainda não tem projetos associados.</p>
+        <button class="btn btn-primary" type="button">Criar primeiro projeto</button>
+      </div>
+    </section>
+  </main>
+
+</div>
+</body>
+</html>

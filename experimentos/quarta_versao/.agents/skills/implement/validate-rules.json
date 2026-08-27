@@ -1,0 +1,21 @@
+{
+  "skill": "implement",
+  "artifact_pattern": "docs/tasks/*-tasks.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md",
+        "docs/tasks/{{FEATURE}}-tasks.md",
+        "docs/spdd/{{FEATURE}}-canvas.md"
+      ]
+    },
+    "output": {
+      "required_sections": [],
+      "id_patterns": {},
+      "gherkin_required_for_ids": [],
+      "no_empty_placeholders": false,
+      "custom_steps": []
+    }
+  }
+}

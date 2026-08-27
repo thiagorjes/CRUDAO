@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-04 — Detalhe da Tarefa | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  body { background: var(--color-background); }
+  .drawer-backdrop { display: flex; justify-content: flex-end; min-height: 100vh; }
+  .drawer { width: 480px; background: var(--color-surface); min-height: 100vh; padding: var(--space-lg); border-left: 1px solid var(--color-border); }
+  .field-locked { background: #f1f3f5; color: var(--color-text-secondary); padding: 8px 12px; border-radius: var(--radius-button); border: 1px solid var(--color-border); }
+  .history-item { border-left: 2px solid var(--color-border); padding-left: var(--space-sm); margin-bottom: var(--space-sm); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="drawer-backdrop">
+<aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+  <div class="page-header">
+    <h1 id="drawer-title" style="font-size:18px;">Corrigir timeout no gateway de pagamento</h1>
+    <a href="tl-03-board-compacto.html" class="btn btn-text" aria-label="Fechar">✕ Fechar</a>
+  </div>
+  <span class="badge badge-tipo">Bug</span>
+
+  <!-- estado: preenchido / idle -->
+  <section aria-label="Detalhes da tarefa" style="margin-top:var(--space-md);">
+    <div class="form-field">
+      <label for="descricao">Descrição (campo travado pós-início)</label>
+      <div id="descricao" class="field-locked" aria-readonly="true">Timeout intermitente ao confirmar pagamento acima de R$ 5.000. Investigar gateway.</div>
+    </div>
+    <div class="form-field">
+      <label for="responsavel">Responsável</label>
+      <select id="responsavel">
+        <option>Sem responsável</option>
+        <option selected>João Silva (JS)</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="status">Etapa atual</label>
+      <select id="status">
+        <option selected>A Fazer</option>
+        <option>Em Andamento</option>
+        <option>Concluído</option>
+      </select>
+    </div>
+    <div class="form-field toggle">
+      <label for="impedido">Marcado como impedido</label>
+      <input id="impedido" type="checkbox" aria-describedby="impedido-desc">
+      <span id="impedido-desc" class="text-secondary">Inicia contagem de lead-time de impedimento (RF-004)</span>
+    </div>
+    <div class="form-field">
+      <span>Lead-time por etapa</span>
+      <p class="text-secondary">A Fazer: 2d 4h · Em Andamento: — · Impedimento acumulado: 0h</p>
+    </div>
+    <button class="btn btn-primary" type="button">Salvar</button>
+  </section>
+
+  <!-- estado: sucesso -->
+  <section class="state-section">
+    <span class="state-label">Sucesso — salvo</span>
+    <div class="toast toast-success" role="status" aria-live="polite">Alterações salvas com sucesso.</div>
+  </section>
+
+  <!-- estado: erro (edição bloqueada pós-início) -->
+  <section class="state-section">
+    <span class="state-label">Erro — edição bloqueada</span>
+    <div class="toast toast-error" role="alert">Esta tarefa já foi iniciada. O campo "Descrição" não pode mais ser editado.</div>
+  </section>
+
+  <!-- estado: loading -->
+  <section class="state-section">
+    <span class="state-label">Loading</span>
+    <div class="skeleton" style="height:16px; margin-bottom:8px;"></div>
+    <div class="skeleton" style="height:16px; width:60%;"></div>
+  </section>
+
+  <section aria-label="Histórico de auditoria" style="margin-top:var(--space-lg);">
+    <h2 style="font-size:14px;">Histórico</h2>
+    <div class="history-item"><strong>João Silva</strong> alterou responsável: — → João Silva <span class="text-secondary">24/08 14:20</span></div>
+    <div class="history-item"><strong>Thiago Cavalcante</strong> moveu etapa: Backlog → A Fazer <span class="text-secondary">24/08 09:10</span></div>
+  </section>
+</aside>
+</div>
+</body>
+</html>

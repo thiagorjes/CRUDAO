@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TL-09 — Admin de Papéis/Permissões | Kanban de Tarefas</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Navegação principal">
+    <div class="sidebar__brand">Kanban</div>
+    <nav aria-label="Menu">
+      <a href="tl-02-lista-projetos.html">Projetos</a>
+      <a href="tl-07-dashboard.html">Dashboard</a>
+      <a href="tl-08-admin-projeto.html" aria-current="page">Admin</a>
+    </nav>
+    <div class="sidebar__project-active">Projeto ativo: Plataforma de Pagamentos</div>
+  </aside>
+  <header class="topbar">
+    <button class="topbar__notif" aria-label="Notificações">🔔</button>
+    <div class="topbar__user"><span class="avatar">TC</span> Thiago Cavalcante</div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Papéis e Permissões</h1>
+      <a href="tl-08-admin-projeto.html" class="btn btn-outline">Voltar ao Admin</a>
+    </div>
+
+    <!-- estado: preenchido / idle -->
+    <form aria-label="Permissões por papel">
+      <table>
+        <thead><tr><th>Permissão</th><th>Dev</th><th>Product Owner</th><th>Project Admin</th></tr></thead>
+        <tbody>
+          <tr><td>tarefa:gerenciar (criar/excluir card)</td><td><input type="checkbox" checked aria-label="Dev - tarefa:gerenciar"></td><td><input type="checkbox" checked aria-label="Product Owner - tarefa:gerenciar"></td><td><input type="checkbox" checked aria-label="Project Admin - tarefa:gerenciar"></td></tr>
+          <tr><td>tarefa:finalizar</td><td><input type="checkbox" aria-label="Dev - tarefa:finalizar"></td><td><input type="checkbox" checked aria-label="Product Owner - tarefa:finalizar"></td><td><input type="checkbox" checked aria-label="Project Admin - tarefa:finalizar"></td></tr>
+          <tr><td>Marcar/desmarcar impedimento</td><td><input type="checkbox" checked aria-label="Dev - impedimento"></td><td><input type="checkbox" checked aria-label="Product Owner - impedimento"></td><td><input type="checkbox" checked aria-label="Project Admin - impedimento"></td></tr>
+        </tbody>
+      </table>
+
+      <h2 style="font-size:14px; margin-top:var(--space-lg);">Toggles específicos do projeto</h2>
+      <div class="form-field toggle">
+        <label for="dev-exclui">devPodeExcluirTarefa</label>
+        <input id="dev-exclui" type="checkbox" checked aria-describedby="dev-exclui-desc">
+        <span id="dev-exclui-desc" class="text-secondary">Permite que devs excluam cards (RF-016)</span>
+      </div>
+
+      <button class="btn btn-primary" type="submit" style="margin-top:var(--space-md);">Salvar permissões</button>
+    </form>
+
+    <!-- estado: loading -->
+    <section class="state-section">
+      <span class="state-label">Loading</span>
+      <div class="skeleton" style="height:16px; margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:16px; width:70%;"></div>
+    </section>
+
+    <!-- estado: erro -->
+    <section class="state-section">
+      <span class="state-label">Erro</span>
+      <div class="toast toast-error" role="alert">Não foi possível salvar as permissões. Tente novamente.</div>
+    </section>
+
+    <!-- estado: sucesso (salvo) -->
+    <section class="state-section">
+      <span class="state-label">Sucesso — salvo</span>
+      <div class="toast toast-success" role="status" aria-live="polite">Permissões atualizadas com sucesso.</div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "skill": "prd",
+  "artifact_pattern": "docs/prd/*-prd.md",
+  "modes": {
+    "input": {
+      "check_registry": true,
+      "required_artifacts": [
+        "memory/state.md"
+      ]
+    },
+    "output": {
+      "required_sections": [
+        "## 1. Visão Geral",
+        "## 3. Requisitos Funcionais",
+        "## 4. Requisitos Não-Funcionais",
+        "## 10. Fora do Escopo"
+      ],
+      "id_patterns": {
+        "RF": "RF-\\d{3}",
+        "RNF": "RNF-\\d{3}"
+      },
+      "gherkin_required_for_ids": ["RF"],
+      "no_empty_placeholders": true,
+      "custom_steps": []
+    }
+  }
+}
