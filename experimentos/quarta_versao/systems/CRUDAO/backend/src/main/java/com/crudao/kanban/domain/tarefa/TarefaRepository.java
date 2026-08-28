@@ -8,6 +8,8 @@ public interface TarefaRepository extends JpaRepository<Tarefa, UUID> {
 
     List<Tarefa> findByProjetoId(UUID projetoId);
 
+    List<Tarefa> findByProjetoIdOrderByAtualizadoEmDesc(UUID projetoId);
+
     boolean existsByWorkflowId(UUID workflowId);
 
     boolean existsByEtapaAtualId(UUID etapaId);

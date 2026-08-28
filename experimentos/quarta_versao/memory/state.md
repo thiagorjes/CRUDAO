@@ -83,6 +83,7 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | Testes E2E TASK-04.3: Configurado Testcontainers + @DynamicPropertySource + application-test.yml (desabilitado para exec local, ativado via `-P integration-tests` em CI/CD) |
 | 2026-08-28 | /implement TASK-04.4 concluído: DELETE /api/tarefas/{id}, GET /api/tarefas/{id}/auditoria, validações RN-CB-001/002/003, 7 testes unitários |
 | 2026-08-28 | /code-review TASK-04.4 inline: ✅ APROVADO SEM RESSALVAS (0 críticos, 0 altos, 0 médios, 0 sugestões) — backend compilado e saudável em Docker |
+| 2026-08-28 | /implement TASK-04.5 em progresso: GET /api/projetos/{id}/board (BoardService sem N+1), GET /api/tarefas/{id}, PUT /api/tarefas/{id}, POST /api/tarefas/{id}/mover — DTOs, endpoints e testes criados |
 
 ## kanban-tarefas
 
