@@ -19,6 +19,7 @@ import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.tarefa.dto.BoardResponse;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -117,9 +118,9 @@ public class TarefaControllerBoardIntegrationTest {
         Projeto projeto = new Projeto();
         projeto.setNome("Projeto Board Test");
         projeto.setDescricao("Projeto para teste de board");
-        projeto.setStatus("ATIVO");
+        projeto.setStatus(Projeto.Status.ATIVO);
         projeto.setCriadoPor(criador);
-        projeto.setCriadoEm(Instant.now());
+        projeto.setCriadoEm(OffsetDateTime.now());
         projeto = projetoRepository.save(projeto);
         projetoId = projeto.getId();
 
@@ -234,7 +235,7 @@ public class TarefaControllerBoardIntegrationTest {
 
         // Verificar que a tarefa impedida tem a flag correta
         assertThat(board.getTarefas().stream()
-                .filter(t -> t.iImpedida())
+                .filter(t -> t.isImpedida())
                 .count()).isEqualTo(1);
 
         System.out.println("✓ Board retorna estrutura correta com 5 tarefas");

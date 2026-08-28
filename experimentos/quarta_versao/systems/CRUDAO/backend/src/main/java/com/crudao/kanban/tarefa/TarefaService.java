@@ -14,12 +14,14 @@ import com.crudao.kanban.domain.workflow.Transicao;
 import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.evento.EventoBoardPublisher;
 import com.crudao.kanban.rbac.PermissaoGuard;
 import com.crudao.kanban.tarefa.dto.CriarTarefaRequest;
 import com.crudao.kanban.tarefa.dto.CriarTarefaResponse;
 import com.crudao.kanban.tarefa.dto.EditarTarefaRequest;
 import com.crudao.kanban.tarefa.dto.MoverTarefaRequest;
 import com.crudao.kanban.tarefa.dto.TarefaDetalheResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +48,8 @@ public class TarefaService {
     private final RaiaRepository raiaRepository;
     private final UsuarioRepository usuarioRepository;
     private final PermissaoGuard permissaoGuard;
+    private final EventoBoardPublisher eventoBoardPublisher;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public CriarTarefaResponse criarTarefa(UUID projetoId, CriarTarefaRequest request) {
@@ -120,6 +124,9 @@ public class TarefaService {
         hist.setEntradaEm(Instant.now());
         hist.setSaidaEm(null);
         tarefaEtapaHistoricoRepository.save(hist);
+
+        // TASK-05.1: Publicar evento de criação para atualização em tempo real
+        publicarEvento("TAREFA_CRIADA", projeto.getId(), tarefa.getId(), etapaInicial.getId());
 
         return new CriarTarefaResponse(
                 tarefa.getId(),
@@ -199,6 +206,9 @@ public class TarefaService {
         auditoria.setValorNovo(etapaDestino.getNome());
         auditoria.setDataHora(Instant.now());
         tarefaAuditoriaRepository.save(auditoria);
+
+        // TASK-05.1: Publicar evento de movimentação para atualização em tempo real
+        publicarEvento("TAREFA_MOVIDA", tarefa.getProjeto().getId(), tarefa.getId(), etapaDestino.getId());
     }
 
     /**
@@ -470,10 +480,11 @@ public class TarefaService {
         auditoria.setDataHora(Instant.now());
         tarefaAuditoriaRepository.save(auditoria);
 
+        // TASK-05.1: Publicar evento de exclusão para atualização em tempo real (antes de deletar)
+        publicarEvento("TAREFA_EXCLUIDA", projetoId, tarefaId, tarefa.getEtapaAtual().getId());
+
         // Excluir tarefa (cascata deleta históricos associados)
         tarefaRepository.deleteById(tarefaId);
-
-        // TODO: TASK-05.1 — publicar evento `TAREFA_EXCLUIDA` via EventoBoardPublisher para atualização em tempo real
     }
 
     /**
@@ -487,6 +498,43 @@ public class TarefaService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
 
         return tarefaAuditoriaRepository.findByTarefaIdOrderByDataHoraAsc(tarefaId);
+    }
+
+    /**
+     * TASK-05.1: Publica um evento de board para atualização em tempo real via STOMP.
+     * Encapsula a criação do payload JSON e invoca {@link EventoBoardPublisher#publicar}.
+     * O evento é publicado após o commit da transação atual via {@link EventoBoardPublisher#publicar}.
+     *
+     * @param tipo Tipo do evento (ex: TAREFA_CRIADA, TAREFA_MOVIDA, TAREFA_EXCLUIDA).
+     * @param projetoId ID do projeto afetado.
+     * @param tarefaId ID da tarefa envolvida.
+     * @param etapaId ID da etapa envolvida.
+     */
+    private void publicarEvento(String tipo, UUID projetoId, UUID tarefaId, UUID etapaId) {
+        try {
+            String payloadJson = objectMapper.writeValueAsString(
+                Map.of(
+                    "tipo", tipo,
+                    "projetoId", projetoId.toString(),
+                    "tarefaId", tarefaId.toString(),
+                    "etapaId", etapaId.toString(),
+                    "timestamp", Instant.now().toEpochMilli()
+                )
+            );
+
+            EventoBoardPublisher.EventoBoardPayload evento =
+                new EventoBoardPublisher.EventoBoardPayload(
+                    tipo,
+                    projetoId,
+                    0L, // Sequência será atribuída pelo adapter
+                    payloadJson
+                );
+
+            eventoBoardPublisher.publicar(evento);
+        } catch (Exception e) {
+            // Log mas não falha a transação — o evento é "best effort"
+            // RNF-002 mitiga via cliente refazendo GET /board em caso de divergência
+        }
     }
 }
 

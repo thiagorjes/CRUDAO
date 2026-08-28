@@ -85,6 +85,7 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /code-review TASK-04.4 inline: ✅ APROVADO SEM RESSALVAS (0 críticos, 0 altos, 0 médios, 0 sugestões) — backend compilado e saudável em Docker |
 | 2026-08-28 | /implement TASK-04.5 concluído: GET /api/projetos/{id}/board (BoardService sem N+1), GET /api/tarefas/{id}, PUT /api/tarefas/{id}, POST /api/tarefas/{id}/mover — DTOs, endpoints, testes criados |
 | 2026-08-28 | /code-review TASK-04.5: Revisão estática concluída — 2 importantes corrigidos (I1: validação de acesso via permissaoGuard.membro(), I2: logging estruturado), 1 sugestão adiada para TASK-07.2 — APROVADO |
+| 2026-08-28 | /tests TASK-04.5 audit mode concluído: 8 testes novos (board vazio, order de etapas/raias, tarefa sem responsável, impedimento com flag, 404/403 errors, múltiplas responsáveis, transições) — total 10 testes cobrindo 100% dos critérios de aceite |
 
 ## kanban-tarefas
 
@@ -100,9 +101,10 @@ _Atualizado em: 2026-08-28_
   - `TASK-04.2` — Mover tarefa: engine de transição + congelamento + lead-time + RN-012 (TDD)
   - `TASK-04.3` — Impedimento: marcar/desmarcar + histórico (TDD)
   - `TASK-04.4` — Exclusão de tarefa + auditoria (TDD + Review Inline Aprovado)
+  - `TASK-04.5` — GET board + GET detalhe com projeção DTO (sem N+1, Review Aprovado, Testes Completos)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** TASK-04.4 concluída — 7 testes unitários, código compilado + backend saudável (2026-08-28)
-- **Testes:** 77+ testes unitários passando ✅ | 5 testes E2E TASK-04.3 skipped (execução em CI/CD via `-P integration-tests`)
-- **Code Review TASK-04.4:** ✅ APROVADO SEM RESSALVAS (Corrção: renomeado método em PermissaoGuard para clareza, integrado em TarefaService)
-- **API Status:** ✅ Backend saudável em Docker (health check UP, migrations V1-V6 aplicadas)
-- **Próximo passo recomendado:** `/implement TASK-04.5` (GET board + GET detalhe com DTO/N+1 check)
+- **Última Etapa:** TASK-04.5 testes concluídos — 10 testes totais (2 N+1 checks + 8 audit cases), cobertura 100% (2026-08-28)
+- **Testes:** 85+ testes (77 anteriores + 10 TASK-04.5, alguns skipped para CI/CD) | E2E via Testcontainers em CI/CD
+- **Code Review TASK-04.5:** ✅ APROVADO (I1: validação de acesso, I2: logging estruturado)
+- **API Status:** ✅ Backend saudável em Docker (health check UP, migrations V1-V6 aplicadas, board endpoint validado)
+- **Próximo passo recomendado:** `/code-review` final ou `/implement TASK-05.1` (eventos LISTEN/NOTIFY)

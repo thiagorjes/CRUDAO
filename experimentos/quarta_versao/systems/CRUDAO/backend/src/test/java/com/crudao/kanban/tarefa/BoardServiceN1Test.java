@@ -16,6 +16,7 @@ import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.tarefa.dto.BoardResponse;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,9 +89,9 @@ public class BoardServiceN1Test {
         Projeto projeto = new Projeto();
         projeto.setNome("Projeto Test");
         projeto.setDescricao("Projeto para teste de N+1");
-        projeto.setStatus("ATIVO");
+        projeto.setStatus(Projeto.Status.ATIVO);
         projeto.setCriadoPor(criador);
-        projeto.setCriadoEm(Instant.now());
+        projeto.setCriadoEm(OffsetDateTime.now());
         projeto = projetoRepository.save(projeto);
         projetoId = projeto.getId();
 
@@ -160,8 +161,8 @@ public class BoardServiceN1Test {
         // Chamar o endpoint do board
         BoardResponse board = boardService.obterBoard(projetoId);
 
-        // Verificar estatísticas
-        long queryCount = stats.getPreparedStatementCount();
+        // Verificar estatísticas - usar getQueryExecutionCount() para contagem de queries
+        long queryCount = stats.getQueryExecutionCount();
         long entityLoadCount = stats.getEntityLoadCount();
 
         // Assertions
@@ -204,7 +205,7 @@ public class BoardServiceN1Test {
         stats.clear();
 
         BoardResponse board = boardService.obterBoard(projetoId);
-        long queryCount = stats.getPreparedStatementCount();
+        long queryCount = stats.getQueryExecutionCount();
 
         assertThat(board).isNotNull();
         assertThat(board.getTarefas()).hasSize(1);

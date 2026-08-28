@@ -12,6 +12,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     Optional<Usuario> findByKeycloakSub(String keycloakSub);
 
+    Optional<Usuario> findByEmail(String email);
+
     /**
      * Busca de usuários para associação a um projeto (RF-015, TASK-07.5) — só ativos, exclui quem
      * já tem vínculo com o projeto informado, top 20 por nome. Escopada por {@code projetoId} para
