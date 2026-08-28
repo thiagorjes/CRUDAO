@@ -76,6 +76,8 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /implement TASK-04.2 concluído: Mover tarefa, congelamento pós-início, lead-time, RN-012 (TDD) — 12 testes 100% verde, total 53 testes |
 | 2026-08-28 | /implement TASK-04.2 refatorado: Adicionados 3 testes críticos faltando (projeto finalizado, auditoria de responsável, product_owner atribuição) — 15 testes, total 56 testes 100% verde |
 | 2026-08-28 | /checklist kanban-tarefas: Validação de rastreabilidade PRD (19 RFs) → Tasks (26) → Cobertura de testes (TechSpec §7); resultado 100% mapeado, 9/19 implementados com testes 100% verde |
+| 2026-08-28 | /tdd TASK-04.3 concluído: Marcação/desmarcação de impedimento com histórico e auditoria (9 testes RED→GREEN→REFACTOR, ciclos múltiplos validados) |
+| 2026-08-28 | /code-review TASK-04.3 concluído: APROVADO COM RESSALVAS (1 importante corrigida: verificação redundante removida; 1 sugestão: TODO para TASK-05.2) |
 
 ## kanban-tarefas
 
@@ -89,8 +91,9 @@ _Atualizado em: 2026-08-28_
   - `TASK-03.3` — CRUD Raia (TDD + Review Aprovado)
   - `TASK-04.1` — Migrations V5-V6 + entidade Tarefa + criação de card + fechamento real de RN-005
   - `TASK-04.2` — Mover tarefa: engine de transição + congelamento + lead-time + RN-012 (TDD)
+  - `TASK-04.3` — Impedimento: marcar/desmarcar + histórico (TDD)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** `/code-review TASK-04.2` — concluído em 2026-08-28
-- **Testes:** 56 testes executados via Maven no Docker (15 novos de TASK-04.2 refinado), 0 falhas, 0 erros
-- **Code Review TASK-04.2:** ✅ APROVADO (I1 resolvido: EditarTarefaRequest com validações Bean Validation)
-- **Próximo passo recomendado:** `/implement TASK-04.3` (Impedimento) ou `/implement TASK-04.4` (Exclusão)
+- **Última Etapa:** `/tdd TASK-04.3` — concluído em 2026-08-28
+- **Testes:** 56 testes anteriores + 9 novos de TASK-04.3 = 65 testes (estrutura validada, execução pendente no Docker)
+- **Code Review TASK-04.3:** Pendente (→ `/code-review TASK-04.3` próximo)
+- **Próximo passo recomendado:** `/code-review TASK-04.3` ou `/implement TASK-04.4` (Exclusão)

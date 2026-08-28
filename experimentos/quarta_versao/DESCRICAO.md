@@ -36,17 +36,12 @@ precisei recriar:
 - ficou "enrolando" para executar os testes (TDD/BDD)
 - tem deixado muitas tasks com o status desatualizado, ora na task, ora no canvas/state, gerando problemas no fluxo e exigindo nova validação e update de status.
 
-
-
-
-
-
-
-
 Problemas:
 - criar uma validação (script python) para garantir que os testes (tdd/bdd) estão criados para as tarefas que exigem isso.
 - criar uma validação (script python) para garantir que os testes serão executados.
 - criar uma validação (script python) para garantir que os testes foram executados.
 - garantir que o code-review seja executado ao final do implement/tdd.
+- garantir que todos os cenários (tdd e bdd) foram mapeados, implementados e associados a cada task para serem validados ao final da implementação. sem isso a etapa de verificação não fica confiável.
+- 
 
 

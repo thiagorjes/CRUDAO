@@ -22,5 +22,31 @@ public class TarefaController {
         CriarTarefaResponse resp = tarefaService.criarTarefa(projetoId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
+
+    /**
+     * TASK-04.3: Marcar tarefa como impedida.
+     * POST /api/tarefas/{tarefaId}/impedimento
+     * Requer permissão `tarefa:impedimento`.
+     */
+    @PostMapping("/api/tarefas/{tarefaId}/impedimento")
+    public ResponseEntity<Void> marcarImpedimento(
+            @PathVariable UUID tarefaId,
+            @RequestParam UUID projetoId) {
+        tarefaService.marcarImpedimento(tarefaId, projetoId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * TASK-04.3: Desmarcar tarefa como impedida.
+     * DELETE /api/tarefas/{tarefaId}/impedimento
+     * Requer permissão `tarefa:impedimento`.
+     */
+    @DeleteMapping("/api/tarefas/{tarefaId}/impedimento")
+    public ResponseEntity<Void> desmarcarImpedimento(
+            @PathVariable UUID tarefaId,
+            @RequestParam UUID projetoId) {
+        tarefaService.desmarcarImpedimento(tarefaId, projetoId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }
 

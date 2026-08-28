@@ -333,5 +333,109 @@ public class TarefaService {
                 .tempoImpedimentoTotalSegundos(tempoImpedimentoTotal)
                 .build();
     }
+
+    /**
+     * TASK-04.3: Marcar tarefa como impedida.
+     * RF-004: Sinalização de bloqueio.
+     * RN-013: Requer `tarefa:impedimento` (dev, product_owner, project_admin, admin por padrão).
+     * RN-CB-003: Bloqueado se projeto finalizado.
+     */
+    @Transactional
+    public void marcarImpedimento(UUID tarefaId, UUID projetoId) {
+        // Valida permissão e projeto ativo (RN-015: projeto finalizado bloqueia todas as escritas)
+        permissaoGuard.exigirProjetoAtivo(projetoId);
+        permissaoGuard.exigir(projetoId, "tarefa:impedimento");
+
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
+
+        Projeto projeto = projetoRepository.findById(projetoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Projeto não encontrado"));
+
+        // Não deixa marcar se já está impedida
+        if (tarefa.isImpedida()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tarefa já está marcada como impedida");
+        }
+
+        Instant agora = Instant.now();
+        tarefa.setImpedida(true);
+        tarefa.setImpedidaDesde(agora);
+
+        // Abre histórico de impedimento
+        TarefaImpedimentoHistorico historico = new TarefaImpedimentoHistorico();
+        historico.setTarefa(tarefa);
+        historico.setMarcadoEm(agora);
+        historico.setDesmarcadoEm(null);
+        tarefaImpedimentoHistoricoRepository.save(historico);
+
+        // Persiste a tarefa
+        tarefa.setAtualizadoEm(agora);
+        tarefaRepository.save(tarefa);
+
+        // Registra auditoria
+        Usuario usuarioLogado = UsuarioAutenticadoHolder.get();
+        TarefaAuditoria auditoria = new TarefaAuditoria();
+        auditoria.setTarefa(tarefa);
+        auditoria.setAutor(usuarioLogado);
+        auditoria.setCampo("impedimento");
+        auditoria.setValorAnterior("false");
+        auditoria.setValorNovo("true");
+        auditoria.setDataHora(agora);
+        tarefaAuditoriaRepository.save(auditoria);
+
+        // TODO: TASK-05.2 — publicar evento/notificação para observadores (responsável, criador, observadores explícitos)
+    }
+
+    /**
+     * TASK-04.3: Desmarcar tarefa como impedida.
+     * RF-004: Fechamento de sinalização de bloqueio.
+     * Requer permissão `tarefa:impedimento`.
+     */
+    @Transactional
+    public void desmarcarImpedimento(UUID tarefaId, UUID projetoId) {
+        // Valida permissão e projeto ativo
+        permissaoGuard.exigirProjetoAtivo(projetoId);
+        permissaoGuard.exigir(projetoId, "tarefa:impedimento");
+
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
+
+        Projeto projeto = projetoRepository.findById(projetoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Projeto não encontrado"));
+
+        // Não deixa desmarcar se não está impedida
+        if (!tarefa.isImpedida()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tarefa não está marcada como impedida");
+        }
+
+        // Busca o histórico aberto (sem desmarcadoEm)
+        TarefaImpedimentoHistorico historicoAberto = tarefaImpedimentoHistoricoRepository
+                .findByTarefaIdAndDesmarcadoEmIsNull(tarefaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "Nenhum histórico aberto de impedimento encontrado"));
+
+        Instant agora = Instant.now();
+
+        // Fecha o histórico
+        historicoAberto.setDesmarcadoEm(agora);
+        tarefaImpedimentoHistoricoRepository.save(historicoAberto);
+
+        // Atualiza tarefa
+        tarefa.setImpedida(false);
+        tarefa.setAtualizadoEm(agora);
+        tarefaRepository.save(tarefa);
+
+        // Registra auditoria
+        Usuario usuarioLogado = UsuarioAutenticadoHolder.get();
+        TarefaAuditoria auditoria = new TarefaAuditoria();
+        auditoria.setTarefa(tarefa);
+        auditoria.setAutor(usuarioLogado);
+        auditoria.setCampo("impedimento");
+        auditoria.setValorAnterior("true");
+        auditoria.setValorNovo("false");
+        auditoria.setDataHora(agora);
+        tarefaAuditoriaRepository.save(auditoria);
+
+        // TODO: TASK-05.2 — publicar evento/notificação para observadores (responsável, criador, observadores explícitos)
+    }
 }
 
