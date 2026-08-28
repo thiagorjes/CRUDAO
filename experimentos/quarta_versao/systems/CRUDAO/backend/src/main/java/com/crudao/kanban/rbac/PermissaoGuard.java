@@ -85,4 +85,24 @@ public class PermissaoGuard {
             throw new AccessDeniedException("Acesso negado");
         }
     }
+
+    /**
+     * Validação RN-012 (autoatribuição de responsável):
+     * - dev (papel) só pode se autoatribuir (`usuarioIdLogado == novoResponsavelId`)
+     * - product_owner/project_admin/admin podem atribuir/reatribuir livremente.
+     *
+     * <p>Lança {@code AccessDeniedException} (403) se dev tenta atribuir a terceiros.
+     */
+    public void validarAutoatribuicaoRN012(UUID projetoId, UUID usuarioIdLogado, UUID novoResponsavelId) {
+        // Se está tentando atribuir a si mesmo, permitir sempre
+        if (usuarioIdLogado.equals(novoResponsavelId)) {
+            return;
+        }
+
+        // Se não é atribuição a si, verificar se o usuário tem permissão de atribuição ampla
+        // (não é dev). Dev não pode atribuir a terceiros.
+        if (!permitido(projetoId, "tarefa:atribuir")) {
+            throw new AccessDeniedException("Dev só pode se autoatribuir");
+        }
+    }
 }

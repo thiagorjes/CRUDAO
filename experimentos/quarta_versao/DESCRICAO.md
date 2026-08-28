@@ -13,12 +13,15 @@ Intenção:
 - Validar resultados com outro harness/modelo na mesma versão do fluxo SSPDD
 
 Modelo:
-- Gemini-3.7-flash para "/tasks"
-- Gemini-3.6-flash para "/implement" e "/code-review"
+- Gemini-3.6-flash para "/implement" e "/code-review" até a task 4.1
+- Gemini-3.7-flash para "/tasks" e /implement,/code-review a partir da task 4.2.
+- Interrompi a implementação com gemini+copilot pois estava falhando muito e travando.
+- resolvi continuar com claude haiku.
 
 Harness:
 - Iniciei no copilot no VSCODE
 - Migrei para o antigravity no VSCODE, pois durante a etapa de implementação o copilot se mostrou mais "burro" (enquanto harness) que o claude, então resolvi testar a extensão do antigravity (harness para vscode).
+- acabaram os tokens do antigravity e retornei ao copilot com o gemini da AUMO
 
 Forma de Licença:
 - Conta PRO particular
@@ -45,4 +48,5 @@ Problemas:
 - criar uma validação (script python) para garantir que os testes serão executados.
 - criar uma validação (script python) para garantir que os testes foram executados.
 - garantir que o code-review seja executado ao final do implement/tdd.
+
 
