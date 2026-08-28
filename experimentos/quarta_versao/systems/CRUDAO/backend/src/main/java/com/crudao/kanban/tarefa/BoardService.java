@@ -1,16 +1,19 @@
 package com.crudao.kanban.tarefa;
 
+import com.crudao.kanban.auth.UsuarioAutenticadoHolder;
 import com.crudao.kanban.domain.raia.Raia;
 import com.crudao.kanban.domain.raia.RaiaRepository;
 import com.crudao.kanban.domain.tarefa.Tarefa;
 import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
+import com.crudao.kanban.domain.usuario.Usuario;
 import com.crudao.kanban.domain.workflow.Etapa;
 import com.crudao.kanban.domain.workflow.EtapaRepository;
 import com.crudao.kanban.domain.workflow.Transicao;
 import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.rbac.PermissaoGuard;
 import com.crudao.kanban.tarefa.dto.BoardResponse;
 import com.crudao.kanban.tarefa.dto.BoardResponse.EtapaCardDTO;
 import com.crudao.kanban.tarefa.dto.BoardResponse.RaiaCardDTO;
@@ -21,6 +24,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,12 +40,15 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class BoardService {
 
+    private static final Logger log = LoggerFactory.getLogger(BoardService.class);
+
     private final WorkflowRepository workflowRepository;
     private final EtapaRepository etapaRepository;
     private final RaiaRepository raiaRepository;
     private final TarefaRepository tarefaRepository;
     private final TransicaoRepository transicaoRepository;
     private final ProjetoRepository projetoRepository;
+    private final PermissaoGuard permissaoGuard;
 
     /**
      * GET /api/projetos/{projetoId}/board
@@ -56,9 +64,21 @@ public class BoardService {
      */
     @Transactional(readOnly = true)
     public BoardResponse obterBoard(UUID projetoId) {
-        // Verificar que o projeto existe
-        projetoRepository.findById(projetoId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Projeto não encontrado"));
+        Usuario usuario = UsuarioAutenticadoHolder.get();
+        UUID usuarioId = usuario != null ? usuario.getId() : null;
+
+        log.info("Acesso ao board iniciado: projetoId={}, usuarioId={}", projetoId, usuarioId);
+
+        try {
+            // Verificar que o projeto existe
+            projetoRepository.findById(projetoId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Projeto não encontrado"));
+
+            // TASK-04.5 Correção I1: Validar que o usuário autenticado tem vínculo ao projeto (leitura exige acesso)
+            if (!permissaoGuard.membro(projetoId)) {
+                log.warn("Acesso negado ao board: projetoId={}, usuarioId={} (sem vínculo ao projeto)", projetoId, usuarioId);
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
+            }
 
         // Query 1: Etapas do workflow do projeto
         List<Workflow> workflows = workflowRepository.findByProjetoId(projetoId);
@@ -125,10 +145,20 @@ public class BoardService {
                         .build())
                 .collect(Collectors.toList());
 
-        return BoardResponse.builder()
+        BoardResponse board = BoardResponse.builder()
                 .etapas(etapasDTO)
                 .raias(raiasDTO)
                 .tarefas(tarefasDTO)
                 .build();
+
+            log.debug("Board retornado com sucesso: projetoId={}, etapas={}, tarefas={}, raias={}", projetoId, board.getEtapas().size(), board.getTarefas().size(), board.getRaias().size());
+            return board;
+        } catch (ResponseStatusException e) {
+            log.warn("Erro ao obter board: projetoId={}, usuarioId={}, status={}, mensagem={}", projetoId, usuarioId, e.getStatusCode(), e.getReason());
+            throw e;
+        } catch (Exception e) {
+            log.error("Erro inesperado ao obter board: projetoId={}, usuarioId={}, erro={}", projetoId, usuarioId, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao obter board");
+        }
     }
 }
