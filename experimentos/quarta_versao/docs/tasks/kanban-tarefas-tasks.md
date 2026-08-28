@@ -173,6 +173,7 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
 
 ### TASK-03.1 — CRUD de Projeto incl. finalizar/reabrir [M]
 
+- **Status:** Concluída — 2026-08-25
 - **Sistema:** CRUDAO
 - **RF de origem:** RF-008
 - **Dependências:** TASK-02.2
@@ -192,16 +193,17 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
 
 ### TASK-03.2 — CRUD Workflow/Etapa/Transicao [G]
 
+- **Status:** Concluída — 2026-08-28
 - **Sistema:** CRUDAO
 - **RF de origem:** RF-002, RF-009, RF-010
 - **Dependências:** TASK-02.2
 - **[P] com:** TASK-03.1, TASK-03.3
 - **Contexto:** Motor de workflow configurável — base para toda movimentação de tarefas (Epic 04).
 - **O que deve ser feito:**
-  - [ ] Criar migration V3 (Workflow, Etapa, Transicao).
-  - [ ] Implementar CRUD de Workflow, Etapa (reordenação incluída), Transicao (contrato `workflows.md`).
-  - [ ] Validar RN-003 (etapa não-final exige ≥1 transição de saída) em nível de serviço na criação/edição de Etapa.
-  - [ ] Preparar RN-005 (bloquear exclusão de workflow/etapa com tarefas ativas vinculadas): stub que sempre retorna "sem tarefas ativas" (decisão fechada pelo Comitê). **Checagem real obrigatória em TASK-04.1**, não é alternativa em aberto.
+  - [x] Criar migration V3 (Workflow, Etapa, Transicao).
+  - [x] Implementar CRUD de Workflow, Etapa (reordenação incluída), Transicao (contrato `workflows.md`).
+  - [x] Validar RN-003 (etapa não-final exige ≥1 transição de saída) em nível de serviço na criação/edição de Etapa.
+  - [x] Preparar RN-005 (bloquear exclusão de workflow/etapa com tarefas ativas vinculadas): stub que sempre retorna "sem tarefas ativas" (decisão fechada pelo Comitê). **Checagem real obrigatória em TASK-04.1**, não é alternativa em aberto.
 - **Guia técnico:** `backend/src/main/resources/db/migration/V3__...sql`; `backend/src/main/java/.../workflow/`. Contrato: `workflows.md`.
 - **Critérios de aceite:**
   - Transição bloqueada quando não configurada (`TarefaService.mover` só existe em 04.2, mas a validação de configuração da Transicao já é testável aqui isoladamente).

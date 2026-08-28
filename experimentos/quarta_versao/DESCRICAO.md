@@ -31,6 +31,6 @@ precisei recriar:
 - reasons-canvas como docs/spdd/kanban-tarefas-canvas.md
 - iniciou as implementações muito bem
 - ficou "enrolando" para executar os testes (TDD/BDD)
-- 
+- tem deixado muitas tasks com o status desatualizado, ora na task, ora no canvas/state, gerando problemas no fluxo e exigindo nova validação e update de status.
 
 

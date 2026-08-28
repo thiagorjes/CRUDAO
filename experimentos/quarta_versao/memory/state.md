@@ -70,7 +70,14 @@ _Atualizado em: 2026-08-28_
 
 ## kanban-tarefas
 
-- **Code review:** TASK-03.2 — APROVADO — 2026-08-28
-- **Findings:** 0 críticos, 0 importantes, 1 sugestão
-- **Canvas:** S (Safeguards) enriquecido com RN-003 e RN-005
-- **Próximo passo:** Próxima task (`TASK-03.3` ou `TASK-03.1`) ou `/spdd-sync`
+- **Tasks Concluídas:**
+  - `TASK-01.1` — Setup de projeto + Docker Compose + Keycloak dev
+  - `TASK-01.2` — Migrations V1-V2 (Usuario, Projeto, Papel, Permissao)
+  - `TASK-02.1` — OIDC + JIT Provisioning + /api/me + Logout
+  - `TASK-02.2` — Motor RBAC + PermissaoGuard
+  - `TASK-03.1` — CRUD de Projeto (incl. finalizar/reabrir)
+  - `TASK-03.2` — CRUD Workflow/Etapa/Transicao (TDD + Review Aprovado)
+  - `TASK-08.3` — Dockerização de backend e frontend
+- **Última Etapa:** `/code-review TASK-03.2` — APROVADO sem ressalvas em 2026-08-28
+- **Testes:** 30 testes executados via Maven no Docker, 0 falhas e 0 erros
+- **Próximo passo recomendado:** `/implement TASK-03.3` ou `/tdd TASK-03.3` (CRUD de Raia)
