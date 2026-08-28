@@ -1,6 +1,6 @@
 # TASK-02.2 — RBAC: motor de permissões efetivas + guard reutilizável
 
-**Status:** Concluída — 2026-08-25
+**Status:** Concluída — 2026-08-28
 
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
@@ -14,8 +14,13 @@ Motor central de autorização — todo endpoint de escrita das demais epics dep
 
 ## O que deve ser feito
 
-- [ ] Implementar serviço de resolução de permissões efetivas do usuário por projeto (papel(is) + toggles `PapelPermissao` habilitados + `Usuario.ativo`).
-- [ ] Implementar checagem reutilizável (`@PreAuthorize` custom ou service guard) usada por todos os controllers de escrita subsequentes (03.x, 04.x, 05.x).
+- [x] Implementar serviço de resolução de permissões efetivas do usuário por projeto (papel(is) + toggles `PapelPermissao` habilitados + `Usuario.ativo`).
+- [x] Implementar checagem reutilizável (`@PreAuthorize` custom ou service guard) usada por todos os controllers de escrita subsequentes (03.x, 04.x, 05.x).
+
+### Validação
+
+- `mvn -q -Dtest=PermissaoServiceTest,PermissaoGuardTest,PermissaoGuardEndpointIT test` — não executado: Maven não conseguiu resolver o parent Spring Boot `3.5.16` porque o mirror Nexus configurado está indisponível (`nexus3-cicd-tools.cloud.sfb`).
+- A análise de problemas do editor não encontrou erros nos cinco arquivos Java novos/alterados.
 
 ## Guia técnico
 

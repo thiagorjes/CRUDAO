@@ -29,5 +29,6 @@ precisei recriar:
 - ADRs 1, 2 e 3
 - reasons-canvas como docs/spdd/kanban-tarefas-canvas.md
 - iniciou as implementações muito bem
+- 
 
 
