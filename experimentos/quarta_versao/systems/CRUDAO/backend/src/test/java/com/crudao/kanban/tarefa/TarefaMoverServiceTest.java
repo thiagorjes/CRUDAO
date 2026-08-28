@@ -19,6 +19,7 @@ import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.rbac.PermissaoGuard;
+import com.crudao.kanban.tarefa.dto.EditarTarefaRequest;
 import com.crudao.kanban.tarefa.dto.MoverTarefaRequest;
 import java.time.Instant;
 import java.util.*;
@@ -325,10 +326,10 @@ class TarefaMoverServiceTest {
                 });
 
         // Act
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("titulo", "Novo titulo");
-        updates.put("descricaoEscopo", "Nova descrição");
-        tarefaService.editar(tarefaId, updates);
+        EditarTarefaRequest request = new EditarTarefaRequest();
+        request.setTitulo("Novo titulo");
+        request.setDescricaoEscopo("Nova descrição");
+        tarefaService.editar(tarefaId, request);
 
         // Assert
         assertEquals("Novo titulo", tarefa.getTitulo());
@@ -343,10 +344,10 @@ class TarefaMoverServiceTest {
         when(tarefaRepository.findById(tarefaId)).thenReturn(Optional.of(tarefa));
 
         // Act & Assert
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("titulo", "Novo titulo");
+        EditarTarefaRequest request = new EditarTarefaRequest();
+        request.setTitulo("Novo titulo");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
-            tarefaService.editar(tarefaId, updates)
+            tarefaService.editar(tarefaId, request)
         );
         assertEquals(409, ex.getStatusCode().value());
     }
@@ -369,9 +370,9 @@ class TarefaMoverServiceTest {
                 });
 
         // Act
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("responsavelId", novoResponsavel.getId());
-        tarefaService.editar(tarefaId, updates);
+        EditarTarefaRequest request = new EditarTarefaRequest();
+        request.setResponsavelId(novoResponsavel.getId());
+        tarefaService.editar(tarefaId, request);
 
         // Assert
         assertEquals(novoResponsavel, tarefa.getResponsavel());
@@ -390,10 +391,10 @@ class TarefaMoverServiceTest {
                 .when(permissaoGuard).validarAutoatribuicaoRN012(projetoId, usuarioLogado.getId(), outroUsuario.getId());
 
         // Act & Assert
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("responsavelId", outroUsuario.getId());
+        EditarTarefaRequest request = new EditarTarefaRequest();
+        request.setResponsavelId(outroUsuario.getId());
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
-            tarefaService.editar(tarefaId, updates)
+            tarefaService.editar(tarefaId, request)
         );
         assertEquals(403, ex.getStatusCode().value());
     }
@@ -495,9 +496,9 @@ class TarefaMoverServiceTest {
                 });
 
         // Act
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("responsavelId", novoResponsavelId);
-        tarefaService.editar(tarefaId, updates);
+        EditarTarefaRequest request = new EditarTarefaRequest();
+        request.setResponsavelId(novoResponsavelId);
+        tarefaService.editar(tarefaId, request);
 
         // Assert
         ArgumentCaptor<TarefaAuditoria> auditCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
@@ -533,9 +534,9 @@ class TarefaMoverServiceTest {
                 });
 
         // Act
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("responsavelId", outroUsuarioId);
-        tarefaService.editar(tarefaId, updates);
+        EditarTarefaRequest request = new EditarTarefaRequest();
+        request.setResponsavelId(outroUsuarioId);
+        tarefaService.editar(tarefaId, request);
 
         // Assert: nenhuma exceção lançada, responsável alterado
         assertEquals(outroUsuario, tarefa.getResponsavel());
