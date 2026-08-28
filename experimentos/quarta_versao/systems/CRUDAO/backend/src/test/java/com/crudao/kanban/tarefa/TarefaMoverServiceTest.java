@@ -22,6 +22,8 @@ import com.crudao.kanban.rbac.PermissaoGuard;
 import com.crudao.kanban.tarefa.dto.MoverTarefaRequest;
 import java.time.Instant;
 import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +33,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -452,5 +455,90 @@ class TarefaMoverServiceTest {
         // Assert
         long tempoImpedimentoEsperado = 6600; // (agora - 600) - (duasHoras + 600) = 7200 - 1200 = 6000 seg, aprox.
         assertTrue(detalhe.getTempoImpedimentoTotalSegundos() > 0, "Tempo de impedimento deve ser > 0");
+    }
+
+    // ===== TESTES DE GAPS IDENTIFICADOS (Complemento TASK-04.2) =====
+
+    @Test
+    @DisplayName("mover_when_projetoFinalizado_should_retornarErro403")
+    void mover_when_projetoFinalizado_should_retornarErro403() {
+        // Arrange: projeto finalizado
+        projeto.setStatus(Projeto.Status.FINALIZADO);
+        when(tarefaRepository.findById(tarefaId)).thenReturn(Optional.of(tarefa));
+        doThrow(new AccessDeniedException("Projeto finalizado"))
+                .when(permissaoGuard).exigirProjetoAtivo(projetoId);
+
+        // Act & Assert
+        MoverTarefaRequest request = new MoverTarefaRequest(etapa2.getId());
+        assertThrows(AccessDeniedException.class, () ->
+            tarefaService.mover(tarefaId, request)
+        );
+        verify(permissaoGuard).exigirProjetoAtivo(projetoId);
+    }
+
+    @Test
+    @DisplayName("editar_when_responsavelAlterado_should_gravarAuditoria")
+    void editar_when_responsavelAlterado_should_gravarAuditoria() {
+        // Arrange
+        UUID novoResponsavelId = UUID.randomUUID();
+        Usuario novoResponsavel = new Usuario();
+        novoResponsavel.setId(novoResponsavelId);
+
+        when(tarefaRepository.findById(tarefaId)).thenReturn(Optional.of(tarefa));
+        when(usuarioRepository.findById(novoResponsavelId)).thenReturn(Optional.of(novoResponsavel));
+        when(tarefaRepository.save(any(Tarefa.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(tarefaAuditoriaRepository.save(any(TarefaAuditoria.class)))
+                .thenAnswer(inv -> {
+                    TarefaAuditoria a = inv.getArgument(0);
+                    a.setId(UUID.randomUUID());
+                    return a;
+                });
+
+        // Act
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("responsavelId", novoResponsavelId);
+        tarefaService.editar(tarefaId, updates);
+
+        // Assert
+        ArgumentCaptor<TarefaAuditoria> auditCaptor = ArgumentCaptor.forClass(TarefaAuditoria.class);
+        verify(tarefaAuditoriaRepository).save(auditCaptor.capture());
+        TarefaAuditoria audit = auditCaptor.getValue();
+        assertEquals(tarefaId, audit.getTarefa().getId());
+        assertEquals("responsavel", audit.getCampo());
+        assertNull(audit.getValorAnterior()); // responsavel anterior era null
+        assertEquals(novoResponsavelId.toString(), audit.getValorNovo());
+        assertNotNull(audit.getDataHora());
+    }
+
+    @Test
+    @DisplayName("editar_when_productOwnerAtribuiAOutrem_should_permitir")
+    void editar_when_productOwnerAtribuiAOutrem_should_permitir() {
+        // Arrange: product_owner pode atribuir a qualquer um (RN-012)
+        // Simular que o usuário logado é product_owner (tem permissão tarefa:atribuir)
+        UUID outroUsuarioId = UUID.randomUUID();
+        Usuario outroUsuario = new Usuario();
+        outroUsuario.setId(outroUsuarioId);
+
+        when(tarefaRepository.findById(tarefaId)).thenReturn(Optional.of(tarefa));
+        when(usuarioRepository.findById(outroUsuarioId)).thenReturn(Optional.of(outroUsuario));
+        // Mock que product_owner tem tarefa:atribuir (ou dev sem tarefa:atribuir é rejeitado)
+        // Neste teste, permitimos porque é product_owner
+        doNothing().when(permissaoGuard).validarAutoatribuicaoRN012(projetoId, usuarioLogado.getId(), outroUsuarioId);
+        when(tarefaRepository.save(any(Tarefa.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(tarefaAuditoriaRepository.save(any(TarefaAuditoria.class)))
+                .thenAnswer(inv -> {
+                    TarefaAuditoria a = inv.getArgument(0);
+                    a.setId(UUID.randomUUID());
+                    return a;
+                });
+
+        // Act
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("responsavelId", outroUsuarioId);
+        tarefaService.editar(tarefaId, updates);
+
+        // Assert: nenhuma exceção lançada, responsável alterado
+        assertEquals(outroUsuario, tarefa.getResponsavel());
+        verify(tarefaAuditoriaRepository).save(any(TarefaAuditoria.class));
     }
 }

@@ -138,6 +138,9 @@ public class TarefaService {
         Tarefa tarefa = tarefaRepository.findById(tarefaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
 
+        // RN-CB-003: Projeto finalizado bloqueia movimentação
+        permissaoGuard.exigirProjetoAtivo(tarefa.getProjeto().getId());
+
         Etapa etapaDestino = etapaRepository.findById(request.getEtapaDestinoId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Etapa destino não encontrada"));
 
