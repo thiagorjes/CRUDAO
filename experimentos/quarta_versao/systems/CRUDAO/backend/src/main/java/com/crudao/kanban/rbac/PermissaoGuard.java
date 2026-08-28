@@ -105,4 +105,30 @@ public class PermissaoGuard {
             throw new AccessDeniedException("Dev só pode se autoatribuir");
         }
     }
+
+    /**
+     * Validação RN-CB-002 (exclusão de tarefa):
+     * Além de `tarefa:gerenciar`, exigir o toggle `tarefa:excluir` habilitado.
+     * - product_owner: sem `tarefa:excluir` → 403
+     * - dev: sem `tarefa:excluir` → 403
+     * - project_admin/admin: tem `tarefa:excluir` → permitido
+     *
+     * <p>Lança {@code AccessDeniedException} (403) se `tarefa:excluir` não está habilitada.
+     */
+    public void exigirPermissaoExcluir(UUID projetoId) {
+        Usuario usuario = UsuarioAutenticadoHolder.get();
+        if (usuario == null || !usuario.isAtivo()) {
+            throw new AccessDeniedException("Acesso negado");
+        }
+
+        // Admin global sempre pode excluir
+        if (usuario.isAdminGlobal()) {
+            return;
+        }
+
+        // Exigir toggle `tarefa:excluir` habilitado (default: project_admin e admin)
+        if (!permitido(projetoId, "tarefa:excluir")) {
+            throw new AccessDeniedException("Acesso negado");
+        }
+    }
 }

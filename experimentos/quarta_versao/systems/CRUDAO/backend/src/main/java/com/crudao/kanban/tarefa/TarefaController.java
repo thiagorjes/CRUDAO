@@ -1,8 +1,10 @@
 package com.crudao.kanban.tarefa;
 
+import com.crudao.kanban.domain.tarefa.TarefaAuditoria;
 import com.crudao.kanban.tarefa.dto.CriarTarefaRequest;
 import com.crudao.kanban.tarefa.dto.CriarTarefaResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,34 @@ public class TarefaController {
             @RequestParam UUID projetoId) {
         tarefaService.desmarcarImpedimento(tarefaId, projetoId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * TASK-04.4: Excluir tarefa pelo board.
+     * DELETE /api/tarefas/{tarefaId}
+     * Requer `tarefa:gerenciar` (RN-CB-001).
+     * Se dev, requer adicionalmente `tarefa:excluir` habilitada (RN-CB-002).
+     * Bloqueado se projeto finalizado (RN-CB-003).
+     */
+    @DeleteMapping("/api/tarefas/{tarefaId}")
+    public ResponseEntity<Void> excluirTarefa(
+            @PathVariable UUID tarefaId,
+            @RequestParam UUID projetoId) {
+        tarefaService.excluirTarefa(tarefaId, projetoId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * TASK-04.4: Obter histórico de auditoria da tarefa.
+     * GET /api/tarefas/{tarefaId}/auditoria
+     * Retorna todas as alterações relevantes com autor, campo, valores anterior/novo e data/hora.
+     * RF-017: rastreabilidade completa de alterações.
+     */
+    @GetMapping("/api/tarefas/{tarefaId}/auditoria")
+    public ResponseEntity<List<TarefaAuditoria>> obterAuditoria(
+            @PathVariable UUID tarefaId) {
+        List<TarefaAuditoria> auditoria = tarefaService.obterAuditoria(tarefaId);
+        return ResponseEntity.ok(auditoria);
     }
 }
 

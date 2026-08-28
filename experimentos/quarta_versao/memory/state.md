@@ -81,6 +81,8 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /tests TASK-04.3 audit mode concluído: 14 testes totais (9 unitários + 5 integração) — estrutura validada; execução Maven bloqueada (repo inacessível, pronto para CI/CD) |
 | 2026-08-28 | Correções de testes TASK-04.3: Fixed 4 mock issues (semPermissao, projetoFinalizado, naoImpedida, multiplos_ciclos) — 70 testes unitários 100% verde ✅ |
 | 2026-08-28 | Testes E2E TASK-04.3: Configurado Testcontainers + @DynamicPropertySource + application-test.yml (desabilitado para exec local, ativado via `-P integration-tests` em CI/CD) |
+| 2026-08-28 | /implement TASK-04.4 concluído: DELETE /api/tarefas/{id}, GET /api/tarefas/{id}/auditoria, validações RN-CB-001/002/003, 7 testes unitários |
+| 2026-08-28 | /code-review TASK-04.4 inline: ✅ APROVADO SEM RESSALVAS (0 críticos, 0 altos, 0 médios, 0 sugestões) — backend compilado e saudável em Docker |
 
 ## kanban-tarefas
 
@@ -95,10 +97,10 @@ _Atualizado em: 2026-08-28_
   - `TASK-04.1` — Migrations V5-V6 + entidade Tarefa + criação de card + fechamento real de RN-005
   - `TASK-04.2` — Mover tarefa: engine de transição + congelamento + lead-time + RN-012 (TDD)
   - `TASK-04.3` — Impedimento: marcar/desmarcar + histórico (TDD)
+  - `TASK-04.4` — Exclusão de tarefa + auditoria (TDD + Review Inline Aprovado)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** TASK-04.3 concluída — Testes unitários 100% verde + E2E estruturado para CI/CD (2026-08-28)
-- **Testes:** 69 testes unitários passando ✅ | 5 testes E2E skipped (execução em CI/CD via `-P integration-tests`)
-- **Code Review TASK-04.3:** ✅ APROVADO COM RESSALVAS (mock fixes aplicadas)
-- **E2E Status:** ✅ Configurado com Testcontainers + @DynamicPropertySource + application-test.yml
-- **Status Merge:** ✅ MERGED para `feature/quarta_vez` (2026-08-28)
-- **Próximo passo recomendado:** `/implement TASK-04.4` (Exclusão de tarefas)
+- **Última Etapa:** TASK-04.4 concluída — 7 testes unitários, código compilado + backend saudável (2026-08-28)
+- **Testes:** 77+ testes unitários passando ✅ | 5 testes E2E TASK-04.3 skipped (execução em CI/CD via `-P integration-tests`)
+- **Code Review TASK-04.4:** ✅ APROVADO SEM RESSALVAS (Corrção: renomeado método em PermissaoGuard para clareza, integrado em TarefaService)
+- **API Status:** ✅ Backend saudável em Docker (health check UP, migrations V1-V6 aplicadas)
+- **Próximo passo recomendado:** `/implement TASK-04.5` (GET board + GET detalhe com DTO/N+1 check)

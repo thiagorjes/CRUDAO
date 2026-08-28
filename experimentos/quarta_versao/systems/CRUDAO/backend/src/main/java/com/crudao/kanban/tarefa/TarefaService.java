@@ -437,5 +437,56 @@ public class TarefaService {
 
         // TODO: TASK-05.2 — publicar evento/notificação para observadores (responsável, criador, observadores explícitos)
     }
+
+    /**
+     * TASK-04.4: Excluir tarefa pelo board (RF-019).
+     * Requer `tarefa:gerenciar` (RN-CB-001).
+     * Se usuário é `dev`, requer adicionalmente `tarefa:excluir` habilitada (RN-CB-002).
+     * Bloqueado se projeto finalizado (RN-CB-003).
+     * Publica evento `TAREFA_EXCLUIDA` via STOMP em até 2s (RNF-001).
+     */
+    @Transactional
+    public void excluirTarefa(UUID tarefaId, UUID projetoId) {
+        // RN-CB-003: Projeto finalizado bloqueia exclusão
+        permissaoGuard.exigirProjetoAtivo(projetoId);
+
+        // RN-CB-001: Exigir `tarefa:gerenciar`
+        permissaoGuard.exigir(projetoId, "tarefa:gerenciar");
+
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
+
+        // RN-CB-002: Exigir também `tarefa:excluir` (além de `tarefa:gerenciar`)
+        permissaoGuard.exigirPermissaoExcluir(projetoId);
+
+        // Registrar auditoria antes de deletar (opcional, mas útil para histórico)
+        Usuario usuarioLogado = UsuarioAutenticadoHolder.get();
+        TarefaAuditoria auditoria = new TarefaAuditoria();
+        auditoria.setTarefa(tarefa);
+        auditoria.setAutor(usuarioLogado);
+        auditoria.setCampo("status");
+        auditoria.setValorAnterior("ativo");
+        auditoria.setValorNovo("excluido");
+        auditoria.setDataHora(Instant.now());
+        tarefaAuditoriaRepository.save(auditoria);
+
+        // Excluir tarefa (cascata deleta históricos associados)
+        tarefaRepository.deleteById(tarefaId);
+
+        // TODO: TASK-05.1 — publicar evento `TAREFA_EXCLUIDA` via EventoBoardPublisher para atualização em tempo real
+    }
+
+    /**
+     * TASK-04.4: Obter histórico de auditoria da tarefa (RF-017).
+     * Retorna todas as alterações relevantes (autor, campo, valor anterior/novo, data/hora)
+     * agregando os registros gravados em TASK-04.2/04.3 e nesta task.
+     */
+    @Transactional(readOnly = true)
+    public List<TarefaAuditoria> obterAuditoria(UUID tarefaId) {
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
+
+        return tarefaAuditoriaRepository.findByTarefaIdOrderByDataHoraAsc(tarefaId);
+    }
 }
 
