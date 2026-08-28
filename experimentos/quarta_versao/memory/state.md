@@ -1,5 +1,5 @@
 # Estado Operacional - CRUDAO
-_Atualizado em: 2026-08-27_
+_Atualizado em: 2026-08-28_
 
 > Estado atual do workspace e das features em andamento.
 > Para principios estaveis e ADRs, veja [memory/constitution.md](constitution.md).
@@ -8,7 +8,7 @@ _Atualizado em: 2026-08-27_
 
 ## Toolset
 
-**Versao:** 2026-08-27
+**Versao:** 2026-08-28
 
 **Pipeline SSPDD:** /guidelines -> /discovery -> /prd -> [/clarify] -> [/checklist] -> [/designer] -> /techspec -> /tasks -> [/analyze] -> /implement ou /tdd -> /code-review -> /tests -> [/spdd-sync]
 
@@ -24,7 +24,7 @@ _Atualizado em: 2026-08-27_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-tarefas | CRUDAO | 1.0 | 1.1 | 1.1 | Pronto para implementação |
+| kanban-tarefas | CRUDAO | 1.0 | 1.1 | 1.1 | Em implementação |
 
 ## Artifact Registry
 
@@ -47,7 +47,8 @@ _Atualizado em: 2026-08-27_
 | docs/tasks/kanban-tarefas-tasks.md | 1.2 | ok - execução Docker obrigatória |
 | docs/checklists/kanban-tarefas-safeguards.md | 1.0 | draft - candidatos extraidos, aguardando /code-review |
 | docs/checklists/kanban-tarefas-TASK-01.1-review.md | 1.3 | aprovado com validação runtime pendente |
-| docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards aguardando /code-review |
+| docs/checklists/kanban-tarefas-TASK-03.2-review.md | 1.0 | ok |
+| docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
 
@@ -64,19 +65,12 @@ _Atualizado em: 2026-08-27_
 | 2026-08-27 | /techspec v1.2 concluido: Docker tornou-se o unico modo suportado para backend, frontend, Keycloak e PostgreSQL |
 | 2026-08-27 | /implement TASK-08.3 concluido: Compose integral, rede Docker, builds e smoke tests ponta a ponta validados |
 | 2026-08-28 | /code-review TASK-01.1: C1/I1 resolvidos; validação runtime atual pendente por Docker Desktop indisponível |
+| 2026-08-28 | /tdd TASK-03.2 concluído: CRUD Workflow/Etapa/Transicao implementado com suíte de testes 100% verde no Docker |
+| 2026-08-28 | /code-review TASK-03.2 concluído: APROVADO sem ressalvas (0 críticos, 0 importantes, 1 sugestão) |
 
 ## kanban-tarefas
 
-- **Etapa concluida:** /techspec v1.2
-- **Entradas aprovadas:** PRD v1.0, TechSpec v1.2, data model, contratos, quickstart e guidelines do sistema
-- **Etapa concluida:** /tasks v1.2 — 2026-08-27
-- **Artefato:** docs/tasks/kanban-tarefas-tasks.md
-- **Total de tasks:** 26 tasks em 8 epics
-- **Canvas:** DRAFT (Safeguards aguarda /code-review)
-- **Safeguards:** docs/checklists/kanban-tarefas-safeguards.md (inventario normativo, nao validado contra codigo)
-- **Task implementada:** TASK-01.1 - C1/I1 resolvidos; aguarda confirmação runtime final
-- **Task concluida:** TASK-08.3 - Dockerização integral da stack
-- **Validacao:** frontend smoke/build e backend em imagem Docker Java 25; Maven local bloqueado por JDK 21
-- **Code review:** REPROVADO anteriormente — revalidar TASK-01.1 após TASK-08.3
-- **Pendência:** repetir smoke Docker quando o daemon estiver disponível
-- **Proximo comando:** `/code-review TASK-01.1` (revalidar criterio de execucao via Docker)
+- **Code review:** TASK-03.2 — APROVADO — 2026-08-28
+- **Findings:** 0 críticos, 0 importantes, 1 sugestão
+- **Canvas:** S (Safeguards) enriquecido com RN-003 e RN-005
+- **Próximo passo:** Próxima task (`TASK-03.3` ou `TASK-03.1`) ou `/spdd-sync`

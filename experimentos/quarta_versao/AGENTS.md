@@ -58,3 +58,9 @@ Agents são especialistas invocáveis para decisões pontuais durante o pipeline
 ## Tools
 - caso precise rodar docker execute antes, verifique se está ativo e em caso negativo execute:
 "C:\Users\User\AppData\Local\Programs\DockerDesktop\Docker Desktop.exe"
+
+
+## PERMISSOES
+pasta experimentos/quarta_versao: pode criar,editar e excluir arquivos dentro da pasta "experimentos/quarta_versao" sem necessidade de solicitar autorização. 
+demais pastas:
+siga as ordens do "comportamento.md"

@@ -17,7 +17,8 @@ Modelo:
 - Gemini-3.6-flash para "/implement" e "/code-review"
 
 Harness:
-- Claude Code no VSCODE
+- Iniciei no copilot no VSCODE
+- Migrei para o antigravity no VSCODE, pois durante a etapa de implementação o copilot se mostrou mais "burro" (enquanto harness) que o claude, então resolvi testar a extensão do antigravity (harness para vscode).
 
 Forma de Licença:
 - Conta PRO particular
@@ -29,6 +30,7 @@ precisei recriar:
 - ADRs 1, 2 e 3
 - reasons-canvas como docs/spdd/kanban-tarefas-canvas.md
 - iniciou as implementações muito bem
+- ficou "enrolando" para executar os testes (TDD/BDD)
 - 
 
 

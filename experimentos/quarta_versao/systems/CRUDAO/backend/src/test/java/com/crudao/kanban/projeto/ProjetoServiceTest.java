@@ -43,7 +43,7 @@ class ProjetoServiceTest {
         UsuarioAutenticadoHolder.set(admin);
         Projeto projeto = new Projeto();
         projeto.setId(UUID.randomUUID());
-        when(projetoRepository.save(any())).thenReturn(projeto);
+        when(projetoRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(papelRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         Permissao permissao = new Permissao();
         permissao.setChave("tarefa:gerenciar");
@@ -51,8 +51,7 @@ class ProjetoServiceTest {
 
         Projeto resultado = service.criar("  Projeto  ", null);
 
-        assertEquals(projeto, resultado);
-        assertEquals("Projeto", projeto.getNome());
+        assertEquals("Projeto", resultado.getNome());
         verify(papelRepository, times(4)).save(any());
         verify(papelPermissaoRepository, atLeast(1)).save(any());
     }

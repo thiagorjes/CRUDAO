@@ -123,18 +123,19 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - O papel `admin` protegido nao pode ser editado, excluido, ter toggles alterados ou ser associado por um administrador local.
 - Um usuario nao pode alterar permissoes do proprio papel; alteracoes geram auditoria.
 - Projeto finalizado e somente leitura, inclusive para `adminGlobal`.
+- Etapa não-final sem transição de saída configurada bloqueia salvamento/operacionalização (RN-003, HTTP 422 em `/api/etapas/{id}/transicoes`).
+- Exclusão de Workflow/Etapa é bloqueada se houver tarefas ativas vinculadas (RN-005, HTTP 409).
 - Testes que sobem o contexto de seguranca exigem Keycloak e PostgreSQL disponiveis.
 - O setup deve ser reproduzivel com Java 25 e runtime frontend alinhado a versao decidida na task; divergencias devem ser corrigidas ou documentadas.
 - Credenciais presentes no realm sao somente de desenvolvimento e nao podem ser promovidas para producao.
 
 **Findings desta revisão:**
 
-- A validação ponta a ponta da stack Docker (backend e frontend incluídos no Compose) permanece pendente.
+- TASK-03.2 aprovada sem ressalvas em 2026-08-28.
 
 ---
 
 ## Handoff
 
-- **Proximo comando:** `/tasks kanban-tarefas`
-- **Review:** docs/checklists/kanban-tarefas-TASK-01.1-review.md — APROVADO COM VALIDAÇÃO RUNTIME PENDENTE
-- **Proximo comando:** repetir smoke Docker quando o daemon estiver disponível.
+- **Proximo comando:** `/implement TASK-03.3` ou `/tdd TASK-03.3`
+- **Review:** docs/checklists/kanban-tarefas-TASK-03.2-review.md — APROVADO
