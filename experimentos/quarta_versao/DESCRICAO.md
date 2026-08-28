@@ -44,5 +44,5 @@ Problemas:
 - criar uma validação (script python) para garantir que os testes (tdd/bdd) estão criados para as tarefas que exigem isso.
 - criar uma validação (script python) para garantir que os testes serão executados.
 - criar uma validação (script python) para garantir que os testes foram executados.
-
+- garantir que o code-review seja executado ao final do implement/tdd.
 

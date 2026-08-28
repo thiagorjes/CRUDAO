@@ -1,6 +1,6 @@
 # TASK-04.1 — Migrations V5-V6 + entidade Tarefa + criação de card
 
-**Status:** Concluída — 2026-08-25
+**Status:** Concluída — 2026-08-28
 
 **Tamanho:** [G] 1-2 dias
 **Sistema:** CRUDAO

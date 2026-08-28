@@ -1,5 +1,6 @@
 package com.crudao.kanban.workflow;
 
+import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.Projeto;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.domain.workflow.*;
@@ -172,13 +173,13 @@ public class WorkflowService {
         return new WorkflowResponse(workflow.getId(), workflow.getNome(), etapaResponses);
     }
 
-    /** Stub de RN-005 (será substituído pela verificação real em TASK-04.1) */
+    private final TarefaRepository tarefaRepository;
+
     private boolean temTarefasAtivasNoWorkflow(UUID workflowId) {
-        return false;
+        return tarefaRepository.existsByWorkflowId(workflowId);
     }
 
-    /** Stub de RN-005 (será substituído pela verificação real em TASK-04.1) */
     private boolean temTarefasAtivasNaEtapa(UUID etapaId) {
-        return false;
+        return tarefaRepository.existsByEtapaAtualId(etapaId);
     }
 }

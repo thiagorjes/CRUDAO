@@ -2,6 +2,7 @@ package com.crudao.kanban.raia;
 
 import com.crudao.kanban.domain.raia.Raia;
 import com.crudao.kanban.domain.raia.RaiaRepository;
+import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.Projeto;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.rbac.PermissaoGuard;
@@ -99,9 +100,10 @@ public class RaiaService {
         raiaRepository.delete(raia);
     }
 
-    /** Stub de RN-005 (será substituído pela verificação real em TASK-04.1) */
+    private final TarefaRepository tarefaRepository;
+
     private boolean temTarefasAtivasNaRaia(UUID raiaId) {
-        return false;
+        return tarefaRepository.existsByRaiaId(raiaId);
     }
 }
 

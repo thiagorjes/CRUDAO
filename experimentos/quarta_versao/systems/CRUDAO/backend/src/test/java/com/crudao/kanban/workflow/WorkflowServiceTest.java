@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.crudao.kanban.domain.tarefa.TarefaRepository;
 import com.crudao.kanban.domain.usuario.Projeto;
 import com.crudao.kanban.domain.usuario.ProjetoRepository;
 import com.crudao.kanban.domain.workflow.*;
@@ -33,6 +34,9 @@ class WorkflowServiceTest {
 
     @Mock
     private ProjetoRepository projetoRepository;
+
+    @Mock
+    private TarefaRepository tarefaRepository;
 
     @Mock
     private PermissaoGuard permissaoGuard;
@@ -105,14 +109,31 @@ class WorkflowServiceTest {
     }
 
     @Test
-    @DisplayName("test_excluirWorkflow_when_stubRN005SemTarefasAtivas_should_excluirSemErro")
-    void test_excluirWorkflow_when_stubRN005SemTarefasAtivas_should_excluirSemErro() {
+    @DisplayName("test_excluirWorkflow_when_semTarefasAtivas_should_excluirSemErro")
+    void test_excluirWorkflow_when_semTarefasAtivas_should_excluirSemErro() {
         UUID workflowId = UUID.randomUUID();
         Workflow workflow = new Workflow(workflowId, projeto, "WF");
         when(workflowRepository.findById(workflowId)).thenReturn(Optional.of(workflow));
+        when(tarefaRepository.existsByWorkflowId(workflowId)).thenReturn(false);
 
         assertDoesNotThrow(() -> workflowService.excluirWorkflow(workflowId));
 
         verify(workflowRepository).delete(workflow);
+    }
+
+    @Test
+    @DisplayName("test_excluirWorkflow_when_temTarefasAtivas_should_retornarErro409")
+    void test_excluirWorkflow_when_temTarefasAtivas_should_retornarErro409() {
+        UUID workflowId = UUID.randomUUID();
+        Workflow workflow = new Workflow(workflowId, projeto, "WF");
+        when(workflowRepository.findById(workflowId)).thenReturn(Optional.of(workflow));
+        when(tarefaRepository.existsByWorkflowId(workflowId)).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+            workflowService.excluirWorkflow(workflowId)
+        );
+
+        assertEquals(409, ex.getStatusCode().value());
+        verify(workflowRepository, never()).delete(any());
     }
 }

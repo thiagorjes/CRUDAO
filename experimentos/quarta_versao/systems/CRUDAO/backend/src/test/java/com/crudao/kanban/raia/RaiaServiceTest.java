@@ -20,11 +20,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.crudao.kanban.domain.tarefa.TarefaRepository;
+
 @ExtendWith(MockitoExtension.class)
 class RaiaServiceTest {
 
     @Mock
     private RaiaRepository raiaRepository;
+
+    @Mock
+    private TarefaRepository tarefaRepository;
 
     @Mock
     private ProjetoRepository projetoRepository;
@@ -117,10 +122,27 @@ class RaiaServiceTest {
         UUID raiaId = UUID.randomUUID();
         Raia raiaCustom = new Raia(raiaId, projeto, "Raia 1", 1);
         when(raiaRepository.findById(raiaId)).thenReturn(Optional.of(raiaCustom));
+        when(tarefaRepository.existsByRaiaId(raiaId)).thenReturn(false);
 
         assertDoesNotThrow(() -> raiaService.excluirRaia(raiaId));
 
         verify(raiaRepository).delete(raiaCustom);
+    }
+
+    @Test
+    @DisplayName("test_excluirRaia_when_raiaCustomizadaComTarefasAtivas_should_retornarErro409")
+    void test_excluirRaia_when_raiaCustomizadaComTarefasAtivas_should_retornarErro409() {
+        UUID raiaId = UUID.randomUUID();
+        Raia raiaCustom = new Raia(raiaId, projeto, "Raia 1", 1);
+        when(raiaRepository.findById(raiaId)).thenReturn(Optional.of(raiaCustom));
+        when(tarefaRepository.existsByRaiaId(raiaId)).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+            raiaService.excluirRaia(raiaId)
+        );
+
+        assertEquals(409, ex.getStatusCode().value());
+        verify(raiaRepository, never()).delete(any());
     }
 }
 

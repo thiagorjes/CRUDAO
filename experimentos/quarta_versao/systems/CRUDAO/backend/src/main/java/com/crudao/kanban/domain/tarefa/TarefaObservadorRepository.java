@@ -1,0 +1,10 @@
+package com.crudao.kanban.domain.tarefa;
+
+import java.util.List;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TarefaObservadorRepository extends JpaRepository<TarefaObservador, TarefaObservadorId> {
+    List<TarefaObservador> findByTarefaId(UUID tarefaId);
+}
+

@@ -69,7 +69,8 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /tdd TASK-03.2 concluído: CRUD Workflow/Etapa/Transicao implementado com suíte de testes 100% verde no Docker |
 | 2026-08-28 | /code-review TASK-03.2 concluído: APROVADO sem ressalvas |
 | 2026-08-28 | /implement TASK-03.3 concluído: CRUD Raia com suíte de testes 100% verde no Docker |
-| 2026-08-28 | /code-review TASK-03.3 concluído: APROVADO sem ressalvas (0 críticos, 0 importantes, 1 sugestão) |
+| 2026-08-28 | /code-review TASK-03.3 concluído: APROVADO sem ressalvas (0 críticos, 0 importants, 1 sugestão) |
+| 2026-08-28 | /implement TASK-04.1 concluído: Migrations V5-V6, entidade Tarefa, criação de card e RN-005 real com 40 testes 100% verde no Docker |
 
 ## kanban-tarefas
 
@@ -81,7 +82,8 @@ _Atualizado em: 2026-08-28_
   - `TASK-03.1` — CRUD de Projeto (incl. finalizar/reabrir)
   - `TASK-03.2` — CRUD Workflow/Etapa/Transicao (TDD + Review Aprovado)
   - `TASK-03.3` — CRUD Raia (TDD + Review Aprovado)
+  - `TASK-04.1` — Migrations V5-V6 + entidade Tarefa + criação de card + fechamento real de RN-005
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** `/code-review TASK-03.3` — APROVADO sem ressalvas em 2026-08-28
-- **Testes:** 35 testes executados via Maven no Docker, 0 falhas e 0 erros
-- **Próximo passo recomendado:** `/implement TASK-04.1` ou `/tdd TASK-04.1` (Migrations de Tarefas e Criação de Card)
+- **Última Etapa:** `/implement TASK-04.1` — concluído em 2026-08-28
+- **Testes:** 40 testes executados via Maven no Docker, 0 falhas e 0 erros
+- **Próximo passo recomendado:** `/code-review TASK-04.1` ou `/tdd TASK-04.2` (Mover tarefa e engine de transição)
