@@ -48,6 +48,7 @@ _Atualizado em: 2026-08-28_
 | docs/checklists/kanban-tarefas-safeguards.md | 1.0 | draft - candidatos extraidos, aguardando /code-review |
 | docs/checklists/kanban-tarefas-TASK-01.1-review.md | 1.3 | aprovado com validação runtime pendente |
 | docs/checklists/kanban-tarefas-TASK-03.2-review.md | 1.0 | ok |
+| docs/checklists/kanban-tarefas-TASK-03.3-review.md | 1.0 | ok |
 | docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
@@ -66,7 +67,9 @@ _Atualizado em: 2026-08-28_
 | 2026-08-27 | /implement TASK-08.3 concluido: Compose integral, rede Docker, builds e smoke tests ponta a ponta validados |
 | 2026-08-28 | /code-review TASK-01.1: C1/I1 resolvidos; validação runtime atual pendente por Docker Desktop indisponível |
 | 2026-08-28 | /tdd TASK-03.2 concluído: CRUD Workflow/Etapa/Transicao implementado com suíte de testes 100% verde no Docker |
-| 2026-08-28 | /code-review TASK-03.2 concluído: APROVADO sem ressalvas (0 críticos, 0 importantes, 1 sugestão) |
+| 2026-08-28 | /code-review TASK-03.2 concluído: APROVADO sem ressalvas |
+| 2026-08-28 | /implement TASK-03.3 concluído: CRUD Raia com suíte de testes 100% verde no Docker |
+| 2026-08-28 | /code-review TASK-03.3 concluído: APROVADO sem ressalvas (0 críticos, 0 importantes, 1 sugestão) |
 
 ## kanban-tarefas
 
@@ -77,7 +80,8 @@ _Atualizado em: 2026-08-28_
   - `TASK-02.2` — Motor RBAC + PermissaoGuard
   - `TASK-03.1` — CRUD de Projeto (incl. finalizar/reabrir)
   - `TASK-03.2` — CRUD Workflow/Etapa/Transicao (TDD + Review Aprovado)
+  - `TASK-03.3` — CRUD Raia (TDD + Review Aprovado)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** `/code-review TASK-03.2` — APROVADO sem ressalvas em 2026-08-28
-- **Testes:** 30 testes executados via Maven no Docker, 0 falhas e 0 erros
-- **Próximo passo recomendado:** `/implement TASK-03.3` ou `/tdd TASK-03.3` (CRUD de Raia)
+- **Última Etapa:** `/code-review TASK-03.3` — APROVADO sem ressalvas em 2026-08-28
+- **Testes:** 35 testes executados via Maven no Docker, 0 falhas e 0 erros
+- **Próximo passo recomendado:** `/implement TASK-04.1` ou `/tdd TASK-04.1` (Migrations de Tarefas e Criação de Card)

@@ -34,3 +34,15 @@ precisei recriar:
 - tem deixado muitas tasks com o status desatualizado, ora na task, ora no canvas/state, gerando problemas no fluxo e exigindo nova validação e update de status.
 
 
+
+
+
+
+
+
+Problemas:
+- criar uma validação (script python) para garantir que os testes (tdd/bdd) estão criados para as tarefas que exigem isso.
+- criar uma validação (script python) para garantir que os testes serão executados.
+- criar uma validação (script python) para garantir que os testes foram executados.
+
+

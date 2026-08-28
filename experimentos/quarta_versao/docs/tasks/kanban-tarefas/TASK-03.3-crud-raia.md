@@ -1,6 +1,6 @@
 # TASK-03.3 — CRUD Raia (swimlanes)
 
-**Status:** Concluída — 2026-08-25
+**Status:** Concluída — 2026-08-28
 **Tamanho:** [M] 4-8h
 **Sistema:** CRUDAO
 **RF de origem:** RF-011
@@ -13,9 +13,9 @@ Agrupamento visual de tarefas no board — inclui raia default global usada quan
 
 ## O que deve ser feito
 
-- [ ] Criar migration V4 (Raia, incl. seed de raia default global com `projetoId=null`).
-- [ ] Implementar CRUD de Raia.
-- [ ] Preparar RN-005 (bloquear exclusão com tarefas ativas vinculadas): implementar aqui apenas um stub que sempre retorna "sem tarefas ativas" (mesma decisão fechada de TASK-03.2). **A checagem real é implementada obrigatoriamente em TASK-04.1.**
+- [x] Criar migration V4 (Raia, incl. seed de raia default global com `projetoId=null`).
+- [x] Implementar CRUD de Raia.
+- [x] Preparar RN-005 (bloquear exclusão com tarefas ativas vinculadas): implementar aqui apenas um stub que sempre retorna "sem tarefas ativas" (mesma decisão fechada de TASK-03.2). **A checagem real é implementada obrigatoriamente em TASK-04.1.**
 
 ## Guia técnico
 

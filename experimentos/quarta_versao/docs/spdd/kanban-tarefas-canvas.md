@@ -124,18 +124,19 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - Um usuario nao pode alterar permissoes do proprio papel; alteracoes geram auditoria.
 - Projeto finalizado e somente leitura, inclusive para `adminGlobal`.
 - Etapa não-final sem transição de saída configurada bloqueia salvamento/operacionalização (RN-003, HTTP 422 em `/api/etapas/{id}/transicoes`).
-- Exclusão de Workflow/Etapa é bloqueada se houver tarefas ativas vinculadas (RN-005, HTTP 409).
+- Exclusão de Workflow/Etapa/Raia é bloqueada se houver tarefas ativas vinculadas (RN-005, HTTP 409).
+- Raia default global (`projeto_id = NULL`) não pode ser editada ou excluída via chamadas de projeto (RN-CB-005, HTTP 403).
 - Testes que sobem o contexto de seguranca exigem Keycloak e PostgreSQL disponiveis.
 - O setup deve ser reproduzivel com Java 25 e runtime frontend alinhado a versao decidida na task; divergencias devem ser corrigidas ou documentadas.
 - Credenciais presentes no realm sao somente de desenvolvimento e nao podem ser promovidas para producao.
 
 **Findings desta revisão:**
 
-- TASK-03.2 aprovada sem ressalvas em 2026-08-28.
+- TASK-03.2 e TASK-03.3 aprovadas sem ressalvas em 2026-08-28.
 
 ---
 
 ## Handoff
 
-- **Proximo comando:** `/implement TASK-03.3` ou `/tdd TASK-03.3`
-- **Review:** docs/checklists/kanban-tarefas-TASK-03.2-review.md — APROVADO
+- **Proximo comando:** `/implement TASK-04.1` ou `/tdd TASK-04.1`
+- **Review:** docs/checklists/kanban-tarefas-TASK-03.3-review.md — APROVADO
