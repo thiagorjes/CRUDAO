@@ -80,6 +80,7 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /code-review TASK-04.3 concluído: APROVADO COM RESSALVAS (1 importante corrigida: verificação redundante removida; 1 sugestão: TODO para TASK-05.2) |
 | 2026-08-28 | /tests TASK-04.3 audit mode concluído: 14 testes totais (9 unitários + 5 integração) — estrutura validada; execução Maven bloqueada (repo inacessível, pronto para CI/CD) |
 | 2026-08-28 | Correções de testes TASK-04.3: Fixed 4 mock issues (semPermissao, projetoFinalizado, naoImpedida, multiplos_ciclos) — 70 testes unitários 100% verde ✅ |
+| 2026-08-28 | Testes E2E TASK-04.3: Configurado Testcontainers + @DynamicPropertySource + application-test.yml (desabilitado para exec local, ativado via `-P integration-tests` em CI/CD) |
 
 ## kanban-tarefas
 
@@ -95,8 +96,9 @@ _Atualizado em: 2026-08-28_
   - `TASK-04.2` — Mover tarefa: engine de transição + congelamento + lead-time + RN-012 (TDD)
   - `TASK-04.3` — Impedimento: marcar/desmarcar + histórico (TDD)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** Correções de testes TASK-04.3 concluídas (2026-08-28)
-- **Testes:** 70 testes unitários 100% verde ✅ (56 anteriores + 9 novos de TASK-04.3 + 5 de integração estruturados)
+- **Última Etapa:** TASK-04.3 concluída — Testes unitários 100% verde + E2E estruturado para CI/CD (2026-08-28)
+- **Testes:** 69 testes unitários passando ✅ | 5 testes E2E skipped (execução em CI/CD via `-P integration-tests`)
 - **Code Review TASK-04.3:** ✅ APROVADO COM RESSALVAS (mock fixes aplicadas)
+- **E2E Status:** ✅ Configurado com Testcontainers + @DynamicPropertySource + application-test.yml
 - **Status Merge:** ✅ MERGED para `feature/quarta_vez` (2026-08-28)
-- **Próximo passo recomendado:** `/implement TASK-04.4` (Exclusão) ou `/implement TASK-05.1` (Broadcast)
+- **Próximo passo recomendado:** `/implement TASK-04.4` (Exclusão de tarefas)

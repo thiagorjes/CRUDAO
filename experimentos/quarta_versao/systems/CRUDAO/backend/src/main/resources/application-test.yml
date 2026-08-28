@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    # Testcontainers injetará dinamicamente via @DynamicPropertySource
+    hikari:
+      maximum-pool-size: 2
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # Criar schema do zero em cada teste
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: false  # Desabilitar Flyway em testes; Hibernate gerencia schema
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/kanban-test
+        opaquetoken:
+          introspection-uri: http://localhost:8080/realms/kanban-test/protocol/openid-connect/token/introspect
+          client-id: kanban-backend
+          client-secret: kanban-test-secret
+
+app:
+  keycloak:
+    issuer-uri: http://localhost:8080/realms/kanban-test
+
+kanban:
+  bootstrap:
+    admin-email: test@crudao.local
