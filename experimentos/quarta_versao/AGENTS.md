@@ -53,3 +53,8 @@ Agents são especialistas invocáveis para decisões pontuais durante o pipeline
 - Toda skill tem `SKILL.md` canônico em `.agents/skills/[skill]/SKILL.md` e `validate-rules.json` para validação estrutural.
 - Todo agent tem definição em `.agents/agents/[agent].md` com Role, Especialidade, Quando Invocar e Outputs Esperados.
 - `memory/constitution.md` — princípios estáveis e ADRs. `memory/state.md` — estado operacional.
+
+
+## Tools
+- caso precise rodar docker execute antes, verifique se está ativo e em caso negativo execute:
+"C:\Users\User\AppData\Local\Programs\DockerDesktop\Docker Desktop.exe"

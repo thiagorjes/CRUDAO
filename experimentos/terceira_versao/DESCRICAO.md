@@ -1,6 +1,16 @@
 Terceiro teste:
-- harness:  usando o opencode como 
-- modelo:   usando o nemotro 3 ultra free como 
+
+Intenção:
+- Validar resultados com outro harness/modelo na mesma versão do fluxo SSPDD
+
+Modelo:
+-Claude Sonnet
+
+Harness:
+- Claude Code no VSCODE
+
+Forma de Licença:
+- Conta PRO particular
 
 usei a primeira_versao como fonte de contexto e o prompt:
 

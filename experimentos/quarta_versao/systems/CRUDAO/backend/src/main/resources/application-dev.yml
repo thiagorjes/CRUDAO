@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/kanban
+    url: jdbc:postgresql://postgres:5432/kanban
     username: kanban
     password: kanban
   jpa:
@@ -13,6 +13,13 @@ spring:
     oauth2:
       resourceserver:
         opaquetoken:
-          introspection-uri: http://localhost:8080/realms/kanban-dev/protocol/openid-connect/token/introspect
+          introspection-uri: http://keycloak:8080/realms/kanban-dev/protocol/openid-connect/token/introspect
           client-id: kanban-frontend
           client-secret: kanban-dev-secret
+app:
+  keycloak:
+    issuer-uri: http://localhost:8080/realms/kanban-dev
+
+kanban:
+  bootstrap:
+    admin-email: admin.teste@crudao.local

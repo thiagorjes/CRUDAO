@@ -46,7 +46,7 @@ _Atualizado em: 2026-08-27_
 | docs/decisions/ADR-003-rbac-hibrido-keycloak.md | 1.0 | ok |
 | docs/tasks/kanban-tarefas-tasks.md | 1.2 | ok - execução Docker obrigatória |
 | docs/checklists/kanban-tarefas-safeguards.md | 1.0 | draft - candidatos extraidos, aguardando /code-review |
-| docs/checklists/kanban-tarefas-TASK-01.1-review.md | 1.2 | bloqueado - Compose não inclui backend/frontend |
+| docs/checklists/kanban-tarefas-TASK-01.1-review.md | 1.3 | aprovado com validação runtime pendente |
 | docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards aguardando /code-review |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
@@ -62,6 +62,8 @@ _Atualizado em: 2026-08-27_
 | 2026-08-27 | /implement TASK-01.1 concluido: esqueleto backend/frontend, Compose, realm Keycloak e Dockerfiles validados |
 | 2026-08-27 | /code-review TASK-01.1 reprovado: Compose não inclui backend/frontend e application-dev usa localhost |
 | 2026-08-27 | /techspec v1.2 concluido: Docker tornou-se o unico modo suportado para backend, frontend, Keycloak e PostgreSQL |
+| 2026-08-27 | /implement TASK-08.3 concluido: Compose integral, rede Docker, builds e smoke tests ponta a ponta validados |
+| 2026-08-28 | /code-review TASK-01.1: C1/I1 resolvidos; validação runtime atual pendente por Docker Desktop indisponível |
 
 ## kanban-tarefas
 
@@ -72,9 +74,9 @@ _Atualizado em: 2026-08-27_
 - **Total de tasks:** 26 tasks em 8 epics
 - **Canvas:** DRAFT (Safeguards aguarda /code-review)
 - **Safeguards:** docs/checklists/kanban-tarefas-safeguards.md (inventario normativo, nao validado contra codigo)
-- **Task bloqueada:** TASK-01.1 - Compose não inclui backend/frontend e configuração dev não usa nomes da rede Docker
-- **Task pendente:** TASK-08.3 - Dockerização integral da stack
+- **Task implementada:** TASK-01.1 - C1/I1 resolvidos; aguarda confirmação runtime final
+- **Task concluida:** TASK-08.3 - Dockerização integral da stack
 - **Validacao:** frontend smoke/build e backend em imagem Docker Java 25; Maven local bloqueado por JDK 21
-- **Code review:** APROVADO COM RESSALVAS — ver docs/checklists/kanban-tarefas-TASK-01.1-review.md
-- **Pendência:** validar backend e frontend dentro do Compose conforme TechSpec 1.2
+- **Code review:** REPROVADO anteriormente — revalidar TASK-01.1 após TASK-08.3
+- **Pendência:** repetir smoke Docker quando o daemon estiver disponível
 - **Proximo comando:** `/code-review TASK-01.1` (revalidar criterio de execucao via Docker)

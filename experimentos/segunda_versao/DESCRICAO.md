@@ -1,4 +1,17 @@
 Segunda versão:
+
+Intenção:
+- Validar melhorias nas skills/agents do fluxo SSPDD
+
+Modelo:
+-Claude Sonnet
+
+Harness:
+- Claude Code no VSCODE
+
+Forma de Licença:
+- Conta PRO particular
+
 Teste com segunda versão ajustados os problemas detectados na V1.
 - usei o conhecimento (artefatos de designer/prd/reasons-canvas das 2 atividades da V1 para responder ao questionário do SSPDD na v2)
 - fluxo adotado:

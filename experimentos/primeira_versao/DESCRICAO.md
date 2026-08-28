@@ -1,4 +1,18 @@
-Primeia versão do SSPDD
+Primeia versão do SSPDD:
+
+Intenção:
+- Validar primeira versão do fluxo "mesclado" CONCEPÇÃO+SDD+SPDD
+
+Modelo:
+-Claude Sonnet
+
+Harness:
+- Claude Code no VSCODE
+
+Forma de Licença:
+- Conta PRO particular
+
+
 - criei um projeto com a primeira versão do SSPDD
 o que pedi:
 -- dashboar para acompanhar as tarefas dos times em projetos, pois antes era feito via mensagens e emails.
@@ -8,6 +22,7 @@ o que foi gerado:
 - um sistema de gestão de atividades
 - gestão de projetos, com usuários associados, workflow personalizavel e gestão de papeis (quem faz o que)
 - pasta primeira_versão
+
 
 problemas identificados:
 - o guideline negligenciava a sessão de design

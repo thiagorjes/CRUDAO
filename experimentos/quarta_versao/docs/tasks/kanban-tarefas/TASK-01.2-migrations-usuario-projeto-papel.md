@@ -33,3 +33,9 @@ Referência de campos: `docs/techspec/kanban-tarefas/data-model.md` (seções Us
 - Flyway aplica V1/V2 sem erro no boot (Testcontainers).
 - Seed de papéis/permissões presente e defaults batem com RN-011/012/013/RN-CB-001/002 (teste de integração lendo `PapelPermissao`).
 - Índices `UNIQUE(keycloakSub)`, `UNIQUE(email)` em `Usuario`, `UNIQUE(projetoId, chave)` em `Papel` presentes.
+
+## Validação
+
+- Teste de integração criado em `backend/src/test/java/com/crudao/kanban/domain/papel/PapelPermissaoMigrationIT.java`, cobrindo aplicação das migrations, catálogo de permissões e seed do `admin`.
+- Build da imagem backend e smoke de inicialização via Docker aprovados; Flyway aplicou V1/V2 sem erro.
+- Execução automatizada com Testcontainers permanece pendente no ambiente Maven porque o container de testes não possui acesso ao socket Docker.

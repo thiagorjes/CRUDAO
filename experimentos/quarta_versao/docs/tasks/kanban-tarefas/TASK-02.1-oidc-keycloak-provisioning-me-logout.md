@@ -21,6 +21,14 @@ Habilita login via SSO — pré-requisito de qualquer ação autenticada no sist
 
 **Status: Concluída** — 2026-08-25
 
+## Validação
+
+- Testes unitários de provisioning JIT e health-check do Keycloak adicionados em `backend/src/test/java`.
+- Backend compilado e iniciado via Docker com PostgreSQL e Keycloak saudáveis.
+- `GET /actuator/health` reporta o componente `keycloak` como `UP`; `GET /actuator/health/keycloak` responde `200`.
+- `GET /api/me` sem Bearer token é rejeitado pela cadeia de segurança.
+- Execução Testcontainers permanece dependente do acesso ao socket Docker no ambiente Maven.
+
 ## Guia técnico
 
 - `backend/src/main/java/.../security/` — configuração OAuth2 Client.

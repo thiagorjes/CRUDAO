@@ -136,5 +136,5 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 ## Handoff
 
 - **Proximo comando:** `/tasks kanban-tarefas`
-- **Review:** docs/checklists/kanban-tarefas-TASK-01.1-review.md — REPROVADO/BLOQUEADO
-- **Proximo comando:** implementar TASK-08.3 para completar a stack Docker e então reexecutar `/code-review TASK-01.1`.
+- **Review:** docs/checklists/kanban-tarefas-TASK-01.1-review.md — APROVADO COM VALIDAÇÃO RUNTIME PENDENTE
+- **Proximo comando:** repetir smoke Docker quando o daemon estiver disponível.
