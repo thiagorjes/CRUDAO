@@ -42,6 +42,6 @@ Problemas:
 - criar uma validação (script python) para garantir que os testes foram executados.
 - garantir que o code-review seja executado ao final do implement/tdd.
 - garantir que todos os cenários (tdd e bdd) foram mapeados, implementados e associados a cada task para serem validados ao final da implementação. sem isso a etapa de verificação não fica confiável.
-- 
+- está sendo necessário rodar o /tests tasks-XX.X para validar se todos os testes estão mapeados, implementados e com sucesso.
 
 

@@ -78,6 +78,7 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /checklist kanban-tarefas: Validação de rastreabilidade PRD (19 RFs) → Tasks (26) → Cobertura de testes (TechSpec §7); resultado 100% mapeado, 9/19 implementados com testes 100% verde |
 | 2026-08-28 | /tdd TASK-04.3 concluído: Marcação/desmarcação de impedimento com histórico e auditoria (9 testes RED→GREEN→REFACTOR, ciclos múltiplos validados) |
 | 2026-08-28 | /code-review TASK-04.3 concluído: APROVADO COM RESSALVAS (1 importante corrigida: verificação redundante removida; 1 sugestão: TODO para TASK-05.2) |
+| 2026-08-28 | /tests TASK-04.3 audit mode concluído: 14 testes totais (9 unitários + 5 integração) — estrutura validada; execução Maven bloqueada (repo inacessível, pronto para CI/CD) |
 
 ## kanban-tarefas
 
