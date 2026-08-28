@@ -179,9 +179,9 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
 - **[P] com:** TASK-03.2, TASK-03.3
 - **Contexto:** Ciclo de vida do projeto — finalização bloqueia toda escrita subsequente (RN-015), afeta todas as demais epics de domínio.
 - **O que deve ser feito:**
-  - [ ] Implementar `POST/PUT/GET /api/projetos` (contrato `projetos.md`).
-  - [ ] Implementar `finalizar`/`reabrir` com checagem `projeto:administrar`.
-  - [ ] Implementar guard reutilizável "projeto finalizado → somente leitura" a ser usado pelas demais epics de escrita (04.x).
+  - [x] Implementar `POST/PUT/GET /api/projetos` (contrato `projetos.md`).
+  - [x] Implementar `finalizar`/`reabrir` com checagem `projeto:administrar`.
+  - [x] Implementar guard reutilizável "projeto finalizado → somente leitura" a ser usado pelas demais epics de escrita (04.x).
 - **Guia técnico:** `backend/src/main/java/.../projeto/`. Contrato: `projetos.md`.
 - **Critérios de aceite:**
   - Projeto finalizado bloqueia toda escrita, inclusive para `admin`/`project_admin` (RN-015).
