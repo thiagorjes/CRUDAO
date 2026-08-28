@@ -49,7 +49,9 @@ _Atualizado em: 2026-08-28_
 | docs/checklists/kanban-tarefas-TASK-01.1-review.md | 1.3 | aprovado com validação runtime pendente |
 | docs/checklists/kanban-tarefas-TASK-03.2-review.md | 1.0 | ok |
 | docs/checklists/kanban-tarefas-TASK-03.3-review.md | 1.0 | ok |
-| docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review |
+| docs/checklists/kanban-tarefas-bdd-coverage.md | 1.0 | ok - 100% rastreabilidade PRD→Tasks→Testes validada |
+| docs/checklists/kanban-tarefas-TASK-04.2-review.md | 1.1 | ok - Aprovado (I1 resolvido: EditarTarefaRequest com @NotBlank/@Size) |
+| docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review (TASK-04.2) |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
 
@@ -73,6 +75,7 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /implement TASK-04.1 concluído: Migrations V5-V6, entidade Tarefa, criação de card e RN-005 real com 40 testes 100% verde no Docker |
 | 2026-08-28 | /implement TASK-04.2 concluído: Mover tarefa, congelamento pós-início, lead-time, RN-012 (TDD) — 12 testes 100% verde, total 53 testes |
 | 2026-08-28 | /implement TASK-04.2 refatorado: Adicionados 3 testes críticos faltando (projeto finalizado, auditoria de responsável, product_owner atribuição) — 15 testes, total 56 testes 100% verde |
+| 2026-08-28 | /checklist kanban-tarefas: Validação de rastreabilidade PRD (19 RFs) → Tasks (26) → Cobertura de testes (TechSpec §7); resultado 100% mapeado, 9/19 implementados com testes 100% verde |
 
 ## kanban-tarefas
 
@@ -87,6 +90,7 @@ _Atualizado em: 2026-08-28_
   - `TASK-04.1` — Migrations V5-V6 + entidade Tarefa + criação de card + fechamento real de RN-005
   - `TASK-04.2` — Mover tarefa: engine de transição + congelamento + lead-time + RN-012 (TDD)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** `/implement TASK-04.2` — concluído em 2026-08-28
-- **Testes:** 53 testes executados via Maven no Docker (incluindo 12 novos de TASK-04.2), 0 falhas, 0 erros
-- **Próximo passo recomendado:** `/code-review TASK-04.2` ou `/implement TASK-04.3` (Impedimento)
+- **Última Etapa:** `/code-review TASK-04.2` — concluído em 2026-08-28
+- **Testes:** 56 testes executados via Maven no Docker (15 novos de TASK-04.2 refinado), 0 falhas, 0 erros
+- **Code Review TASK-04.2:** ✅ APROVADO (I1 resolvido: EditarTarefaRequest com validações Bean Validation)
+- **Próximo passo recomendado:** `/implement TASK-04.3` (Impedimento) ou `/implement TASK-04.4` (Exclusão)

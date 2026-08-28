@@ -16,7 +16,7 @@ Modelo:
 - Gemini-3.6-flash para "/implement" e "/code-review" até a task 4.1
 - Gemini-3.7-flash para "/tasks" e /implement,/code-review a partir da task 4.2.
 - Interrompi a implementação com gemini+copilot pois estava falhando muito e travando.
-- resolvi continuar com claude haiku.
+- resolvi continuar com claude haiku. tudo fluindo melhor com haiku.
 
 Harness:
 - Iniciei no copilot no VSCODE

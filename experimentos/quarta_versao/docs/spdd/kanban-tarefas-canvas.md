@@ -114,10 +114,10 @@ _Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review v1.0 - 2026-08-27_
+_Atualizado por: /code-review v1.0 - 2026-08-28 (TASK-04.2)_
 > Decisoes: ADR-006, ADR-007, ADR-008
 
-Guardrails consolidados a partir dos artefatos e confirmados como requisitos de revisão. A implementação da feature ainda deve ser verificada task a task.
+Guardrails consolidados a partir dos artefatos e confirmados como requisitos de revisão. A implementação da feature verificada task a task.
 
 - Inventario normativo detalhado: [kanban-tarefas-safeguards.md](../checklists/kanban-tarefas-safeguards.md).
 - O papel `admin` protegido nao pode ser editado, excluido, ter toggles alterados ou ser associado por um administrador local.
@@ -129,10 +129,14 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - Testes que sobem o contexto de seguranca exigem Keycloak e PostgreSQL disponiveis.
 - O setup deve ser reproduzivel com Java 25 e runtime frontend alinhado a versao decidida na task; divergencias devem ser corrigidas ou documentadas.
 - Credenciais presentes no realm sao somente de desenvolvimento e nao podem ser promovidas para producao.
+- **Edição de tarefas (PUT /tarefas/{id}) deve validar entrada via Bean Validation em DTOs (tamanho máximo de titulo/descricao, nulidade) antes de persisted.**
+- **Autorização de movimentação (POST /tarefas/{id}/mover) validada no backend (tarefa:finalizar se etapa final), nunca depende de UI.**
+- **Lead-time calculado em segundos com precisão até Instant.now() para etapas em andamento; tempo de impedimento acumulado sobre múltiplos ciclos marca/desmarca.**
 
 **Findings desta revisão:**
 
 - TASK-03.2 e TASK-03.3 aprovadas sem ressalvas em 2026-08-28.
+- TASK-04.2 aprovado com ressalvas (1 importante: validação de entrada em editar(), 2 sugestões menores) em 2026-08-28.
 
 ---
 

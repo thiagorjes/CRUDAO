@@ -17,6 +17,7 @@ import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.rbac.PermissaoGuard;
 import com.crudao.kanban.tarefa.dto.CriarTarefaRequest;
 import com.crudao.kanban.tarefa.dto.CriarTarefaResponse;
+import com.crudao.kanban.tarefa.dto.EditarTarefaRequest;
 import com.crudao.kanban.tarefa.dto.MoverTarefaRequest;
 import com.crudao.kanban.tarefa.dto.TarefaDetalheResponse;
 import java.time.Instant;
@@ -204,9 +205,11 @@ public class TarefaService {
      * TASK-04.2: Editar tarefa com congelamento de campos estruturais pós-início e validação RN-012.
      * RF-003: Campos estruturais (`titulo`, `descricaoEscopo`) congelados quando `iniciada=true`.
      * RN-012: Dev só se autoatribui; product_owner/project_admin/admin atribuem livremente.
+     *
+     * Entrada validada via Bean Validation (@NotBlank, @Size) em EditarTarefaRequest.
      */
     @Transactional
-    public void editar(UUID tarefaId, Map<String, Object> updates) {
+    public void editar(UUID tarefaId, EditarTarefaRequest request) {
         Tarefa tarefa = tarefaRepository.findById(tarefaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
 
@@ -214,14 +217,14 @@ public class TarefaService {
 
         // Se tarefa já iniciada, bloquear campos estruturais
         if (tarefa.isIniciada()) {
-            if (updates.containsKey("titulo") || updates.containsKey("descricaoEscopo")) {
+            if (request.getTitulo() != null || request.getDescricaoEscopo() != null) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Campos estruturais congelados após início");
             }
         }
 
         // Processar atribuição com RN-012
-        if (updates.containsKey("responsavelId")) {
-            UUID novoResponsavelId = (UUID) updates.get("responsavelId");
+        if (request.getResponsavelId() != null) {
+            UUID novoResponsavelId = request.getResponsavelId();
             Usuario novoResponsavel = usuarioRepository.findById(novoResponsavelId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
 
@@ -247,8 +250,8 @@ public class TarefaService {
         }
 
         // Processar edição de título e descrição
-        if (updates.containsKey("titulo")) {
-            String novoTitulo = (String) updates.get("titulo");
+        if (request.getTitulo() != null) {
+            String novoTitulo = request.getTitulo();
             String tituloAnterior = tarefa.getTitulo();
             tarefa.setTitulo(novoTitulo);
 
@@ -262,8 +265,8 @@ public class TarefaService {
             tarefaAuditoriaRepository.save(auditoria);
         }
 
-        if (updates.containsKey("descricaoEscopo")) {
-            String novaDescricao = (String) updates.get("descricaoEscopo");
+        if (request.getDescricaoEscopo() != null) {
+            String novaDescricao = request.getDescricaoEscopo();
             String descricaoAnterior = tarefa.getDescricaoEscopo();
             tarefa.setDescricaoEscopo(novaDescricao);
 
