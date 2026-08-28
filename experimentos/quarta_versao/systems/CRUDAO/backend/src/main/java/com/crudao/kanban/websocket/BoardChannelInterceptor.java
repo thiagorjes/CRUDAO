@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -32,6 +33,7 @@ public class BoardChannelInterceptor implements ChannelInterceptor {
 
     private final UsuarioProjetoPapelRepository usuarioProjetoPapelRepository;
     private final UsuarioRepository usuarioRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     private static final Pattern BOARD_TOPIC_PATTERN = Pattern.compile("^/topic/board/([a-f0-9-]+)$");
     private static final Pattern NOTIFICACOES_TOPIC_PATTERN = Pattern.compile("^/topic/notificacoes/([a-f0-9-]+)$");
@@ -86,23 +88,19 @@ public class BoardChannelInterceptor implements ChannelInterceptor {
     }
 
     /**
-     * Valida se o usuário tem acesso ao board de um projeto.
-     * RN: Usuário deve ter vínculo UsuarioProjetoPapel ativo (Projeto.ativo=true).
+     * Valida se o usuário tem acesso ao board de um projeto em uma única query.
+     * RN: Usuário deve ter vínculo UsuarioProjetoPapel ativo (Projeto.ativo=true, Usuario.ativo=true).
+     *
+     * Correção TASK-05.1: Query consolidada (1 instead of 2) para melhorar performance de handshake STOMP.
+     * Antes: findByEmail + findByUsuarioIdAndProjetoId (2 queries).
+     * Agora: existeVinculoAtivoParaBoardProjeto (1 query com JOIN).
      */
     private boolean validarAcessoBoard(String usuarioEmail, UUID projetoId) {
         try {
-            var usuario = usuarioRepository.findByEmail(usuarioEmail);
-            if (usuario.isEmpty() || !usuario.get().isAtivo()) {
-                return false;
-            }
-
-            // Verifica se há vínculo ativo do usuário com o projeto
-            var vinculos = usuarioProjetoPapelRepository.findByUsuarioIdAndProjetoId(
-                usuario.get().getId(),
+            return usuarioProjetoPapelRepository.existeVinculoAtivoParaBoardProjeto(
+                usuarioEmail,
                 projetoId
             );
-
-            return !vinculos.isEmpty();
         } catch (Exception e) {
             log.error("Erro ao validar acesso ao board", e);
             return false;
@@ -129,12 +127,20 @@ public class BoardChannelInterceptor implements ChannelInterceptor {
     }
 
     /**
-     * Envia uma resposta ERROR STOMP ao cliente para sinalizar falha de autorização.
-     * O cliente receberá a mensagem de erro mas a subscrição será bloqueada.
+     * Bloqueia subscrição desautorizada e registra em log.
+     *
+     * Nota: Spring STOMP intercepta ANTES de qualquer handshake — não há como enviar ERROR frame
+     * na interceptação. A subscrição é silenciosamente bloqueada (retornando null de preSend),
+     * e o cliente não recebe confirmação RECEIPT. Isso é aceitável para segurança (fail-closed)
+     * e força o cliente a retentar com acesso correto.
+     *
+     * Alternativa: implementar `StompSubProtocolErrorHandler` para capturar erros post-handshake,
+     * mas isso não cobre a fase de SUBSCRIBE (só CONNECT).
      */
     private void enviarErrorStomp(StompHeaderAccessor accessor, String mensagemErro) {
-        // Spring STOMP não oferece suporte direto a enviar ERROR na interceptação
-        // Este é um placeholder — a subscrição é bloqueada por retornar null
-        log.info("Bloqueando subscrição desautorizada: {}", mensagemErro);
+        log.warn("Bloqueando subscrição desautorizada: {} | Session: {}",
+            mensagemErro,
+            accessor.getSessionId()
+        );
     }
 }

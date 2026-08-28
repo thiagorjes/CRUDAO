@@ -114,8 +114,8 @@ _Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review v1.0 - 2026-08-28 (TASK-04.3)_
-> Decisoes: ADR-006, ADR-007, ADR-008
+_Atualizado por: /code-review v1.0 - 2026-08-28 (TASK-05.1)_
+> Decisoes: ADR-002, ADR-004, ADR-008
 
 Guardrails consolidados a partir dos artefatos e confirmados como requisitos de revisão. A implementação da feature verificada task a task.
 
@@ -134,12 +134,17 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - **Lead-time calculado em segundos com precisão até Instant.now() para etapas em andamento; tempo de impedimento acumulado sobre múltiplos ciclos marca/desmarca.**
 - **Marcação/desmarcação de impedimento (POST/DELETE /tarefas/{id}/impedimento) requer `tarefa:impedimento` no backend; histórico suporta múltiplos ciclos via marcadoEm/desmarcadoEm; auditoria grava cada alteração.**
 - **Evitar duplicação de validação de guards (ex.: projeto finalizado já validado por permissaoGuard.exigirProjetoAtivo) — não replicar no método, confiar no contrato da guard.**
+- **STOMP: subscrição a tópicos (/topic/board/{projetoId}, /topic/notificacoes/{usuarioId}) SEMPRE validada no backend via BoardChannelInterceptor; nunca confiar em autenticação do lado do cliente (RNF-003, OWASP A01:2021).**
+- **LISTEN/NOTIFY: reconexão automática com backoff até 10 tentativas; cliente detecta gap de sequência e refaz GET /board para resincronização (mitigação de perda de evento — ADR-004 trade-off).**
+- **EventoBoardPublisher é porta de domínio desacoplada; implementação via adapter permite trocar LISTEN/NOTIFY por broker dedicado (RabbitMQ, Kafka) no futuro sem alterar lógica de negócio.**
+- **Publicação de eventos é best-effort (não falha a transação); cliente mitiga divergência via resincronização por seq.**
 
 **Findings desta revisão:**
 
 - TASK-03.2 e TASK-03.3 aprovadas sem ressalvas em 2026-08-28.
 - TASK-04.2 aprovado com ressalvas (1 importante: validação de entrada em editar(), 2 sugestões menores) em 2026-08-28.
 - TASK-04.3 aprovado com ressalvas (1 importante: verificação redundante de projeto finalizado removida, 1 sugestão: TODO para TASK-05.2) em 2026-08-28.
+- TASK-05.1 aprovado com ressalvas (0 críticos, 0 importantes, 3 sugestões: timeout explícito LISTEN, métrica latência NOTIFY→STOMP, logging de gap) em 2026-08-28.
 
 ---
 

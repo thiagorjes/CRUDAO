@@ -51,7 +51,10 @@ _Atualizado em: 2026-08-28_
 | docs/checklists/kanban-tarefas-TASK-03.3-review.md | 1.0 | ok |
 | docs/checklists/kanban-tarefas-bdd-coverage.md | 1.0 | ok - 100% rastreabilidade PRD→Tasks→Testes validada |
 | docs/checklists/kanban-tarefas-TASK-04.2-review.md | 1.1 | ok - Aprovado (I1 resolvido: EditarTarefaRequest com @NotBlank/@Size) |
-| docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review (TASK-04.2) |
+| docs/checklists/kanban-tarefas-TASK-04.4-review.md | 1.0 | ok - Aprovado sem ressalvas |
+| docs/checklists/kanban-tarefas-TASK-04.5-review.md | 1.0 | ok - Aprovado |
+| docs/checklists/kanban-tarefas-TASK-05.1-review.md | 1.0 | ok - Aprovado com ressalvas (3 sugestões observabilidade) |
+| docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review (TASK-05.1) com guardrails STOMP/LISTEN-NOTIFY |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
 
@@ -86,6 +89,8 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /implement TASK-04.5 concluído: GET /api/projetos/{id}/board (BoardService sem N+1), GET /api/tarefas/{id}, PUT /api/tarefas/{id}, POST /api/tarefas/{id}/mover — DTOs, endpoints, testes criados |
 | 2026-08-28 | /code-review TASK-04.5: Revisão estática concluída — 2 importantes corrigidos (I1: validação de acesso via permissaoGuard.membro(), I2: logging estruturado), 1 sugestão adiada para TASK-07.2 — APROVADO |
 | 2026-08-28 | /tests TASK-04.5 audit mode concluído: 8 testes novos (board vazio, order de etapas/raias, tarefa sem responsável, impedimento com flag, 404/403 errors, múltiplas responsáveis, transições) — total 10 testes cobrindo 100% dos critérios de aceite |
+| 2026-08-28 | /implement TASK-05.1 concluído: EventoBoardPublisher (porta), ListenNotifyPublisher (adapter LISTEN/NOTIFY), StompConfig, BoardChannelInterceptor, TarefaService integração — 23 testes 100% verde |
+| 2026-08-28 | /code-review TASK-05.1: ✅ APROVADO COM RESSALVAS (0 críticos, 0 importantes, 3 sugestões sobre observabilidade) — Canvas S atualizado com safeguards STOMP/LISTEN-NOTIFY, dependências ADR-002/004/008 confirmadas |
 
 ## kanban-tarefas
 
@@ -102,9 +107,10 @@ _Atualizado em: 2026-08-28_
   - `TASK-04.3` — Impedimento: marcar/desmarcar + histórico (TDD)
   - `TASK-04.4` — Exclusão de tarefa + auditoria (TDD + Review Inline Aprovado)
   - `TASK-04.5` — GET board + GET detalhe com projeção DTO (sem N+1, Review Aprovado, Testes Completos)
+  - `TASK-05.1` — EventoBoardPublisher + LISTEN/NOTIFY + STOMP (Review Aprovado com ressalvas, 23 testes)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** TASK-04.5 testes concluídos — 10 testes totais (2 N+1 checks + 8 audit cases), cobertura 100% (2026-08-28)
-- **Testes:** 85+ testes (77 anteriores + 10 TASK-04.5, alguns skipped para CI/CD) | E2E via Testcontainers em CI/CD
-- **Code Review TASK-04.5:** ✅ APROVADO (I1: validação de acesso, I2: logging estruturado)
-- **API Status:** ✅ Backend saudável em Docker (health check UP, migrations V1-V6 aplicadas, board endpoint validado)
-- **Próximo passo recomendado:** `/code-review` final ou `/implement TASK-05.1` (eventos LISTEN/NOTIFY)
+- **Última Etapa:** TASK-05.1 code review concluído — Safeguards atualizados, 0 críticos encontrados (2026-08-28)
+- **Testes:** 108+ testes (95 anteriores + 23 TASK-05.1, alguns skipped para CI/CD) | E2E via Testcontainers em CI/CD
+- **Code Review TASK-05.1:** ✅ APROVADO COM RESSALVAS (0 críticos, 0 importantes, 3 sugestões)
+- **API Status:** ✅ Backend saudável em Docker (health check UP, migrations V1-V6 aplicadas, WebSocket/STOMP operacional)
+- **Próximo passo recomendado:** `/implement TASK-05.2` (Notificações internas, depende de TASK-05.1)

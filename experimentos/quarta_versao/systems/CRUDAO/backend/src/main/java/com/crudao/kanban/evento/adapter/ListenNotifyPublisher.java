@@ -6,15 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.postgresql.PGConnection;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -31,26 +30,19 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * 3. Retransmite eventos recebidos via STOMP a `/topic/board/{projetoId}`.
  *
  * ADR-004: Broadcast multi-pod — o `LISTEN` de qualquer pod recebe eventos publicados por qualquer outro pod.
+ * ADR-002: Usa DataSource injetado (connection pool) para respeitar pooling e escalabilidade.
  *
  * Trade-offs:
  * - Payload limitado a 8KB por PostgreSQL (mitigado: eventos comprimidos/estruturados).
  * - Sem garantia de replay — eventos perdidos durante reconexão (mitigado: cliente detecta gap e refaz GET /board).
- * - Thread dedicada por pod (escalável até ~100 pods com margem; além disso, considerar broker dedicado — ADR-002).
+ * - Thread dedicada por pod (escalável até ~100 pods com margem; além disso, considerar broker dedicado).
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ListenNotifyPublisher implements EventoBoardPublisher {
 
-    @Value("${spring.datasource.url}")
-    private String datasourceUrl;
-
-    @Value("${spring.datasource.username}")
-    private String datasourceUser;
-
-    @Value("${spring.datasource.password}")
-    private String datasourcePassword;
-
+    private final DataSource dataSource;
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
@@ -139,17 +131,25 @@ public class ListenNotifyPublisher implements EventoBoardPublisher {
     /**
      * Executa o SQL NOTIFY com a payload do evento.
      * Usa uma transação separada para garantir que o NOTIFY é enviado mesmo se houver erro posterior.
+     * Sanitiza a entrada de payload para evitar SQL injection (embora NOTIFY não suporte prepared statements).
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private void publicarViaJdbc(String payloadJson, long seq) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(datasourceUrl, datasourceUser, datasourcePassword);
+        try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // Formata o payload JSON para incluir a sequência
+            // Formata o payload JSON para incluir a sequência com sanitização de entrada
             String notifyPayload = String.format("{\"seq\":%d,\"data\":%s}", seq, payloadJson);
-            String sql = String.format("NOTIFY board_events, E'%s'",
-                notifyPayload.replace("'", "''"));
+            // Escape de single quotes (padrão PostgreSQL) + validação básica
+            String sanitized = notifyPayload.replace("\\", "\\\\").replace("'", "''");
 
+            // Valida que o payload não contém caracteres de controle perigosos
+            if (sanitized.contains("\0")) {
+                log.warn("Payload contém null byte — rejeitado");
+                return;
+            }
+
+            String sql = String.format("NOTIFY board_events, E'%s'", sanitized);
             stmt.execute(sql);
             log.debug("NOTIFY publicado com seq={}, tipo={}", seq, extractTipo(payloadJson));
         }
@@ -168,8 +168,7 @@ public class ListenNotifyPublisher implements EventoBoardPublisher {
             try {
                 reconnectAttempts = 0; // Reset após conexão bem-sucedida
 
-                listenConnection = DriverManager.getConnection(
-                    datasourceUrl, datasourceUser, datasourcePassword);
+                listenConnection = dataSource.getConnection();
 
                 PGConnection pgConn = listenConnection.unwrap(PGConnection.class);
                 try (Statement stmt = listenConnection.createStatement()) {

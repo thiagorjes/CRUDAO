@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 
@@ -46,6 +47,9 @@ class BoardChannelInterceptorTest {
     @Mock
     private UsuarioProjetoPapelRepository usuarioProjetoPapelRepository;
 
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
+
     private BoardChannelInterceptor interceptor;
 
     private UUID usuarioId;
@@ -54,7 +58,11 @@ class BoardChannelInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        interceptor = new BoardChannelInterceptor(usuarioProjetoPapelRepository, usuarioRepository);
+        interceptor = new BoardChannelInterceptor(
+            usuarioProjetoPapelRepository,
+            usuarioRepository,
+            messagingTemplate
+        );
         usuarioId = UUID.randomUUID();
         projetoId = UUID.randomUUID();
 
@@ -66,12 +74,12 @@ class BoardChannelInterceptorTest {
     }
 
     @Test
-    @DisplayName("Subscrição a /topic/board/{projetoId} AUTORIZADA com vínculo ao projeto")
+    @DisplayName("Subscrição a /topic/board/{projetoId} AUTORIZADA com vínculo ao projeto (query consolidada)")
     void testSubscribeBoard_Autorizado() {
         // Arrange
-        when(usuarioRepository.findByEmail("user@example.com")).thenReturn(Optional.of(usuario));
-        when(usuarioProjetoPapelRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId))
-            .thenReturn(List.of(mock(UsuarioProjetoPapel.class))); // Simula vínculo
+        // Usa query consolidada em vez de 2 queries separadas (melhoria de performance TASK-05.1)
+        when(usuarioProjetoPapelRepository.existeVinculoAtivoParaBoardProjeto("user@example.com", projetoId))
+            .thenReturn(true);
 
         Principal principal = mock(Principal.class);
         when(principal.getName()).thenReturn("user@example.com");
@@ -92,9 +100,8 @@ class BoardChannelInterceptorTest {
     @DisplayName("Subscrição a /topic/board/{projetoId} BLOQUEADA sem vínculo ao projeto")
     void testSubscribeBoard_SemVinculo() {
         // Arrange
-        when(usuarioRepository.findByEmail("user@example.com")).thenReturn(Optional.of(usuario));
-        when(usuarioProjetoPapelRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId))
-            .thenReturn(List.of()); // Sem vínculo
+        when(usuarioProjetoPapelRepository.existeVinculoAtivoParaBoardProjeto("user@example.com", projetoId))
+            .thenReturn(false);
 
         Principal principal = mock(Principal.class);
         when(principal.getName()).thenReturn("user@example.com");

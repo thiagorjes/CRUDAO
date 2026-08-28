@@ -38,4 +38,16 @@ public interface UsuarioProjetoPapelRepository
 
     Optional<UsuarioProjetoPapel> findByUsuarioIdAndProjetoIdAndPapelId(
             UUID usuarioId, UUID projetoId, UUID papelId);
+
+    /**
+     * TASK-05.1: Valida acesso ao board de um projeto em uma única query (performance de handshake STOMP).
+     * Consolida: busca por email + verificação de ativo + vínculo ao projeto.
+     */
+    @Query(
+            "SELECT COUNT(upp) > 0 FROM UsuarioProjetoPapel upp "
+                    + "WHERE upp.usuario.email = :email "
+                    + "AND upp.usuario.ativo = true "
+                    + "AND upp.projeto.id = :projetoId")
+    boolean existeVinculoAtivoParaBoardProjeto(
+            @Param("email") String email, @Param("projetoId") UUID projetoId);
 }
