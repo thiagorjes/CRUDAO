@@ -15,6 +15,7 @@ import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.evento.EventoBoardPublisher;
+import com.crudao.kanban.notificacao.NotificacaoService;
 import com.crudao.kanban.rbac.PermissaoGuard;
 import com.crudao.kanban.tarefa.dto.CriarTarefaRequest;
 import com.crudao.kanban.tarefa.dto.CriarTarefaResponse;
@@ -49,6 +50,7 @@ public class TarefaService {
     private final UsuarioRepository usuarioRepository;
     private final PermissaoGuard permissaoGuard;
     private final EventoBoardPublisher eventoBoardPublisher;
+    private final NotificacaoService notificacaoService;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -209,6 +211,9 @@ public class TarefaService {
 
         // TASK-05.1: Publicar evento de movimentação para atualização em tempo real
         publicarEvento("TAREFA_MOVIDA", tarefa.getProjeto().getId(), tarefa.getId(), etapaDestino.getId());
+
+        // TASK-05.2: Criar notificações para observadores
+        notificacaoService.criarNotificacoesPorTransicaoEtapa(tarefa, etapaAtual.getId(), etapaDestino.getId());
     }
 
     /**
@@ -393,7 +398,8 @@ public class TarefaService {
         auditoria.setDataHora(agora);
         tarefaAuditoriaRepository.save(auditoria);
 
-        // TODO: TASK-05.2 — publicar evento/notificação para observadores (responsável, criador, observadores explícitos)
+        // TASK-05.2: Criar notificações para observadores
+        notificacaoService.criarNotificacoesPorImpedimentoMarcado(tarefa);
     }
 
     /**
@@ -445,7 +451,8 @@ public class TarefaService {
         auditoria.setDataHora(agora);
         tarefaAuditoriaRepository.save(auditoria);
 
-        // TODO: TASK-05.2 — publicar evento/notificação para observadores (responsável, criador, observadores explícitos)
+        // TASK-05.2: Criar notificações para observadores
+        notificacaoService.criarNotificacoesPorImpedimentoDesmarcado(tarefa);
     }
 
     /**
