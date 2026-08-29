@@ -240,8 +240,11 @@ public class ListenNotifyNotificacaoPublisher implements NotificacaoEventPublish
     private String extractTipo(String payloadJson) {
         try {
             var node = objectMapper.readTree(payloadJson);
+            // Aceita tanto o envelope {"seq":..,"data":{..}} quanto o payload cru {"tipo":..}.
             var dataNode = node.get("data");
-            return dataNode.get("tipo").asText("DESCONHECIDO");
+            var alvo = dataNode != null ? dataNode : node;
+            var tipoNode = alvo.get("tipo");
+            return tipoNode != null ? tipoNode.asText("DESCONHECIDO") : "DESCONHECIDO";
         } catch (JsonProcessingException e) {
             return "ERRO";
         }

@@ -1,0 +1,36 @@
+# Profile "it" — testes de integração (@SpringBootTest) contra o stack Docker final.
+# O banco, o Keycloak e os demais serviços são os containers do docker-compose.yml.
+# Datasource e Keycloak resolvidos por variável de ambiente (com defaults para execução
+# do container Maven na mesma máquina, via host.docker.internal).
+spring:
+  datasource:
+    url: ${IT_DB_URL:jdbc:postgresql://host.docker.internal:5432/kanban_it}
+    username: ${IT_DB_USER:kanban}
+    password: ${IT_DB_PASS:kanban}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 4
+  jpa:
+    hibernate:
+      ddl-auto: validate   # schema é criado/versionado só por Flyway (ADR-005)
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true          # roda as migrations reais V1..Vn — validação de schema é o ponto do teste
+  security:
+    oauth2:
+      resourceserver:
+        opaquetoken:
+          introspection-uri: ${IT_KEYCLOAK_INTROSPECTION_URI:http://host.docker.internal:8080/realms/kanban-dev/protocol/openid-connect/token/introspect}
+          client-id: kanban-frontend
+          client-secret: kanban-dev-secret
+
+app:
+  keycloak:
+    issuer-uri: ${IT_KEYCLOAK_ISSUER_URI:http://host.docker.internal:8080/realms/kanban-dev}
+
+kanban:
+  bootstrap:
+    admin-email: admin.teste@crudao.local

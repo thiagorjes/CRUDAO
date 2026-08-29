@@ -18,6 +18,7 @@ import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
 import com.crudao.kanban.rbac.PermissaoGuard;
+import com.crudao.kanban.support.IntegrationTestBase;
 import com.crudao.kanban.tarefa.dto.BoardResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -27,15 +28,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,25 +42,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * TASK-04.5 Audit Mode: Testes complementares de casos de borda e cenários de erro.
+ * Valida contra o PostgreSQL do stack Docker final (ver {@link IntegrationTestBase}).
  * RF-001, RF-006: Board retorna etapas na ordem, raias e tarefas sem N+1.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureMockMvc
-@Testcontainers
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:postgresql://localhost:5433/kanban_audit_test",
-        "spring.datasource.username=postgres",
-        "spring.datasource.password=postgres",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
-})
-public class TarefaControllerBoardAuditTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withDatabaseName("kanban_audit_test")
-            .withUsername("postgres")
-            .withPassword("postgres")
-            .withExposedPorts(5432);
+@AutoConfigureMockMvc(addFilters = false) // sem cadeia de segurança HTTP — foco é o board, não OIDC
+@Transactional // rollback por teste — evita acúmulo/colisão de keycloak_sub entre métodos
+public class TarefaControllerBoardAuditTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -437,8 +421,10 @@ public class TarefaControllerBoardAuditTest {
         BoardResponse board = objectMapper.readValue(responseBody, BoardResponse.class);
 
         assertThat(board.getTarefas()).hasSize(2);
-        assertThat(board.getTarefas().get(0).getResponsavelId()).isEqualTo(criador.getId());
-        assertThat(board.getTarefas().get(1).getResponsavelId()).isEqualTo(usuario2.getId());
+        // A ordem das tarefas no board não é garantida — valida pelo conjunto de responsáveis.
+        assertThat(board.getTarefas())
+                .extracting(t -> t.getResponsavelId())
+                .containsExactlyInAnyOrder(criador.getId(), usuario2.getId());
 
         System.out.println("✓ Múltiplas tarefas mantêm responsáveis diferentes");
     }

@@ -11,6 +11,7 @@ import com.crudao.kanban.evento.NotificacaoEventPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -198,16 +199,17 @@ public class NotificacaoService {
             UUID etapaOrigemId,
             UUID etapaDestinoId) {
         try {
-            String payloadJson = objectMapper.writeValueAsString(
-                Map.of(
-                    "tipo", tipo,
-                    "usuarioId", usuarioId.toString(),
-                    "tarefaId", tarefaId.toString(),
-                    "etapaOrigemId", etapaOrigemId != null ? etapaOrigemId.toString() : null,
-                    "etapaDestinoId", etapaDestinoId != null ? etapaDestinoId.toString() : null,
-                    "timestamp", Instant.now().toEpochMilli()
-                )
-            );
+            // HashMap (não Map.of) porque etapaOrigemId/etapaDestinoId são null no fluxo de
+            // impedimento — Map.of lança NPE com valores nulos.
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("tipo", tipo);
+            payload.put("usuarioId", usuarioId.toString());
+            payload.put("tarefaId", tarefaId.toString());
+            payload.put("etapaOrigemId", etapaOrigemId != null ? etapaOrigemId.toString() : null);
+            payload.put("etapaDestinoId", etapaDestinoId != null ? etapaDestinoId.toString() : null);
+            payload.put("timestamp", Instant.now().toEpochMilli());
+
+            String payloadJson = objectMapper.writeValueAsString(payload);
 
             NotificacaoEventPublisher.NotificacaoEventPayload evento =
                 new NotificacaoEventPublisher.NotificacaoEventPayload(
@@ -234,7 +236,26 @@ public class NotificacaoService {
     }
 
     /**
-     * Marca notificação como lida.
+     * Marca notificação como lida com validação de autorização.
+     * RNF-003: Usuário só pode marcar suas próprias notificações como lidas.
+     */
+    @Transactional
+    public void marcarComoLidaComAutorizacao(UUID notificacaoId, UUID usuarioIdAutenticado) {
+        var notificacao = notificacaoRepository.findById(notificacaoId)
+                .orElseThrow(() -> new IllegalArgumentException("Notificação não encontrada"));
+
+        // Valida que notificação pertence ao usuário autenticado
+        if (!notificacao.getUsuario().getId().equals(usuarioIdAutenticado)) {
+            throw new IllegalArgumentException("Usuário não tem permissão para acessar esta notificação");
+        }
+
+        notificacao.setLida(true);
+        notificacao.setLidoEm(Instant.now());
+        notificacaoRepository.save(notificacao);
+    }
+
+    /**
+     * Marca notificação como lida (sem validação — para uso interno).
      */
     @Transactional
     public void marcarComoLida(UUID notificacaoId) {

@@ -17,6 +17,8 @@ import com.crudao.kanban.domain.workflow.Transicao;
 import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.rbac.PermissaoGuard;
+import com.crudao.kanban.support.IntegrationTestBase;
 import com.crudao.kanban.tarefa.dto.BoardResponse;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -25,47 +27,35 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * TASK-04.5: Teste de integração do endpoint GET /api/projetos/{projetoId}/board.
- * Usa Testcontainers para validar com banco real.
+ * Valida contra o PostgreSQL do stack Docker final (ver {@link IntegrationTestBase}).
  * RF-001: Board retorna etapas (na ordem), raias e tarefas.
  * Critério de aceite: Teste de integração comprova ausência de N+1.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureMockMvc
-@Testcontainers
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:postgresql://localhost:5433/kanban_test",
-        "spring.datasource.username=postgres",
-        "spring.datasource.password=postgres",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
-})
-public class TarefaControllerBoardIntegrationTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withDatabaseName("kanban_test")
-            .withUsername("postgres")
-            .withPassword("postgres")
-            .withExposedPorts(5432);
+@AutoConfigureMockMvc(addFilters = false) // sem cadeia de segurança HTTP — o teste valida o board, não OIDC
+@Transactional // rollback por teste — evita acúmulo/colisão de keycloak_sub entre métodos
+public class TarefaControllerBoardIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private PermissaoGuard permissaoGuard;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -105,6 +95,8 @@ public class TarefaControllerBoardIntegrationTest {
 
     @BeforeEach
     void setup() {
+        when(permissaoGuard.membro(any(UUID.class))).thenReturn(true);
+
         // Criar usuário e setar como autenticado
         criador = new Usuario();
         criador.setKeycloakSub("test-user-board");

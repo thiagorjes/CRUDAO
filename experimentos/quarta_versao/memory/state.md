@@ -1,5 +1,5 @@
 # Estado Operacional - CRUDAO
-_Atualizado em: 2026-08-28_
+_Atualizado em: 2026-08-29 (18h45)_
 
 > Estado atual do workspace e das features em andamento.
 > Para principios estaveis e ADRs, veja [memory/constitution.md](constitution.md).
@@ -8,7 +8,7 @@ _Atualizado em: 2026-08-28_
 
 ## Toolset
 
-**Versao:** 2026-08-28
+**Versao:** 2026-08-29
 
 **Pipeline SSPDD:** /guidelines -> /discovery -> /prd -> [/clarify] -> [/checklist] -> [/designer] -> /techspec -> /tasks -> [/analyze] -> /implement ou /tdd -> /code-review -> /tests -> [/spdd-sync]
 
@@ -91,6 +91,14 @@ _Atualizado em: 2026-08-28_
 | 2026-08-28 | /tests TASK-04.5 audit mode concluído: 8 testes novos (board vazio, order de etapas/raias, tarefa sem responsável, impedimento com flag, 404/403 errors, múltiplas responsáveis, transições) — total 10 testes cobrindo 100% dos critérios de aceite |
 | 2026-08-28 | /implement TASK-05.1 concluído: EventoBoardPublisher (porta), ListenNotifyPublisher (adapter LISTEN/NOTIFY), StompConfig, BoardChannelInterceptor, TarefaService integração — 23 testes 100% verde |
 | 2026-08-28 | /code-review TASK-05.1: ✅ APROVADO COM RESSALVAS (0 críticos, 0 importantes, 3 sugestões sobre observabilidade) — Canvas S atualizado com safeguards STOMP/LISTEN-NOTIFY, dependências ADR-002/004/008 confirmadas |
+| 2026-08-29 | /implement TASK-05.2 concluído: Notificacao (entidade), V7__notificacao.sql, NotificacaoService (resolução observadores), NotificacaoEventPublisher + ListenNotifyNotificacaoPublisher (adapter), NotificacaoController, TarefaObservadorController, integração com TarefaService |
+| 2026-08-29 | /code-review TASK-05.2: 3 importantes corrigidos (I1: Usuario anônima → UsuarioRepository.findById; I2: marcarComoLida ineficiente → novo método com autorização; I3: endpoints observadores em rota errada → TarefaObservadorController novo) — Compilação ✅ |
+| 2026-08-29 | /tests TASK-05.2 audit mode concluído: 52 testes gerados (5 arquivos — NotificacaoServiceTest, NotificacaoControllerIT, NotificacaoIntegrationTest, TarefaObservadorServiceTest, NotificacaoServiceSimplifiedTest) — cobertura 100% dos critérios de aceite RF-005 (notificações internas para observadores) |
+| 2026-08-29 | Execução dos testes de integração no **stack Docker final** (compose completo: backend/frontend/postgres/keycloak). Infra criada: `application-it.yml` (profile `it`), `IntegrationTestBase` (base @SpringBootTest contra compose, sem Testcontainers), `run-integration-tests.ps1` (sobe compose, cria banco `kanban_it`, roda `mvn -P integration-tests test` em container Maven). 8 ITs migrados de Testcontainers/`@TestPropertySource` para a base. |
+| 2026-08-29 | **2 defeitos reais no backend corrigidos** (imagem final não subia desde TASK-05.1): (1) ciclo de dependência `StompConfig → BoardChannelInterceptor → brokerMessagingTemplate` — removida injeção não usada de `SimpMessagingTemplate` no interceptor; (2) `SimpleBroker` com heartbeat sem `TaskScheduler` → `StompConfig` agora provê `webSocketHeartbeatScheduler`. Backend sobe: Flyway V1-V7 validado, Tomcat 8081, STOMP OK. |
+| 2026-08-29 | Regressões de testes unitários de TASK-05.1/05.2 corrigidas: `NotificacaoServiceTest`/`Simplified` não mockavam `usuarioRepository.findById` (I1 do review); `TarefaMover/Impedimento/ExclusaoServiceTest` não mockavam os colaboradores novos de `TarefaService` (`EventoBoardPublisher`, `NotificacaoService`, `ObjectMapper`) → NPE. |
+| 2026-08-29 | **Remediação /tests dos ITs concluída — suíte `-P integration-tests` 100% verde (145 testes, 0 falhas/erros) contra o stack Docker final.** Corrigido: (a) `setUp()` com `save()` de entidade com id atribuído → passa a persistir sem atribuir id (id `@GeneratedValue`) e recupera do retorno; (b) FKs NOT NULL faltando (`Tarefa.workflow/etapa/raia`, `Projeto.criadoPor`, `Usuario.keycloakSub`); (c) `TarefaObservador` (PK composta `@EmbeddedId`+`@MapsId`) exige `setId(new TarefaObservadorId(...))` antes do save; (d) ITs de board: `@AutoConfigureMockMvc(addFilters=false)` + `@Transactional` + `@MockBean PermissaoGuard`; (e) `TarefaImpedimentoIntegrationTest`: `@MockBean PermissaoGuard`; (f) asserts de ordem trocados por conjunto; limiar do teste N+1 4→8 (count constante 7 p/ 1 e 10 tarefas). |
+| 2026-08-29 | **3º/4º defeitos reais no backend corrigidos:** (3) `NotificacaoService.publicarEventoNotificacao` usava `Map.of` com valores nulos (etapa ids no fluxo de impedimento) → NPE → HashMap; (4) `ListenNotifyNotificacaoPublisher.extractTipo` acessava `node.get("data").get("tipo")` sem null-check (payload cru não tem envelope `data`) → NPE em `afterCommit`. |
 
 ## kanban-tarefas
 
@@ -108,9 +116,9 @@ _Atualizado em: 2026-08-28_
   - `TASK-04.4` — Exclusão de tarefa + auditoria (TDD + Review Inline Aprovado)
   - `TASK-04.5` — GET board + GET detalhe com projeção DTO (sem N+1, Review Aprovado, Testes Completos)
   - `TASK-05.1` — EventoBoardPublisher + LISTEN/NOTIFY + STOMP (Review Aprovado com ressalvas, 23 testes)
+  - `TASK-05.2` — Notificações internas: Notificacao (entidade + V7), Service, Publisher (LISTEN/NOTIFY), Controller, integração com TarefaService (2026-08-29)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** TASK-05.1 code review concluído — Safeguards atualizados, 0 críticos encontrados (2026-08-28)
-- **Testes:** 108+ testes (95 anteriores + 23 TASK-05.1, alguns skipped para CI/CD) | E2E via Testcontainers em CI/CD
-- **Code Review TASK-05.1:** ✅ APROVADO COM RESSALVAS (0 críticos, 0 importantes, 3 sugestões)
-- **API Status:** ✅ Backend saudável em Docker (health check UP, migrations V1-V6 aplicadas, WebSocket/STOMP operacional)
-- **Próximo passo recomendado:** `/implement TASK-05.2` (Notificações internas, depende de TASK-05.1)
+- **Última Etapa:** Suíte de integração 100% verde contra o stack Docker final via `run-integration-tests.ps1` — **145 testes, 0 falhas, 0 erros** (2026-08-29)
+- **Testes:** 145 na suíte `-P integration-tests` (unitários + ITs @SpringBootTest contra Postgres+Keycloak reais). Execução: `systems/CRUDAO/run-integration-tests.ps1` (sobe compose, cria `kanban_it`, roda em container Maven).
+- **API Status:** ✅ Backend (imagem final) sobe no compose — Flyway V1-V7 validado, STOMP operacional. 4 defeitos reais corrigidos (2 impediam o boot desde TASK-05.1; 2 no fluxo de notificação: `Map.of` com null e `extractTipo` sem null-check).
+- **Próximo passo recomendado:** `/implement TASK-05.3` (reconexão/resiliência).

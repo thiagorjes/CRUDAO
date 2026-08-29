@@ -17,7 +17,10 @@ import com.crudao.kanban.domain.usuario.Usuario;
 import com.crudao.kanban.domain.usuario.UsuarioRepository;
 import com.crudao.kanban.domain.workflow.Etapa;
 import com.crudao.kanban.domain.workflow.Workflow;
+import com.crudao.kanban.evento.EventoBoardPublisher;
+import com.crudao.kanban.notificacao.NotificacaoService;
 import com.crudao.kanban.rbac.PermissaoGuard;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.*;
 import org.junit.jupiter.api.AfterEach;
@@ -27,7 +30,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
@@ -41,6 +47,7 @@ import org.springframework.web.server.ResponseStatusException;
  * RN-CB-003: bloqueado se projeto finalizado.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT) // stubs condicionais por caminho de RN-CB-00x
 class TarefaExclusaoServiceTest {
 
     @Mock
@@ -69,6 +76,16 @@ class TarefaExclusaoServiceTest {
 
     @Mock
     private PermissaoGuard permissaoGuard;
+
+    // Colaboradores adicionados ao TarefaService em TASK-05.1/05.2.
+    @Mock
+    private EventoBoardPublisher eventoBoardPublisher;
+
+    @Mock
+    private NotificacaoService notificacaoService;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
     private TarefaService tarefaService;

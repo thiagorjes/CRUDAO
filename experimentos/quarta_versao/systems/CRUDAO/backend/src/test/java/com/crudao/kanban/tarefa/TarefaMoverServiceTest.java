@@ -18,8 +18,11 @@ import com.crudao.kanban.domain.workflow.Transicao;
 import com.crudao.kanban.domain.workflow.TransicaoRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.evento.EventoBoardPublisher;
+import com.crudao.kanban.notificacao.NotificacaoService;
 import com.crudao.kanban.rbac.PermissaoGuard;
 import com.crudao.kanban.tarefa.dto.EditarTarefaRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.crudao.kanban.tarefa.dto.MoverTarefaRequest;
 import java.time.Instant;
 import java.util.*;
@@ -33,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
@@ -75,6 +79,16 @@ class TarefaMoverServiceTest {
 
     @Mock
     private PermissaoGuard permissaoGuard;
+
+    // Colaboradores adicionados ao TarefaService em TASK-05.1/05.2.
+    @Mock
+    private EventoBoardPublisher eventoBoardPublisher;
+
+    @Mock
+    private NotificacaoService notificacaoService;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
     private TarefaService tarefaService;

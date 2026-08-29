@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -33,7 +32,6 @@ public class BoardChannelInterceptor implements ChannelInterceptor {
 
     private final UsuarioProjetoPapelRepository usuarioProjetoPapelRepository;
     private final UsuarioRepository usuarioRepository;
-    private final SimpMessagingTemplate messagingTemplate;
 
     private static final Pattern BOARD_TOPIC_PATTERN = Pattern.compile("^/topic/board/([a-f0-9-]+)$");
     private static final Pattern NOTIFICACOES_TOPIC_PATTERN = Pattern.compile("^/topic/notificacoes/([a-f0-9-]+)$");

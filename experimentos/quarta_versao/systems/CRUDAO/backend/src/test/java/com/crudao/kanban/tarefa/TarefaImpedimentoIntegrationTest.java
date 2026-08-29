@@ -14,6 +14,8 @@ import com.crudao.kanban.domain.workflow.Etapa;
 import com.crudao.kanban.domain.workflow.EtapaRepository;
 import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.domain.workflow.WorkflowRepository;
+import com.crudao.kanban.rbac.PermissaoGuard;
+import com.crudao.kanban.support.IntegrationTestBase;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -22,14 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 /**
  * Testes de integração para TASK-04.3: Impedimento — validação de persistência em PostgreSQL real.
@@ -46,20 +41,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *
  * TODO TASK-05.3: Adicionar @BeforeEach setup de RBAC real via Papel/Permissao ou mockar PermissaoGuard
  */
-@SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("TarefaImpedimento — Testes de Integração com PostgreSQL")
-@org.junit.jupiter.api.Disabled("Execução em CI/CD via integration-tests profile")
-class TarefaImpedimentoIntegrationTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:15-alpine")
-                    .withDatabaseName("kanban_test")
-                    .withUsername("test")
-                    .withPassword("test");
+class TarefaImpedimentoIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private TarefaService tarefaService;
@@ -88,17 +71,10 @@ class TarefaImpedimentoIntegrationTest {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    /**
-     * Injetar propriedades de datasource do Testcontainers no Spring Boot
-     * Necessário para @SpringBootTest + @Testcontainers descobrir URL/user/password do PostgreSQL container
-     */
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-    }
+    // O motor de RBAC tem testes dedicados (PermissaoGuardTest/EndpointIT); aqui só validamos
+    // persistência de impedimento, então a checagem de permissão é neutralizada.
+    @MockBean
+    private PermissaoGuard permissaoGuard;
 
     private UUID projetoId;
     private UUID tarefaId;

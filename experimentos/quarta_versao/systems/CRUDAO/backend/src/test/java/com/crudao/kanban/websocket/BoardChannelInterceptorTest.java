@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 
@@ -47,9 +46,6 @@ class BoardChannelInterceptorTest {
     @Mock
     private UsuarioProjetoPapelRepository usuarioProjetoPapelRepository;
 
-    @Mock
-    private SimpMessagingTemplate messagingTemplate;
-
     private BoardChannelInterceptor interceptor;
 
     private UUID usuarioId;
@@ -60,8 +56,7 @@ class BoardChannelInterceptorTest {
     void setUp() {
         interceptor = new BoardChannelInterceptor(
             usuarioProjetoPapelRepository,
-            usuarioRepository,
-            messagingTemplate
+            usuarioRepository
         );
         usuarioId = UUID.randomUUID();
         projetoId = UUID.randomUUID();
