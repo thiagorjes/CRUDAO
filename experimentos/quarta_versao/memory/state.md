@@ -1,5 +1,5 @@
 # Estado Operacional - CRUDAO
-_Atualizado em: 2026-08-29 (18h45)_
+_Atualizado em: 2026-08-29 (21h00)_
 
 > Estado atual do workspace e das features em andamento.
 > Para principios estaveis e ADRs, veja [memory/constitution.md](constitution.md).
@@ -99,6 +99,8 @@ _Atualizado em: 2026-08-29 (18h45)_
 | 2026-08-29 | Regressões de testes unitários de TASK-05.1/05.2 corrigidas: `NotificacaoServiceTest`/`Simplified` não mockavam `usuarioRepository.findById` (I1 do review); `TarefaMover/Impedimento/ExclusaoServiceTest` não mockavam os colaboradores novos de `TarefaService` (`EventoBoardPublisher`, `NotificacaoService`, `ObjectMapper`) → NPE. |
 | 2026-08-29 | **Remediação /tests dos ITs concluída — suíte `-P integration-tests` 100% verde (145 testes, 0 falhas/erros) contra o stack Docker final.** Corrigido: (a) `setUp()` com `save()` de entidade com id atribuído → passa a persistir sem atribuir id (id `@GeneratedValue`) e recupera do retorno; (b) FKs NOT NULL faltando (`Tarefa.workflow/etapa/raia`, `Projeto.criadoPor`, `Usuario.keycloakSub`); (c) `TarefaObservador` (PK composta `@EmbeddedId`+`@MapsId`) exige `setId(new TarefaObservadorId(...))` antes do save; (d) ITs de board: `@AutoConfigureMockMvc(addFilters=false)` + `@Transactional` + `@MockBean PermissaoGuard`; (e) `TarefaImpedimentoIntegrationTest`: `@MockBean PermissaoGuard`; (f) asserts de ordem trocados por conjunto; limiar do teste N+1 4→8 (count constante 7 p/ 1 e 10 tarefas). |
 | 2026-08-29 | **3º/4º defeitos reais no backend corrigidos:** (3) `NotificacaoService.publicarEventoNotificacao` usava `Map.of` com valores nulos (etapa ids no fluxo de impedimento) → NPE → HashMap; (4) `ListenNotifyNotificacaoPublisher.extractTipo` acessava `node.get("data").get("tipo")` sem null-check (payload cru não tem envelope `data`) → NPE em `afterCommit`. |
+| 2026-08-29 | /implement TASK-05.3 concluído: `AbstractListenNotifyRelay` (base comum dos 2 adapters LISTEN/NOTIFY) com reconexão infinita + backoff exponencial (1s→30s), métricas Micrometer (`kanban.listener.reconnections`, `kanban.listener.notify_to_stomp`), envelope com `ts`; `ListenNotifyHealthIndicator` no grupo `readiness`; `application.yml` expõe `metrics` + probes. Nota: arquivo da task tinha marcação Concluída de template (2026-08-26) sem implementação real. |
+| 2026-08-30 | /code-review TASK-05.3 (revisor em contexto fresco): APROVADO COM RESSALVAS (0 críticos, 5 importantes). Corrigidos: IT de reconexão-após-kill (`ListenNotifyReconexaoIntegrationTest`); métrica de reconexão conta sucesso, não tentativa; truncamento >8KB publica marcador `{"truncado":true}` válido em vez de cortar o JSON; limite em bytes UTF-8; Canvas S sincronizado (10 tentativas → infinita). Suíte `-P integration-tests` **152 testes, 0 falhas**. |
 
 ## kanban-tarefas
 
@@ -117,8 +119,9 @@ _Atualizado em: 2026-08-29 (18h45)_
   - `TASK-04.5` — GET board + GET detalhe com projeção DTO (sem N+1, Review Aprovado, Testes Completos)
   - `TASK-05.1` — EventoBoardPublisher + LISTEN/NOTIFY + STOMP (Review Aprovado com ressalvas, 23 testes)
   - `TASK-05.2` — Notificações internas: Notificacao (entidade + V7), Service, Publisher (LISTEN/NOTIFY), Controller, integração com TarefaService (2026-08-29)
+  - `TASK-05.3` — Resiliência LISTEN/NOTIFY: reconexão infinita + backoff, health readiness, métricas Micrometer (2026-08-29)
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** Suíte de integração 100% verde contra o stack Docker final via `run-integration-tests.ps1` — **145 testes, 0 falhas, 0 erros** (2026-08-29)
-- **Testes:** 145 na suíte `-P integration-tests` (unitários + ITs @SpringBootTest contra Postgres+Keycloak reais). Execução: `systems/CRUDAO/run-integration-tests.ps1` (sobe compose, cria `kanban_it`, roda em container Maven).
-- **API Status:** ✅ Backend (imagem final) sobe no compose — Flyway V1-V7 validado, STOMP operacional. 4 defeitos reais corrigidos (2 impediam o boot desde TASK-05.1; 2 no fluxo de notificação: `Map.of` com null e `extractTipo` sem null-check).
-- **Próximo passo recomendado:** `/implement TASK-05.3` (reconexão/resiliência).
+- **Última Etapa:** /code-review TASK-05.3 + correções — suíte `-P integration-tests` **152 testes, 0 falhas, 0 erros** contra o stack Docker final (2026-08-30)
+- **Testes:** 152 na suíte `-P integration-tests` (unitários + ITs @SpringBootTest contra Postgres+Keycloak reais). Execução: `systems/CRUDAO/run-integration-tests.ps1` (sobe compose, cria `kanban_it`, roda em container Maven).
+- **API Status:** ✅ Backend (imagem final) sobe no compose — Flyway V1-V7 validado, STOMP operacional. Actuator expõe `health,info,metrics`; grupo `readiness` reflete estado dos listeners LISTEN/NOTIFY.
+- **Próximo passo recomendado:** `/implement TASK-06.1` (dashboard) ou `/implement TASK-08.1` (testes multi-pod).

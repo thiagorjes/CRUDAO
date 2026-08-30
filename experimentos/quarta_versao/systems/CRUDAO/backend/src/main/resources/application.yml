@@ -12,7 +12,13 @@ management:
     health:
       show-details: always
       show-components: always
+      probes:
+        enabled: true
+      group:
+        readiness:
+          # Durante a reconexão do listener LISTEN/NOTIFY o pod sai de rotação (TASK-05.3).
+          include: readinessState,listenNotify,keycloak
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics

@@ -135,7 +135,7 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - **Marcação/desmarcação de impedimento (POST/DELETE /tarefas/{id}/impedimento) requer `tarefa:impedimento` no backend; histórico suporta múltiplos ciclos via marcadoEm/desmarcadoEm; auditoria grava cada alteração.**
 - **Evitar duplicação de validação de guards (ex.: projeto finalizado já validado por permissaoGuard.exigirProjetoAtivo) — não replicar no método, confiar no contrato da guard.**
 - **STOMP: subscrição a tópicos (/topic/board/{projetoId}, /topic/notificacoes/{usuarioId}) SEMPRE validada no backend via BoardChannelInterceptor; nunca confiar em autenticação do lado do cliente (RNF-003, OWASP A01:2021).**
-- **LISTEN/NOTIFY: reconexão automática com backoff até 10 tentativas; cliente detecta gap de sequência e refaz GET /board para resincronização (mitigação de perda de evento — ADR-004 trade-off).**
+- **LISTEN/NOTIFY: reconexão automática infinita com backoff exponencial (1s→teto 30s); durante a desconexão o readiness probe (`/actuator/health/listenNotify`) fica DOWN e tira o pod de rotação. Cliente detecta gap de sequência / reconexão de WebSocket e refaz GET /board para resincronização (mitigação de perda de evento — ADR-004 trade-off). Payload acima de 8KB é substituído por marcador `{"truncado":true}` que também dispara o resync. (atualizado por /implement TASK-05.3 — antes: "até 10 tentativas")**
 - **EventoBoardPublisher é porta de domínio desacoplada; implementação via adapter permite trocar LISTEN/NOTIFY por broker dedicado (RabbitMQ, Kafka) no futuro sem alterar lógica de negócio.**
 - **Publicação de eventos é best-effort (não falha a transação); cliente mitiga divergência via resincronização por seq.**
 
