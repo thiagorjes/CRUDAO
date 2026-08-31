@@ -54,5 +54,8 @@ function limparSessaoERedirecionar(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|favicon.ico|login|api/auth).*)"],
+  matcher: [
+    // Protege tudo exceto: next assets, login, auth endpoints
+    "/((?!_next|favicon.ico|login|api/auth|sitemap.xml|robots.txt).*)",
+  ],
 };

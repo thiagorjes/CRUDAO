@@ -1,5 +1,5 @@
 # Estado Operacional - CRUDAO
-_Atualizado em: 2026-08-29 (21h00)_
+_Atualizado em: 2026-08-31 (17h45)_
 
 > Estado atual do workspace e das features em andamento.
 > Para principios estaveis e ADRs, veja [memory/constitution.md](constitution.md).
@@ -54,6 +54,8 @@ _Atualizado em: 2026-08-29 (21h00)_
 | docs/checklists/kanban-tarefas-TASK-04.4-review.md | 1.0 | ok - Aprovado sem ressalvas |
 | docs/checklists/kanban-tarefas-TASK-04.5-review.md | 1.0 | ok - Aprovado |
 | docs/checklists/kanban-tarefas-TASK-05.1-review.md | 1.0 | ok - Aprovado com ressalvas (3 sugestões observabilidade) |
+| docs/checklists/kanban-tarefas-TASK-06.1-review.md | 1.0 | ok - Aprovado com ressalvas |
+| docs/checklists/kanban-tarefas-TASK-07.1-review.md | 1.0 | ok - APROVADO (3 importantes corrigidos pós-review) |
 | docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review (TASK-05.1) com guardrails STOMP/LISTEN-NOTIFY |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
@@ -104,6 +106,10 @@ _Atualizado em: 2026-08-29 (21h00)_
 | 2026-08-31 | /implement TASK-06.1 concluído: `GET /api/projetos/{projetoId}/dashboard` (DashboardService/Response/Controller), lead-time médio/etapa (RN-001) + impedimento/etapa por overlap em leitura (RN-002, **sem migration nova** — V7/V11 do texto da task eram marcações obsoletas), acesso via `permissaoGuard.membro()` sem bloqueio de projeto finalizado (RN-015). 8 testes unitários 100% verde (`mvn -o test`). Docs da task (individual + tasks.md EPIC 06) reconciliados; Canvas S +2 safeguards (premissa 1-workflow-por-projeto; regras de acesso do dashboard). |
 | 2026-08-31 | /code-review TASK-06.1 (revisor em contexto fresco): APROVADO COM RESSALVAS (0 críticos, ~5 importantes). Corrigidos agora: docs reconciliados + nota de decisão; 3 casos de borda adicionados ao teste unitário (impedimento aberto, fora da janela, clipping inferior). Adiado para /tests: IT contra Postgres do derived query `findByTarefa_Projeto_Id` (path aninhado) + teste MockMvc do controller. Pendência de PO: RN-002 menciona "total agregado" não exposto pelo contrato/payload. |
 | 2026-08-31 | /tests TASK-06.1 audit mode concluído: `DashboardControllerIntegrationTest` (4 cenários — 200+agregação contra Postgres real exercitando `findByTarefa_Projeto_Id`; 200 projeto FINALIZADO/RN-015; 403 sem vínculo; 404 inexistente). Suíte `-P integration-tests` **164 testes, 0 falhas, 0 erros** no stack Docker final. Nota: `@MockBean` deprecado (padrão pré-existente do repo). |
+| 2026-08-31 | /implement TASK-07.1 concluído: Shell Next.js com sidebar (lista de projetos), topbar (usuário + logout), proteção de rotas (middleware), consumo de `/api/me` (obterMe), página inicial (lista projetos com links), login/logout via OIDC. Tokens visuais Design Brief 100% aplicados (paleta via variables, Google Fonts Inter, espaçamento 8px). |
+| 2026-08-31 | /code-review TASK-07.1: APROVADO (3/3 critérios de aceite atendidos; 3 importantes identificados e corrigidos: I1=estrutura HTML válida para cards, I2=dropdown fecha ao clicar fora + ao navegar, I3=remove inline styles usa classes CSS; +S1 tratamento erro logout). 0 críticos, 0 importantes residuais, 0 findings segurança. |
+| 2026-08-31 | /implement TASK-07.2 concluído: Board UI (TL-03 — cards compactos) com etapas×raias×cards; criar/excluir/mover cards; indicador visual de impedimento; cliente STOMP com reconexão + resincronização por seq. Route handlers criados: GET /api/board/{projetoId}, POST/DELETE /tarefas, POST /mover, POST/DELETE /impedimento. Componentes React: BoardLayout, Card, CreateCardModal. Integração completa com backend. |
+| 2026-08-31 | /code-review TASK-07.2 (contexto fresco): APROVADO COM RESSALVAS (0 críticos, 2 importantes, 3 sugestões). Corrigidos durante review: C1 (autenticação STOMP) + C2 (race condition). Adiáveis: I1 (projetoFinalizado no backend), S1-S3 (visual improvements + testes). Safeguards confirmados: STOMP auth obrigatória, resincronização com lock. |
 
 ## kanban-tarefas
 
@@ -124,8 +130,10 @@ _Atualizado em: 2026-08-29 (21h00)_
   - `TASK-05.2` — Notificações internas: Notificacao (entidade + V7), Service, Publisher (LISTEN/NOTIFY), Controller, integração com TarefaService (2026-08-29)
   - `TASK-05.3` — Resiliência LISTEN/NOTIFY: reconexão infinita + backoff, health readiness, métricas Micrometer (2026-08-29)
   - `TASK-06.1` — Dashboard: `GET /api/projetos/{id}/dashboard` — lead-time médio/etapa + impedimento/etapa por overlap (sem migration), RN-015 (Review Aprovado com ressalvas, 8 testes unitários) (2026-08-31) — **EPIC 06 concluído**
+  - `TASK-07.1` — Shell Next.js + autenticação (sidebar, topbar, proteção rotas, `/api/me`, login/logout OIDC, Design Brief 100%) (2026-08-31) — **Review APROVADO**
+  - `TASK-07.2` — Board UI (cards, mover, impedimento, STOMP realtime) (2026-08-31) — **Review APROVADO COM RESSALVAS**
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** /tests TASK-06.1 audit mode — suíte `-P integration-tests` **164 testes, 0 falhas** no stack Docker final (2026-08-31)
+- **Última Etapa:** /code-review TASK-07.2 — APROVADO COM RESSALVAS (0 críticos, 2 importantes adiáveis) (2026-08-31)
 - **Testes:** 164 na suíte `-P integration-tests` (inclui `DashboardServiceTest` 8 + `DashboardControllerIntegrationTest` 4). Execução ITs: `systems/CRUDAO/run-integration-tests.ps1`.
 - **API Status:** ✅ Backend (imagem final) sobe no compose — Flyway V1-V7 validado, STOMP operacional. Actuator expõe `health,info,metrics`; grupo `readiness` reflete estado dos listeners LISTEN/NOTIFY.
-- **Próximo passo recomendado:** `/implement TASK-08.1` (testes multi-pod) ou iniciar EPIC 07 (frontend, TASK-07.1). Pendência aberta de PO: RN-002 "total agregado" no payload do dashboard.
+- **Próximo passo recomendado:** Merge TASK-07.2 (APROVADO COM RESSALVAS — nenhum crítico bloqueia). Em paralelo: `TASK-07.3` (Detalhe da tarefa) ou `TASK-07.2-refinement` (adicionar `projetoFinalizado` ao backend). Epic 08 (hardening) após Epic 07 MVP. Pendência aberta de PO: RN-002 "total agregado" no payload do dashboard (TASK-06.1).

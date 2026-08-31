@@ -589,3 +589,10 @@ table th {
   gap: var(--space-sm);
   font-weight: normal;
 }
+
+/* Topbar actions — flex container para notificações e menu de usuário */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
