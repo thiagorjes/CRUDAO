@@ -3,11 +3,10 @@ import { apiProxyFetch } from "@/lib/api/proxy";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; usuarioId: string } }
+  { params }: { params: Promise<{ id: string; usuarioId: string }> }
 ) {
   try {
-    const tarefaId = params.id;
-    const usuarioId = params.usuarioId;
+    const { id: tarefaId, usuarioId } = await params;
 
     const response = await apiProxyFetch(
       `/api/tarefas/${tarefaId}/observadores/${usuarioId}`,

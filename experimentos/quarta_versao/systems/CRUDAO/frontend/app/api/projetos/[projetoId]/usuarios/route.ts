@@ -3,17 +3,18 @@ import { apiProxyFetch } from "@/lib/api/proxy";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ projetoId: string }> }
 ) {
   try {
-    const { id: tarefaId } = await params;
-    const response = await apiProxyFetch(`/api/tarefas/${tarefaId}/auditoria`, {
+    const { projetoId } = await params;
+
+    const response = await apiProxyFetch(`/api/projetos/${projetoId}/usuarios`, {
       method: "GET",
     });
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: "Erro ao obter auditoria" },
+        { error: "Erro ao obter usuários do projeto" },
         { status: response.status }
       );
     }
@@ -21,9 +22,9 @@ export async function GET(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("[GET /api/tarefas/:id/auditoria]", error);
+    console.error("[GET /api/projetos/:projetoId/usuarios]", error);
     return NextResponse.json(
-      { error: "Erro ao obter auditoria" },
+      { error: "Erro ao obter usuários do projeto" },
       { status: 500 }
     );
   }

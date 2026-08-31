@@ -98,3 +98,21 @@ export async function removerObservador(
     throw new Error(error.message || "Erro ao remover observador");
   }
 }
+
+/**
+ * Obter lista de usuários do projeto
+ * GET /api/projetos/{projetoId}/usuarios
+ */
+export async function obterUsuariosProjeto(projetoId: string): Promise<{ id: string; nome: string }[]> {
+  const res = await fetch(`/api/projetos/${projetoId}/usuarios`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const error = (await res.json()) as ApiError;
+    throw new Error(error.message || "Erro ao obter usuários do projeto");
+  }
+
+  return res.json();
+}

@@ -7,10 +7,10 @@ import { apiProxyFetch } from "@/lib/api";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projetoId: string } }
+  { params }: { params: Promise<{ projetoId: string }> }
 ) {
   try {
-    const { projetoId } = params;
+    const { projetoId } = await params;
 
     const res = await apiProxyFetch(
       `/api/projetos/${projetoId}/board`,

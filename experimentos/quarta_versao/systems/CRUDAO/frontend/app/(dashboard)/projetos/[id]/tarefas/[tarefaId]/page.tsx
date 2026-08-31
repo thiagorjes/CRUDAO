@@ -9,6 +9,7 @@ import {
   editarTarefa,
   adicionarObservador,
   removerObservador,
+  obterUsuariosProjeto,
 } from "@/lib/api/tarefa";
 import LeadTimePanel from "@/components/LeadTimePanel";
 import AuditoriaPanel from "@/components/AuditoriaPanel";
@@ -19,9 +20,11 @@ export default function TarefaDetalhePage() {
   const params = useParams();
   const router = useRouter();
   const tarefaId = params.tarefaId as string;
+  const projetoId = params.id as string;
 
   const [tarefa, setTarefa] = useState<TarefaDetalhe | null>(null);
   const [auditoria, setAuditoria] = useState<AuditoriaEntry[]>([]);
+  const [usuariosDisponiveis, setUsuariosDisponiveis] = useState<{ id: string; nome: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -32,12 +35,14 @@ export default function TarefaDetalhePage() {
     const carregar = async () => {
       try {
         setLoading(true);
-        const [tarefaData, auditoriaData] = await Promise.all([
+        const [tarefaData, auditoriaData, usuariosData] = await Promise.all([
           obterTarefaDetalhe(tarefaId),
           obterAuditoria(tarefaId),
+          obterUsuariosProjeto(projetoId),
         ]);
         setTarefa(tarefaData);
         setAuditoria(auditoriaData);
+        setUsuariosDisponiveis(usuariosData);
         setErro(null);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Erro ao carregar tarefa";
@@ -48,7 +53,7 @@ export default function TarefaDetalhePage() {
     };
 
     carregar();
-  }, [tarefaId]);
+  }, [tarefaId, projetoId]);
 
   const handleSalvarTarefa = useCallback(
     async (dados: { titulo: string; descricaoEscopo?: string }) => {
@@ -226,7 +231,7 @@ export default function TarefaDetalhePage() {
             observadores={tarefa.observadores}
             onAdicionar={handleAdicionarObservador}
             onRemover={handleRemoverObservador}
-            usuariosDisponiveis={[]} // TODO: popular com usuários do projeto
+            usuariosDisponiveis={usuariosDisponiveis}
           />
         </div>
       </div>

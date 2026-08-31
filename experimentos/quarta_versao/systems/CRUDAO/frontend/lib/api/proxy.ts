@@ -8,7 +8,14 @@ export async function apiProxyFetch(
   path: string,
   options?: RequestInit
 ): Promise<Response> {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  if (!backendUrl) {
+    throw new Error(
+      "NEXT_PUBLIC_BACKEND_URL não configurada. Configure em .env.local ou variáveis de ambiente."
+    );
+  }
+
   const url = `${backendUrl}${path}`;
 
   // Obter token da sessão
