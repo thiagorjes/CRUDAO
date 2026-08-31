@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
 import { apiProxyFetch } from "@/lib/api";
 
 /**
@@ -5,22 +6,31 @@ import { apiProxyFetch } from "@/lib/api";
  * Proxy para GET /api/projetos/{projetoId}/board do backend
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { projetoId: string } }
 ) {
-  const { projetoId } = params;
+  try {
+    const { projetoId } = params;
 
-  const res = await apiProxyFetch(
-    `/api/projetos/${projetoId}/board`,
-    { method: "GET" }
-  );
+    const res = await apiProxyFetch(
+      `/api/projetos/${projetoId}/board`,
+      { method: "GET" }
+    );
 
-  if (!res.ok) {
-    return new Response(res.body, { status: res.status });
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: "Erro ao obter board" },
+        { status: res.status }
+      );
+    }
+
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("[GET /api/board/:projetoId]", error);
+    return NextResponse.json(
+      { error: "Erro ao obter board" },
+      { status: 500 }
+    );
   }
-
-  return new Response(res.body, {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }

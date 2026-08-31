@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import type { BoardTarefa, BoardEtapa } from "@/lib/types";
 
 interface CardProps {
@@ -22,6 +24,9 @@ export default function Card({
   onToggleImpedimento,
   projetoFinalizado = false,
 }: CardProps) {
+  const params = useParams();
+  const projetoId = params.id as string;
+
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -104,9 +109,12 @@ export default function Card({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-gray-900 truncate">
+          <Link
+            href={`/projetos/${projetoId}/tarefas/${tarefa.id}`}
+            className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate block"
+          >
             {tarefa.titulo}
-          </h4>
+          </Link>
           <p className="text-xs text-gray-500 mt-1">
             {etapaAtual?.nome}
           </p>

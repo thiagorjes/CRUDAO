@@ -87,7 +87,7 @@ export default function BoardLayout({
                             sem cards
                           </p>
                         ) : (
-                          tarefasRaia.map((tarefa) => (
+                          tarefasRaia.map((tarefa: BoardTarefa) => (
                             <Card
                               key={tarefa.id}
                               tarefa={tarefa}

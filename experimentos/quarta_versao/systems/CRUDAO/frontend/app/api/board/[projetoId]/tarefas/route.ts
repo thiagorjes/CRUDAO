@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
 import { apiProxyFetch } from "@/lib/api";
 
 /**
@@ -5,24 +6,30 @@ import { apiProxyFetch } from "@/lib/api";
  * Proxy para POST /api/projetos/{projetoId}/tarefas do backend
  */
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { projetoId: string } }
 ) {
-  const { projetoId } = params;
-  const body = await request.json();
+  try {
+    const { projetoId } = params;
+    const body = await request.json();
 
-  const res = await apiProxyFetch(`/api/projetos/${projetoId}/tarefas`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+    const res = await apiProxyFetch(`/api/projetos/${projetoId}/tarefas`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
 
-  if (!res.ok) {
-    return new Response(res.body, { status: res.status });
+    if (!res.ok) {
+      const errorData = await res.json();
+      return NextResponse.json(errorData, { status: res.status });
+    }
+
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (error) {
+    console.error("[POST /api/board/:projetoId/tarefas]", error);
+    return NextResponse.json(
+      { error: "Erro ao criar tarefa" },
+      { status: 500 }
+    );
   }
-
-  return new Response(res.body, {
-    status: res.status,
-    headers: { "Content-Type": "application/json" },
-  });
 }

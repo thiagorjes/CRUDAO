@@ -49,6 +49,54 @@ export type EventoBoardMessage = {
   timestamp: string;
 };
 
+// Detalhe da tarefa (TASK-07.3)
+export type LeadTimeEtapa = {
+  etapaId: string;
+  etapaNome: string;
+  sequencia: number;
+  duracao: number; // ms
+};
+
+export type AuditoriaEntry = {
+  id: string;
+  tipo: string; // CRIACAO, MOVIDA, IMPEDIDA, etc.
+  descricao: string;
+  usuarioId: string;
+  usuarioNome: string;
+  timestamp: string;
+  dadosAntigos?: Record<string, unknown>;
+  dadosNovos?: Record<string, unknown>;
+};
+
+export type TarefaDetalhe = {
+  id: string;
+  titulo: string;
+  descricaoEscopo?: string;
+  etapaAtualId: string;
+  etapaNome: string;
+  raiaId: string;
+  raiaNome: string;
+  responsavelId?: string;
+  responsavelNome?: string;
+  iniciada: boolean;
+  impedida: boolean;
+  impedidaDesde?: string;
+  criadaEm: string;
+  criadoPorId: string;
+  criadoPorNome: string;
+  atualizadaEm: string;
+  leadTimePorEtapa: LeadTimeEtapa[];
+  leadTimeTotal: number; // ms
+  tempoImpedimento: number; // ms acumulado
+  observadores: { id: string; nome: string }[];
+};
+
+export type EditarTarefaRequest = {
+  titulo: string;
+  descricaoEscopo?: string;
+  responsavelId?: string;
+};
+
 // Erro de API
 export type ApiError = {
   error?: string;

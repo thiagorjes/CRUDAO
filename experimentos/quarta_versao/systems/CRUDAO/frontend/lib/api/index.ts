@@ -1,0 +1,1 @@
+export { apiProxyFetch } from "./proxy";
