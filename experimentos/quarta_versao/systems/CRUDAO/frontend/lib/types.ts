@@ -103,3 +103,27 @@ export type ApiError = {
   message?: string;
   status?: number;
 };
+
+// Admin types
+export type ProjtoDetalhe = {
+  id: string;
+  nome: string;
+  descricao?: string;
+  finalizado: boolean;
+  criadoEm: string;
+};
+
+export type Workflow = {
+  id: string;
+  nome: string;
+  projetoId: string;
+  ordem: number;
+};
+
+export type Raia = {
+  id: string;
+  nome: string;
+  projetoId?: string;
+  global: boolean;
+  ordem: number;
+};
