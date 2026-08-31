@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type Tab = "projeto" | "workflows" | "raias";
+type Tab = "projeto" | "workflows" | "raias" | "papeis";
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;
@@ -16,6 +16,7 @@ export default function AdminLayoutClient({ children, projetoId }: AdminLayoutCl
     { id: "projeto", label: "Projeto", href: `/projetos/${projetoId}/admin/projeto` },
     { id: "workflows", label: "Workflows", href: `/projetos/${projetoId}/admin/workflows` },
     { id: "raias", label: "Raias", href: `/projetos/${projetoId}/admin/raias` },
+    { id: "papeis", label: "Papéis", href: `/projetos/${projetoId}/admin/papeis` },
   ];
 
   return (

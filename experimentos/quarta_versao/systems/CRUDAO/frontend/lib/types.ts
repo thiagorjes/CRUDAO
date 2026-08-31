@@ -127,3 +127,18 @@ export type Raia = {
   global: boolean;
   ordem: number;
 };
+
+export type Papel = {
+  id: string;
+  nome: string;
+  projetoId?: string;
+  protegido: boolean;
+};
+
+export type UsuarioProjetoPapel = {
+  usuarioId: string;
+  projetoId: string;
+  papelId: string;
+  usuarioNome: string;
+  papelNome: string;
+};
