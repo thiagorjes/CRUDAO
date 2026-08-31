@@ -1,6 +1,6 @@
 # TASK-06.1 — Migration V7 + agregação de lead-time médio
 
-**Status:** Concluída — 2026-08-26
+**Status:** Concluída — 2026-08-31 (/implement + /code-review APROVADO COM RESSALVAS; ITs adiados para /tests)
 
 **Tamanho:** [G] 1-2 dias
 **Sistema:** CRUDAO
@@ -14,14 +14,17 @@ Visibilidade para gestores sem necessidade de acompanhar a execução diretament
 
 ## O que deve ser feito
 
-- [x] ~~Criar migration V7 (Notificacao)~~ — já criada em TASK-05.2; nome desatualizado no texto original desta task. Migration nova desta task: **V11** (adiciona `etapa_id` a `tarefa_impedimento_historico`).
+- [x] **Sem migration nova.** O texto original mencionava "V7 (Notificacao)" (criada em TASK-05.2) e um rascunho posterior citava "V11 (`etapa_id` em `tarefa_impedimento_historico`)" — ambos descartados. O tempo de impedimento por etapa é derivado em leitura (ver Decisão de implementação abaixo).
 - [x] Implementar `GET /api/projetos/{projetoId}/dashboard`: lead-time médio por etapa + tempo médio de impedimento agregado (RN-001, RN-002), a partir de `TarefaEtapaHistorico`/`TarefaImpedimentoHistorico`.
 - [x] Garantir acessibilidade do dashboard mesmo com projeto finalizado (RN-015 — leitura permitida, sem `exigirProjetoAtivo`).
 
+## Decisão de implementação (2026-08-31)
+
+`TarefaImpedimentoHistorico` não referencia etapa. Em vez de adicionar `etapa_id` via migration + backfill + escrita na engine de impedimento (`TarefaService`, lógica congelada/safeguarded), o tempo de impedimento por etapa é calculado em leitura, por **sobreposição (overlap)** de cada intervalo de impedimento da tarefa com a janela `[entradaEm, saidaEm]` do `TarefaEtapaHistorico`. Atende RN-002 sem alterar schema nem tocar a engine. Volume baixo — contrato dispensa materialização.
+
 ## Guia técnico
 
-- `backend/src/main/resources/db/migration/V7__notificacao.sql`
-- `backend/src/main/java/.../dashboard/DashboardService.java`
+- `backend/src/main/java/.../dashboard/DashboardService.java`, `DashboardResponse.java`, `DashboardController.java`
 - Contrato: `docs/techspec/kanban-tarefas/contracts/dashboard-notificacoes.md`.
 
 ## Critérios de aceite

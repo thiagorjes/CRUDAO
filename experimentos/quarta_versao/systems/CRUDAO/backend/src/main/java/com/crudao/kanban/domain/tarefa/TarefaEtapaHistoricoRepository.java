@@ -6,5 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TarefaEtapaHistoricoRepository extends JpaRepository<TarefaEtapaHistorico, UUID> {
     List<TarefaEtapaHistorico> findByTarefaIdOrderByEntradaEmAsc(UUID tarefaId);
+
+    List<TarefaEtapaHistorico> findByTarefa_Projeto_Id(UUID projetoId);
 }
 

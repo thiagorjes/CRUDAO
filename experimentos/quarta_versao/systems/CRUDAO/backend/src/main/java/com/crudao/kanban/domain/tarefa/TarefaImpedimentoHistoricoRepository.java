@@ -9,5 +9,7 @@ public interface TarefaImpedimentoHistoricoRepository extends JpaRepository<Tare
     List<TarefaImpedimentoHistorico> findByTarefaIdOrderByMarcadoEmAsc(UUID tarefaId);
 
     Optional<TarefaImpedimentoHistorico> findByTarefaIdAndDesmarcadoEmIsNull(UUID tarefaId);
+
+    List<TarefaImpedimentoHistorico> findByTarefa_Projeto_Id(UUID projetoId);
 }
 

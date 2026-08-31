@@ -397,16 +397,16 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
 
 ## EPIC 06 — Dashboard
 
-### TASK-06.1 — Migration V7 + agregação de lead-time médio [G]
+### TASK-06.1 — Agregação de lead-time médio (dashboard) [G]
 
 - **Sistema:** CRUDAO
 - **RF de origem:** RF-007
 - **Dependências:** TASK-04.5
 - **Contexto:** Visibilidade para gestores sem necessidade de acompanhar a execução diretamente — segundo objetivo central do PRD.
 - **O que deve ser feito:**
-  - [ ] Criar migration V7 (Notificacao). **Não criar V8** — pertence exclusivamente a TASK-02.3.
-  - [ ] Implementar `GET /api/projetos/{projetoId}/dashboard` (contrato `dashboard-notificacoes.md`): lead-time médio por etapa + tempo médio de impedimento agregado (RN-001, RN-002), a partir de `TarefaEtapaHistorico`/`TarefaImpedimentoHistorico`, usando os índices já criados em `data-model.md`.
-  - [ ] Garantir acessibilidade do dashboard mesmo com projeto finalizado (RN-015 — leitura permitida).
+  - [x] **Sem migration nova** (o "V7 (Notificacao)" do texto original foi entregue em TASK-05.2). Tempo de impedimento por etapa derivado em leitura por overlap — ver "Decisão de implementação" no arquivo individual da task.
+  - [x] Implementar `GET /api/projetos/{projetoId}/dashboard` (contrato `dashboard-notificacoes.md`): lead-time médio por etapa + tempo médio de impedimento agregado (RN-001, RN-002), a partir de `TarefaEtapaHistorico`/`TarefaImpedimentoHistorico`, usando os índices já criados em `data-model.md`.
+  - [x] Garantir acessibilidade do dashboard mesmo com projeto finalizado (RN-015 — leitura permitida).
 - **Guia técnico:** `backend/src/main/java/.../dashboard/DashboardService.java`. Contrato: `dashboard-notificacoes.md`.
 - **Critérios de aceite:**
   - Dashboard agrega lead-time médio corretamente com histórico de múltiplas tarefas/etapas (dataset controlado de teste).
