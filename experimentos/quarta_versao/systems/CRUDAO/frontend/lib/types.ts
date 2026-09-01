@@ -131,12 +131,19 @@ export type Raia = {
   global: boolean;
 };
 
+export type PermissaoToggle = { chave: string; habilitada: boolean };
+
+/** Espelha PapelResponse (backend) — GET /api/projetos/{id}/papeis. */
 export type Papel = {
   id: string;
+  chave: string;
   nome: string;
-  projetoId?: string;
   protegido: boolean;
+  permissoes: PermissaoToggle[];
 };
+
+/** Espelha UsuarioBuscaResponse (GET /api/projetos/{id}/usuarios/buscar). */
+export type UsuarioBusca = { id: string; nome: string; email: string };
 
 /** Espelha ProjetoController.UsuarioProjetoResponse (GET /api/projetos/{id}/usuarios). */
 export type UsuarioProjetoPapel = {
