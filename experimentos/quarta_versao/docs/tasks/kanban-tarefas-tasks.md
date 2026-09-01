@@ -571,10 +571,11 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
 - **Dependências:** TASK-05.3
 - **[P] com:** TASK-08.1
 - **Contexto:** Fecha os requisitos de `observability.md` não cobertos incrementalmente pelas tasks anteriores.
+- **Status:** Concluída (2026-09-01)
 - **O que deve ser feito:**
-  - [ ] Confirmar logging em arquivo local (rotação 5MB, retenção 10 arquivos).
-  - [ ] Confirmar métricas mínimas via Actuator/Micrometer completas (reconexões, latência NOTIFY→STOMP).
-  - [ ] Produzir stub de runbook operacional de indisponibilidade do Keycloak (referenciado na TechSpec como pré-requisito de go-live, fora do escopo funcional).
+  - [x] `logback-spring.xml`: arquivo local `RollingFileAppender` 5MB + `FixedWindowRollingPolicy` (10 arquivos no total) + console.
+  - [x] Métricas Actuator/Micrometer (`kanban.listener.reconnections`, `kanban.listener.notify_to_stomp` já em `AbstractListenNotifyRelay`; endpoint `metrics` exposto, acesso autenticado por decisão de TASK-08.3).
+  - [x] `docs/runbooks/keycloak-indisponivel.md` (stub): sintoma, verificação, escalonamento.
 - **Guia técnico:** `backend/src/main/resources/logback-spring.xml`; `docs/runbooks/keycloak-indisponivel.md` (novo).
 - **Critérios de aceite:**
   - Logs rotacionam conforme especificado.

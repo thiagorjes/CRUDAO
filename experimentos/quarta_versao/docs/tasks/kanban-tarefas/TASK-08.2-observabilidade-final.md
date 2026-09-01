@@ -12,9 +12,9 @@ Fecha os requisitos de `observability.md` não cobertos incrementalmente pelas t
 
 ## O que deve ser feito
 
-- [ ] Confirmar logging em arquivo local (rotação 5MB, retenção 10 arquivos).
-- [ ] Confirmar métricas mínimas via Actuator/Micrometer completas (reconexões, latência NOTIFY→STOMP).
-- [ ] Produzir stub de runbook operacional de indisponibilidade do Keycloak (referenciado na TechSpec como pré-requisito de go-live, fora do escopo funcional).
+- [x] Confirmar logging em arquivo local (rotação 5MB, retenção 10 arquivos).
+- [x] Confirmar métricas mínimas via Actuator/Micrometer completas (reconexões, latência NOTIFY→STOMP).
+- [x] Produzir stub de runbook operacional de indisponibilidade do Keycloak (referenciado na TechSpec como pré-requisito de go-live, fora do escopo funcional).
 
 ## Guia técnico
 
@@ -27,10 +27,22 @@ Fecha os requisitos de `observability.md` não cobertos incrementalmente pelas t
 - Métricas visíveis via `/actuator/metrics`.
 - Runbook stub existe e cobre: sintoma, verificação, escalonamento.
 
-## Status: Concluída — 2026-08-26
+## Status: Concluída — 2026-09-01
 
-- `logback-spring.xml` criado (novo): appender de arquivo `RollingFileAppender` + `FixedWindowRollingPolicy` (maxIndex 10) + `SizeBasedTriggeringPolicy` (5MB), console mantido em paralelo.
-- `application.yml`: `management.endpoints.web.exposure.include` ganhou `metrics` (health/info já expostos desde TASK-02.1/05.3) — expõe os contadores/timers `kanban.evento.listener.reconexoes`/`kanban.evento.listener.latencia` já criados em `AbstractPgListener` (TASK-05.3), sem métrica nova nesta task.
-- `docs/runbooks/keycloak-indisponivel.md` criado (novo) — sintoma, verificação, escalonamento (ADR-006 referenciado).
-- Testes: `mvn test -Dtest="*Test"` — **165/165 verdes**, sem regressão.
-- **Code review:** agent QA (contexto fresco, general-purpose) — 0 findings 🔴. 2 findings 🟡 corrigidos: (1) `maxIndex=10` em `logback-spring.xml` retinha 11 arquivos (1 ativo + 10 rotacionados) em vez de 10 — corrigido para `maxIndex=9`; (2) `logs/` sem entrada em `.gitignore` do backend, risco de commit acidental de log local — adicionado. 3 findings 🟢 não corrigidos (decisão, baixo risco): `/actuator/metrics` autenticado mas sem restrição de papel (registrar como guardrail futuro no canvas); `LOG_FILE` com caminho relativo (infra de deploy, fora de escopo); sem teste automatizado (esperado, task config-only).
+- `backend/src/main/resources/logback-spring.xml` criado: `RollingFileAppender` em
+  `${LOG_DIR:-logs}/kanban-backend.log` + `FixedWindowRollingPolicy` (`minIndex 1`, `maxIndex 9`
+  → 10 arquivos no total contando o ativo) + `SizeBasedTriggeringPolicy` `5MB`; `ConsoleAppender`
+  mantido para `docker logs`. `include` dos defaults do Spring Boot para os patterns. Boot
+  verificado no compose: `logs/kanban-backend.log` criado, app sobe em ~10s.
+- Métricas: `application.yml` já expunha `health,info,metrics`. Os meters exigidos já existem em
+  `AbstractListenNotifyRelay` (TASK-05.3): `kanban.listener.reconnections` (Counter, tag `canal`) e
+  `kanban.listener.notify_to_stomp` (Timer, tag `canal`) — registrados no construtor, um par por
+  canal (`board_events`, `notificacao_events`). Nenhuma métrica nova nesta task.
+  `GET /actuator/metrics` responde `403` sem autenticação **por decisão de TASK-08.3**
+  (`SecurityConfig`: só `/actuator/health/**` é `permitAll`, o resto exige sessão autenticada para
+  não vazar detalhes internos) — endpoint exposto e meters registrados; acesso é autenticado.
+- `docs/runbooks/keycloak-indisponivel.md` criado (stub) — contexto (ADR-006, sem fallback),
+  sintoma, verificação, ação imediata, tabela de escalonamento N1/N2/N3, pendências do stub.
+- `logs/` já está em `systems/CRUDAO/backend/.gitignore`.
+- Sem teste automatizado (task config/doc-only). Suíte de integração sem regressão (rebuild do
+  backend no compose sobe e fica `healthy`; `listenNotify` UP em ambos os canais).
