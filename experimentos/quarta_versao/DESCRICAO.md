@@ -53,5 +53,7 @@ Problemas:
 7. garantir que todos os testes serão mapeados, implementados e testados com sucesso. testes com sucesso obrigatórios: Acceptance Criteria Tests, Unitary Tests , Integration Tests.
 8. fluxo deve ser: Criar Banco e schema, criar modelos/services/controllers/repositories etc, rodar flyway, criar testes, rodar testes. Assim conseguiremos rodar as etapas anteriores sem falhas.
 
+9. usar modelos piores para gerar tasks piora a implementação, mesmo quando feita por um modelo melhor.
+
 
 
