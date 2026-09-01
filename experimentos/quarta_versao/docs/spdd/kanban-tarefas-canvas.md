@@ -114,7 +114,7 @@ _Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review v1.0 - 2026-09-01 (TASK-07.7)_
+_Atualizado por: /code-review v1.0 - 2026-09-01 (fidelidade de telas)_
 > Decisoes: ADR-002, ADR-004, ADR-008
 
 Guardrails consolidados a partir dos artefatos e confirmados como requisitos de revisão. A implementação da feature verificada task a task.
@@ -147,8 +147,12 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - **Clientes STOMP DEVEM ter guarda de encerramento (`encerrado`/`desconectar`) que impeça reconexão e novas chamadas de `getTicket()` após unmount do componente.**
 - **`lib/api/proxy.ts` do frontend DEVE delegar para `lib/api.ts` (cookie `kanban_session` cifrado + `decifrarSessao`); nunca ler um cookie de nome `session` nem usar o valor cru como Bearer.**
 - **Payload STOMP de notificações é apenas gatilho: o cliente recarrega `GET /api/notificacoes` (fonte de verdade) a cada MESSAGE; não há lógica de `seq`/gap para notificações (só para o board).**
+- **Fidelidade de UI: toda tela com protótipo em `docs/design/kanban-tarefas/prototypes/` deve replicar a marcação (estrutura + estados) e usar EXCLUSIVAMENTE as classes do design system de `app/globals.css` (paridade manual com `_shared.css`). PROIBIDO estilizar com classes de framework CSS não instalado (Tailwind não está no `package.json` nem configurado) — resultam em telas sem estilo. (registrado por /code-review fidelidade de telas — 2026-09-01)**
+- **`app/globals.css` deve ser mantido em paridade 1:1 com `docs/design/kanban-tarefas/prototypes/_shared.css`; divergências (ex.: `table th`, `font-family` do body) são regressão de design.**
 
 **Findings desta revisão:**
+
+- /code-review fidelidade de telas — **REPROVADO** (2026-09-01): 3 críticos (C1 Tailwind não instalado usado em ~18 telas TASK-07.2+; C2 TL-06 confirmação de exclusão via `window.confirm()`; C3 TL-04 é página, não drawer), 7 importantes (board/card/modal-nova-tarefa/dashboard/admin/sidebar fora da marcação dos protótipos; `globals.css` fora de paridade), 4 sugestões. Rotas `admin/workflows/[workflowId]` e `admin/usuarios` (TL-08 Colunas/Transições, TL-10) não existem (página nem route handler). Fiéis: TL-01; parcial: TL-02. Relatório: `docs/checklists/kanban-tarefas-ui-fidelidade-review.md`.
 
 - TASK-03.2 e TASK-03.3 aprovadas sem ressalvas em 2026-08-28.
 - TASK-04.2 aprovado com ressalvas (1 importante: validação de entrada em editar(), 2 sugestões menores) em 2026-08-28.
