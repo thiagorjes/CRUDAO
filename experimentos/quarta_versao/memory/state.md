@@ -56,6 +56,7 @@ _Atualizado em: 2026-08-31 (17h45)_
 | docs/checklists/kanban-tarefas-TASK-05.1-review.md | 1.0 | ok - Aprovado com ressalvas (3 sugestões observabilidade) |
 | docs/checklists/kanban-tarefas-TASK-06.1-review.md | 1.0 | ok - Aprovado com ressalvas |
 | docs/checklists/kanban-tarefas-TASK-07.1-review.md | 1.0 | ok - APROVADO (3 importantes corrigidos pós-review) |
+| docs/checklists/kanban-tarefas-TASK-07.6-review.md | 1.0 | ok - APROVADO (0 críticos, 0 importantes, 3 sugestões) |
 | docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review (TASK-05.1) com guardrails STOMP/LISTEN-NOTIFY |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
@@ -115,6 +116,9 @@ _Atualizado em: 2026-08-31 (17h45)_
 | 2026-08-31 | /code-review TASK-07.3: ❌ REPROVADO inicialmente (1 crítico, 2 importantes, 3 sugestões). C1: assinatura Next.js 14+ incompatível; I1: RF-005 incompleto; I2: validação URL ausente. |
 | 2026-08-31 | Correções aplicadas (1 hora): C1 resolvido em 8 route handlers (tarefas + board); I1 implementado (novo endpoint `/api/projetos/{id}/usuarios`, carregamento em frontend, passa para ObservadoresPanel); I2 adicionada validação em proxy.ts. Build ✅ bem-sucedido. |
 | 2026-08-31 | /code-review TASK-07.3 (pós-correções): ✅ APROVADO COM RESSALVAS (0 críticos residuais, 0 importantes residuais, 3 sugestões adiáveis). Código pronto para merge. Sugestões (S1-S3) são melhorias futuras. |
+| 2026-09-01 | TASK-07.4 e TASK-07.5 commitadas (Admin UI projeto/workflows/raias/papéis/permissões/usuários) — `727ce45`, `fbdbc40`. |
+| 2026-09-01 | /code-review TASK-07.6: ✅ APROVADO (0 críticos, 0 importantes, 3 sugestões adiáveis: S1 import via barrel `@/lib/api`, S2 validação de UUID no route handler, S3 testes de `formatarTempo`/mapeamento de status). Gate: `tsc` ✅, `vitest` ✅ (5, sem testes de dashboard), eslint inutilizável (config v9 ausente no repo). Canvas S +2 safeguards (tipos TS espelham contrato 1:1 em segundos; dashboard sem gate de permissão client-side). Relatório: `docs/checklists/kanban-tarefas-TASK-07.6-review.md`. |
+| 2026-09-01 | /implement TASK-07.6 (Dashboard UI) concluído: página `projetos/[id]/dashboard/page.tsx`, `components/dashboard/DashboardView.tsx` (tabela lead-time + impedimento médios por etapa, formatação de duração, total de tarefas consideradas), route handler proxy `GET /api/dashboard/[projetoId]` → `/api/projetos/{id}/dashboard`. Tipos `EtapaLeadTime`/`Dashboard` em `lib/types.ts` **realinhados ao contrato real do backend** (`leadTimeMedioPorEtapa`, `leadTimeMedioSegundos`, `tempoImpedimentoMedioSegundos`, `totalTarefasConsideradas`) — o rascunho anterior assumia campos inexistentes (agregado ms, `impedimentoPorEtapa`). Link de nav já existia em `DashboardShell`. `tsc --noEmit` ✅. Falta /code-review. |
 
 ## kanban-tarefas
 
@@ -137,8 +141,14 @@ _Atualizado em: 2026-08-31 (17h45)_
   - `TASK-06.1` — Dashboard: `GET /api/projetos/{id}/dashboard` — lead-time médio/etapa + impedimento/etapa por overlap (sem migration), RN-015 (Review Aprovado com ressalvas, 8 testes unitários) (2026-08-31) — **EPIC 06 concluído**
   - `TASK-07.1` — Shell Next.js + autenticação (sidebar, topbar, proteção rotas, `/api/me`, login/logout OIDC, Design Brief 100%) (2026-08-31) — **Review APROVADO**
   - `TASK-07.2` — Board UI (cards, mover, impedimento, STOMP realtime) (2026-08-31) — **Review APROVADO COM RESSALVAS**
+  - `TASK-07.3` — Detalhe da tarefa (lead-time, auditoria, edição, observadores) (2026-08-31) — **Review APROVADO COM RESSALVAS**
+  - `TASK-07.4` — Admin UI projeto/workflows/raias (2026-09-01, commit `727ce45`)
+  - `TASK-07.5` — Admin UI papéis/permissões/usuários (2026-09-01, commit `fbdbc40`)
+  - `TASK-07.6` — Dashboard UI (lead-time + impedimento médios/etapa) (2026-09-01) — **Review APROVADO**
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** /code-review TASK-07.2 — APROVADO COM RESSALVAS (0 críticos, 2 importantes adiáveis) (2026-08-31)
+- **Última Etapa:** /code-review TASK-07.6 — APROVADO (0 críticos, 0 importantes, 3 sugestões) (2026-09-01)
+- **Code review:** TASK-07.6 — APROVADO — 2026-09-01
+- **Findings:** 0 críticos, 0 importantes, 3 sugestões
 - **Testes:** 164 na suíte `-P integration-tests` (inclui `DashboardServiceTest` 8 + `DashboardControllerIntegrationTest` 4). Execução ITs: `systems/CRUDAO/run-integration-tests.ps1`.
 - **API Status:** ✅ Backend (imagem final) sobe no compose — Flyway V1-V7 validado, STOMP operacional. Actuator expõe `health,info,metrics`; grupo `readiness` reflete estado dos listeners LISTEN/NOTIFY.
-- **Próximo passo recomendado:** Merge TASK-07.2 (APROVADO COM RESSALVAS — nenhum crítico bloqueia). Em paralelo: `TASK-07.3` (Detalhe da tarefa) ou `TASK-07.2-refinement` (adicionar `projetoFinalizado` ao backend). Epic 08 (hardening) após Epic 07 MVP. Pendência aberta de PO: RN-002 "total agregado" no payload do dashboard (TASK-06.1).
+- **Próximo passo recomendado:** `TASK-07.7` (Notificações UI) fecha o EPIC 07. Depois (Notificações UI) fecha o EPIC 07. Epic 08 (hardening) após Epic 07 MVP. Pendências abertas de PO: RN-002 "total agregado" no payload do dashboard (TASK-06.1); `projetoFinalizado` no GET /board (I1 de TASK-07.2/07.3).

@@ -114,7 +114,7 @@ _Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review v1.0 - 2026-08-28 (TASK-05.1)_
+_Atualizado por: /code-review v1.0 - 2026-09-01 (TASK-07.6)_
 > Decisoes: ADR-002, ADR-004, ADR-008
 
 Guardrails consolidados a partir dos artefatos e confirmados como requisitos de revisão. A implementação da feature verificada task a task.
@@ -140,6 +140,8 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - **Premissa "1 workflow por projeto": BoardService (TASK-04.5) e DashboardService (TASK-06.1) usam `workflows.get(0)`; o schema não impõe `UNIQUE(workflow.projeto_id)`. Se a modelagem passar a permitir múltiplos workflows ativos por projeto, ambos os serviços precisam ser revistos (histórico/agregação de outros workflows é hoje silenciosamente ignorado). (registrado por /code-review TASK-06.1)**
 - **Dashboard (GET /api/projetos/{projetoId}/dashboard) é somente leitura e permanece acessível com projeto FINALIZADO (RN-015): exige apenas `permissaoGuard.membro(projetoId)` (403) — nunca `exigirProjetoAtivo`. Tempo de impedimento por etapa é derivado em leitura por overlap de intervalos, sem coluna `etapa_id` em `tarefa_impedimento_historico`.**
 - **Publicação de eventos é best-effort (não falha a transação); cliente mitiga divergência via resincronização por seq.**
+- **Tipos TypeScript de payloads de API devem espelhar 1:1 o contrato (`docs/techspec/kanban-tarefas/contracts/*`) e o record/DTO do backend — nomes de campo e unidade (segundos, não ms). Dashboard UI (TASK-07.6): `leadTimeMedioPorEtapa[].{leadTimeMedioSegundos,tempoImpedimentoMedioSegundos}` + `totalTarefasConsideradas`. (registrado por /code-review TASK-07.6)**
+- **Rotas de API do frontend (route handlers) NÃO aplicam gate de permissão client-side para o dashboard: autorização é exclusivamente do backend (`permissaoGuard.membro`, 403). Papel `gestor` sem permissão de execução acessa normalmente.**
 
 **Findings desta revisão:**
 
@@ -147,6 +149,7 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - TASK-04.2 aprovado com ressalvas (1 importante: validação de entrada em editar(), 2 sugestões menores) em 2026-08-28.
 - TASK-04.3 aprovado com ressalvas (1 importante: verificação redundante de projeto finalizado removida, 1 sugestão: TODO para TASK-05.2) em 2026-08-28.
 - TASK-05.1 aprovado com ressalvas (0 críticos, 0 importantes, 3 sugestões: timeout explícito LISTEN, métrica latência NOTIFY→STOMP, logging de gap) em 2026-08-28.
+- TASK-07.6 (Dashboard UI) APROVADO (0 críticos, 0 importantes, 3 sugestões: import via barrel, validação UUID no route handler, testes de `formatarTempo`/status) em 2026-09-01.
 
 ---
 

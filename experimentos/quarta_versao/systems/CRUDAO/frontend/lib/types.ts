@@ -142,3 +142,15 @@ export type UsuarioProjetoPapel = {
   usuarioNome: string;
   papelNome: string;
 };
+
+export type EtapaLeadTime = {
+  etapaId: string;
+  etapaNome: string;
+  leadTimeMedioSegundos: number;
+  tempoImpedimentoMedioSegundos: number;
+};
+
+export type Dashboard = {
+  leadTimeMedioPorEtapa: EtapaLeadTime[];
+  totalTarefasConsideradas: number;
+};
