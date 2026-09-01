@@ -1,70 +1,99 @@
-"use client";
-
 import type { Dashboard } from "@/lib/types";
+import { formatarDuracao } from "@/lib/format";
 
 interface DashboardViewProps {
   dashboard: Dashboard;
 }
 
+/**
+ * TL-07 — Dashboard (docs/design/.../tl-07-dashboard.html).
+ *
+ * Limitação de contrato (registrada em I4 da review de fidelidade): o backend
+ * (`GET /api/projetos/{id}/dashboard`) não expõe um agregado "geral" nem filtro de período —
+ * só a série por etapa e o total de tarefas consideradas. "Lead-time médio geral" e "Tempo médio
+ * de impedimento" abaixo são a média simples entre as etapas (aproximação, não um agregado real
+ * ponderado pelo backend); não há seletor de período nesta versão.
+ */
 export default function DashboardView({ dashboard }: DashboardViewProps) {
-  const formatarTempo = (segundosTotais: number): string => {
-    const s = Math.max(0, Math.floor(segundosTotais));
-    if (s === 0) return "0s";
-    const segundos = s % 60;
-    const minutos = Math.floor(s / 60) % 60;
-    const horas = Math.floor(s / 3600) % 24;
-    const dias = Math.floor(s / 86400);
-
-    if (dias > 0) return `${dias}d ${horas}h`;
-    if (horas > 0) return `${horas}h ${minutos}m`;
-    if (minutos > 0) return `${minutos}m ${segundos}s`;
-    return `${segundos}s`;
-  };
-
   const etapas = dashboard.leadTimeMedioPorEtapa ?? [];
 
+  const media = (valores: number[]) =>
+    valores.length === 0 ? 0 : valores.reduce((a, b) => a + b, 0) / valores.length;
+
+  const leadTimeMedioGeral = media(etapas.map((e) => e.leadTimeMedioSegundos));
+  const impedimentoMedioGeral = media(etapas.map((e) => e.tempoImpedimentoMedioSegundos));
+  const maxLeadTime = Math.max(1, ...etapas.map((e) => e.leadTimeMedioSegundos));
+
   return (
-    <div className="flex flex-col h-full bg-gray-50 p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          Visão de gestão — lead-time e impedimento médios por etapa
-          {" · "}
-          {dashboard.totalTarefasConsideradas} tarefa(s) considerada(s)
-        </p>
+    <div>
+      <div className="page-header">
+        <h1>Dashboard</h1>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Lead-Time e Impedimento Médios por Etapa
-        </h2>
-        {etapas.length > 0 ? (
-          <table className="w-full text-sm">
+      {etapas.length === 0 ? (
+        <div className="empty-state">
+          Ainda não há movimentações suficientes para calcular lead-time neste projeto.
+        </div>
+      ) : (
+        <>
+          <section aria-label="KPIs">
+            <div className="kpi-grid">
+              <div className="card kpi-card">
+                <div className="kpi-value">{formatarDuracao(leadTimeMedioGeral)}</div>
+                <div className="kpi-label">Lead-time médio geral</div>
+              </div>
+              <div className="card kpi-card">
+                <div className="kpi-value">{formatarDuracao(impedimentoMedioGeral)}</div>
+                <div className="kpi-label">Tempo médio de impedimento</div>
+              </div>
+              <div className="card kpi-card">
+                <div className="kpi-value">{dashboard.totalTarefasConsideradas}</div>
+                <div className="kpi-label">Tarefas consideradas</div>
+              </div>
+            </div>
+
+            <div className="card">
+              <h2 style={{ fontSize: 14 }}>Lead-time médio por etapa</h2>
+              <div
+                className="bar-chart"
+                role="img"
+                aria-label={`Gráfico de lead-time médio por etapa: ${etapas
+                  .map((e) => `${e.etapaNome} ${formatarDuracao(e.leadTimeMedioSegundos)}`)
+                  .join(", ")}`}
+              >
+                {etapas.map((e) => (
+                  <div key={e.etapaId} className="bar-wrap">
+                    <div
+                      className="bar"
+                      style={{ height: `${Math.max(4, (e.leadTimeMedioSegundos / maxLeadTime) * 140)}px` }}
+                    />
+                    {e.etapaNome}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <table style={{ marginTop: "var(--space-lg)" }}>
             <thead>
-              <tr className="text-left text-gray-500 border-b border-gray-200">
-                <th className="py-2 font-medium">Etapa</th>
-                <th className="py-2 font-medium text-right">Lead-time médio</th>
-                <th className="py-2 font-medium text-right">Impedimento médio</th>
+              <tr>
+                <th>Etapa</th>
+                <th className="text-right">Lead-time médio</th>
+                <th className="text-right">Impedimento médio</th>
               </tr>
             </thead>
             <tbody>
               {etapas.map((etapa) => (
-                <tr key={etapa.etapaId} className="border-b border-gray-100 last:border-0">
-                  <td className="py-3 font-medium text-gray-700">{etapa.etapaNome}</td>
-                  <td className="py-3 text-right font-bold text-blue-600">
-                    {formatarTempo(etapa.leadTimeMedioSegundos)}
-                  </td>
-                  <td className="py-3 text-right font-bold text-yellow-600">
-                    {formatarTempo(etapa.tempoImpedimentoMedioSegundos)}
-                  </td>
+                <tr key={etapa.etapaId}>
+                  <td>{etapa.etapaNome}</td>
+                  <td className="text-right">{formatarDuracao(etapa.leadTimeMedioSegundos)}</td>
+                  <td className="text-right">{formatarDuracao(etapa.tempoImpedimentoMedioSegundos)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        ) : (
-          <p className="text-gray-600">Sem dados para o período.</p>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

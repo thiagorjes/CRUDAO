@@ -97,6 +97,26 @@ public class ProjetoService {
         return projeto;
     }
 
+    /**
+     * TL-10: usuários associados ao projeto (usado também para popular selects de
+     * responsável/observador nas telas de tarefa). Mesma regra de acesso de {@link #obter(UUID)}.
+     */
+    @Transactional(readOnly = true)
+    public List<com.crudao.kanban.projeto.dto.UsuarioProjetoResponse> listarUsuarios(UUID projetoId) {
+        Usuario usuario = usuarioObrigatorio();
+        if (!projetoRepository.existsById(projetoId)) throw naoEncontrado();
+        if (!usuario.isAdminGlobal() && !permissaoGuard.membro(projetoId)) throw naoEncontrado();
+
+        return vinculoRepository.findByProjetoId(projetoId).stream()
+                .map(v -> com.crudao.kanban.projeto.dto.UsuarioProjetoResponse.builder()
+                        .usuarioId(v.getUsuario().getId())
+                        .usuarioNome(v.getUsuario().getNome())
+                        .papelId(v.getPapel().getId())
+                        .papelNome(v.getPapel().getNome())
+                        .build())
+                .toList();
+    }
+
     @Transactional
     public Projeto atualizar(UUID id, String nome, String descricao) {
         permissaoGuard.exigir(id, "projeto:administrar");

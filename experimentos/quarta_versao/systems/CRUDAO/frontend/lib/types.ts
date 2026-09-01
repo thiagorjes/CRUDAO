@@ -109,28 +109,26 @@ export type ApiError = {
   status?: number;
 };
 
-// Admin types
-export type ProjtoDetalhe = {
+// Admin types — espelham os DTOs reais do backend (workflow/dto/*, raia/dto/RaiaResponse).
+export type Etapa = {
   id: string;
   nome: string;
-  descricao?: string;
-  finalizado: boolean;
-  criadoEm: string;
+  ordem: number;
+  etapaFinal: boolean;
+  transicoesSaida: string[]; // IDs de etapas destino
 };
 
 export type Workflow = {
   id: string;
   nome: string;
-  projetoId: string;
-  ordem: number;
+  etapas: Etapa[];
 };
 
 export type Raia = {
   id: string;
   nome: string;
-  projetoId?: string;
-  global: boolean;
   ordem: number;
+  global: boolean;
 };
 
 export type Papel = {
@@ -140,11 +138,11 @@ export type Papel = {
   protegido: boolean;
 };
 
+/** Espelha ProjetoController.UsuarioProjetoResponse (GET /api/projetos/{id}/usuarios). */
 export type UsuarioProjetoPapel = {
   usuarioId: string;
-  projetoId: string;
-  papelId: string;
   usuarioNome: string;
+  papelId: string;
   papelNome: string;
 };
 

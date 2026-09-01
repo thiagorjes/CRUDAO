@@ -22,30 +22,43 @@ export default function DashboardPage() {
           const err = await res.json();
           throw new Error(err.message || `Erro ${res.status}`);
         }
-        const data = await res.json();
-        setDashboard(data);
+        setDashboard(await res.json());
         setErro(null);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Erro ao carregar dashboard";
-        setErro(msg);
+        setErro(e instanceof Error ? e.message : "Erro ao carregar dashboard");
       } finally {
         setLoading(false);
       }
     };
-
     carregar();
   }, [projetoId]);
 
   if (loading) {
-    return <div className="text-center text-gray-600 p-6">Carregando dashboard...</div>;
+    return (
+      <div>
+        <div className="page-header">
+          <h1>Dashboard</h1>
+        </div>
+        <div className="kpi-grid">
+          <div className="skeleton" style={{ height: 64 }} />
+          <div className="skeleton" style={{ height: 64 }} />
+          <div className="skeleton" style={{ height: 64 }} />
+        </div>
+      </div>
+    );
   }
 
-  if (erro) {
-    return <div className="text-red-600 p-6 bg-red-50 rounded border border-red-200">{erro}</div>;
-  }
-
-  if (!dashboard) {
-    return <div className="text-gray-600 p-6">Dashboard não disponível</div>;
+  if (erro || !dashboard) {
+    return (
+      <div>
+        <div className="page-header">
+          <h1>Dashboard</h1>
+        </div>
+        <div className="toast toast-error" role="alert">
+          {erro || "Dashboard não disponível"}
+        </div>
+      </div>
+    );
   }
 
   return <DashboardView dashboard={dashboard} />;

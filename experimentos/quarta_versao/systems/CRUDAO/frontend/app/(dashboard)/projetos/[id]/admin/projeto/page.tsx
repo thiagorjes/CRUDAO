@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ProjetoAdminForm from "@/components/admin/ProjetoAdminForm";
-import type { ProjtoDetalhe } from "@/lib/types";
+import type { ProjetoResumo } from "@/lib/types";
 
 export default function ProjetoAdminPage() {
   const params = useParams();
   const projetoId = params.id as string;
 
-  const [projeto, setProjeto] = useState<ProjtoDetalhe | null>(null);
+  const [projeto, setProjeto] = useState<ProjetoResumo | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -22,34 +22,33 @@ export default function ProjetoAdminPage() {
           const err = await res.json();
           throw new Error(err.message || "Erro ao carregar projeto");
         }
-        const data = await res.json();
-        setProjeto(data);
+        setProjeto(await res.json());
         setErro(null);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Erro ao carregar projeto";
-        setErro(msg);
+        setErro(e instanceof Error ? e.message : "Erro ao carregar projeto");
       } finally {
         setLoading(false);
       }
     };
-
     carregar();
   }, [projetoId]);
 
   if (loading) {
-    return <div className="text-center text-gray-600">Carregando...</div>;
+    return (
+      <div>
+        <div className="skeleton" style={{ height: 16, marginBottom: 8 }} />
+        <div className="skeleton" style={{ height: 16, width: "80%" }} />
+      </div>
+    );
   }
 
   if (erro || !projeto) {
-    return <div className="text-center text-red-600">{erro || "Erro ao carregar projeto"}</div>;
+    return (
+      <div className="toast toast-error" role="alert">
+        {erro || "Erro ao carregar projeto"}
+      </div>
+    );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Informações do Projeto</h2>
-        <ProjetoAdminForm projeto={projeto} projetoId={projetoId} />
-      </div>
-    </div>
-  );
+  return <ProjetoAdminForm projeto={projeto} projetoId={projetoId} />;
 }

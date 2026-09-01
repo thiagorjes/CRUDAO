@@ -18,6 +18,12 @@ public class ProjetoController {
     @GetMapping("/{id}")
     public Response obter(@PathVariable UUID id) { return Response.from(service.obter(id)); }
 
+    /** TL-10 — usuários associados ao projeto (também usado por selects de responsável/observador). */
+    @GetMapping("/{id}/usuarios")
+    public List<com.crudao.kanban.projeto.dto.UsuarioProjetoResponse> listarUsuarios(@PathVariable UUID id) {
+        return service.listarUsuarios(id);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Response criar(@RequestBody Request request) {

@@ -9,89 +9,107 @@ interface RaiasListProps {
   onRefresh: () => void;
 }
 
+/** TL-08 — aba "Raias". */
 export default function RaiasList({ projetoId, raias, onRefresh }: RaiasListProps) {
   const [novoNome, setNovoNome] = useState("");
   const [erro, setErro] = useState<string | null>(null);
-  const [criando, setCriando] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
 
-  const handleCriarRaia = async () => {
-    setCriando(true);
+  const handleCriar = async () => {
+    setOcupado(true);
     setErro(null);
-
     try {
       const res = await fetch("/api/admin/raias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projetoId, nome: novoNome }),
+        body: JSON.stringify({ projetoId, nome: novoNome.trim(), ordem: raias.length + 1 }),
       });
-
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || `Erro ${res.status}`);
       }
-
       setNovoNome("");
       onRefresh();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erro ao criar raia";
-      setErro(msg);
+      setErro(e instanceof Error ? e.message : "Erro ao criar raia");
     } finally {
-      setCriando(false);
+      setOcupado(false);
+    }
+  };
+
+  const handleExcluir = async (raia: Raia) => {
+    if (raia.global) return;
+    if (!confirm(`Excluir a raia "${raia.nome}"?`)) return;
+    setOcupado(true);
+    setErro(null);
+    try {
+      const res = await fetch(`/api/admin/raias/${raia.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Não é possível excluir: há tarefas ativas vinculadas (RN-005).");
+      }
+      onRefresh();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao excluir raia");
+    } finally {
+      setOcupado(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Criar Nova Raia</h3>
-        {erro && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm mb-4">{erro}</div>}
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Nome da raia"
-            value={novoNome}
-            onChange={(e) => setNovoNome(e.target.value)}
-            disabled={criando}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
-          />
-          <button
-            onClick={handleCriarRaia}
-            disabled={criando || !novoNome.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {criando ? "Criando..." : "Criar"}
-          </button>
+    <div>
+      {erro && (
+        <div className="toast toast-error" role="alert" style={{ marginBottom: "var(--space-md)" }}>
+          {erro}
         </div>
-      </div>
+      )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Raias</h3>
-        {raias.length === 0 ? (
-          <p className="text-gray-600">Nenhuma raia criada</p>
-        ) : (
-          <div className="space-y-2">
+      {raias.length === 0 ? (
+        <div className="empty-state">Nenhuma raia criada.</div>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Ordem</th>
+              <th>Raia</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
             {raias.map((raia) => (
-              <div key={raia.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
-                <div>
-                  <p className="font-medium text-gray-900">{raia.nome}</p>
-                  <p className="text-xs text-gray-600">{raia.id} {raia.global ? "• Global" : ""}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (confirm("Deletar esta raia?")) {
-                      // TODO: implementar delete
-                    }
-                  }}
-                  className="text-red-600 hover:text-red-700 text-sm font-medium disabled:text-gray-400"
-                  disabled={raia.global}
-                >
-                  Deletar
-                </button>
-              </div>
+              <tr key={raia.id}>
+                <td>{raia.ordem}</td>
+                <td>
+                  {raia.nome}
+                  {raia.global ? " (global)" : ""}
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn btn-text"
+                    onClick={() => handleExcluir(raia)}
+                    disabled={raia.global || ocupado}
+                    title={raia.global ? "Raia global não pode ser excluída (RN-CB-005)" : undefined}
+                  >
+                    Excluir
+                  </button>
+                </td>
+              </tr>
             ))}
-          </div>
-        )}
+          </tbody>
+        </table>
+      )}
+
+      <div className="row" style={{ marginTop: "var(--space-md)" }}>
+        <input
+          placeholder="Nome da raia"
+          value={novoNome}
+          onChange={(e) => setNovoNome(e.target.value)}
+          disabled={ocupado}
+        />
+        <button type="button" className="btn btn-outline" onClick={handleCriar} disabled={ocupado || !novoNome.trim()}>
+          {ocupado ? "Salvando…" : "+ Nova raia"}
+        </button>
       </div>
     </div>
   );

@@ -22,28 +22,28 @@ export default function RaiasAdminPage() {
           const err = await res.json();
           throw new Error(err.message || "Erro ao carregar raias");
         }
-        const data = await res.json();
-        setRaias(data);
+        setRaias(await res.json());
         setErro(null);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Erro ao carregar raias";
-        setErro(msg);
+        setErro(e instanceof Error ? e.message : "Erro ao carregar raias");
       } finally {
         setLoading(false);
       }
     };
-
     carregar();
   }, [projetoId]);
 
   if (loading) {
-    return <div className="text-center text-gray-600">Carregando...</div>;
+    return <div className="skeleton" style={{ height: 16, width: "80%" }} />;
   }
 
-  return (
-    <div className="space-y-6">
-      {erro && <div className="text-red-600 p-4 bg-red-50 rounded border border-red-200">{erro}</div>}
-      <RaiasList projetoId={projetoId} raias={raias} onRefresh={() => window.location.reload()} />
-    </div>
-  );
+  if (erro) {
+    return (
+      <div className="toast toast-error" role="alert">
+        {erro}
+      </div>
+    );
+  }
+
+  return <RaiasList projetoId={projetoId} raias={raias} onRefresh={() => window.location.reload()} />;
 }

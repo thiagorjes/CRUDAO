@@ -96,8 +96,8 @@ export async function removerObservador(
 }
 
 /**
- * Obter lista de usuários do projeto
- * GET /api/projetos/{projetoId}/usuarios
+ * Obter lista de usuários associados ao projeto (dedupe por usuário — um usuário pode ter mais
+ * de um papel). GET /api/projetos/{projetoId}/usuarios → UsuarioProjetoResponse[] (backend).
  */
 export async function obterUsuariosProjeto(projetoId: string): Promise<{ id: string; nome: string }[]> {
   const res = await fetch(`/api/projetos/${projetoId}/usuarios`, {
@@ -110,5 +110,9 @@ export async function obterUsuariosProjeto(projetoId: string): Promise<{ id: str
     throw new Error(error.message || "Erro ao obter usuários do projeto");
   }
 
-  return res.json();
+  const vinculos = (await res.json()) as { usuarioId: string; usuarioNome: string }[];
+  const vistos = new Set<string>();
+  return vinculos
+    .filter((v) => (vistos.has(v.usuarioId) ? false : (vistos.add(v.usuarioId), true)))
+    .map((v) => ({ id: v.usuarioId, nome: v.usuarioNome }));
 }

@@ -22,27 +22,28 @@ export default function WorkflowsAdminPage() {
           const err = await res.json();
           throw new Error(err.message || "Erro ao carregar workflows");
         }
-        const data = await res.json();
-        setWorkflows(data);
+        setWorkflows(await res.json());
         setErro(null);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Erro ao carregar workflows";
-        setErro(msg);
+        setErro(e instanceof Error ? e.message : "Erro ao carregar workflows");
       } finally {
         setLoading(false);
       }
     };
-
     carregar();
   }, [projetoId]);
 
   if (loading) {
-    return <div className="text-center text-gray-600">Carregando...</div>;
+    return <div className="skeleton" style={{ height: 16, width: "80%" }} />;
   }
 
   return (
-    <div className="space-y-6">
-      {erro && <div className="text-red-600 p-4 bg-red-50 rounded border border-red-200">{erro}</div>}
+    <div>
+      {erro && (
+        <div className="toast toast-error" role="alert" style={{ marginBottom: "var(--space-md)" }}>
+          {erro}
+        </div>
+      )}
       <WorkflowsList projetoId={projetoId} workflows={workflows} onRefresh={() => window.location.reload()} />
     </div>
   );
