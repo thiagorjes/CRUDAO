@@ -1,19 +1,62 @@
 import Link from "next/link";
 import { obterMe } from "@/lib/me";
+import { apiFetchJson } from "@/lib/api";
+import type { ProjetoResumo } from "@/lib/types";
+import NovoProjetoButton from "@/components/projetos/NovoProjetoButton";
 
 /** TL-02 — Lista de Projetos (RF-008) */
 export default async function ProjetosPage() {
   const me = await obterMe();
 
+  // adminGlobal não tem vínculo com todos os projetos; usa a listagem completa do backend.
+  let projetosAdmin: ProjetoResumo[] = [];
+  if (me.adminGlobal) {
+    try {
+      projetosAdmin = await apiFetchJson<ProjetoResumo[]>("/api/projetos");
+    } catch {
+      projetosAdmin = [];
+    }
+  }
+
+  const vazio = me.adminGlobal ? projetosAdmin.length === 0 : me.projetos.length === 0;
+
   return (
     <div>
-      <div className="page-header">
-        <h1>Meus Projetos</h1>
+      <div
+        className="page-header"
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-md)" }}
+      >
+        <h1>{me.adminGlobal ? "Projetos" : "Meus Projetos"}</h1>
+        {me.adminGlobal && <NovoProjetoButton />}
       </div>
 
-      {me.projetos.length === 0 ? (
+      {vazio ? (
         <div className="empty-state">
-          <p>Você não está vinculado a nenhum projeto ainda.</p>
+          <p>
+            {me.adminGlobal
+              ? "Nenhum projeto ainda. Use “Novo projeto” para criar o primeiro."
+              : "Você não está vinculado a nenhum projeto ainda."}
+          </p>
+        </div>
+      ) : me.adminGlobal ? (
+        <div className="project-grid">
+          {projetosAdmin.map((p) => (
+            <div key={p.id} className="card project-card">
+              <h3>{p.nome}</h3>
+              <p className="text-secondary">
+                {p.status === "FINALIZADO" ? "Finalizado" : "Ativo"}
+                {p.descricao ? ` — ${p.descricao}` : ""}
+              </p>
+              <div className="project-card__acoes">
+                <Link href={`/projetos/${p.id}/board`} className="btn btn-primary">
+                  Board
+                </Link>
+                <Link href={`/projetos/${p.id}/admin`} className="btn btn-outline">
+                  Admin
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="project-grid">

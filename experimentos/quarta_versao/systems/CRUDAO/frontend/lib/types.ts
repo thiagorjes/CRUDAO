@@ -8,6 +8,14 @@ export type MeResponse = {
   projetos: { projetoId: string; papeis: string[] }[];
 };
 
+/** Espelha ProjetoController.Response de GET /api/projetos */
+export type ProjetoResumo = {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  status: "ATIVO" | "FINALIZADO";
+};
+
 // Board types (espelha contrato de GET /api/projetos/{projetoId}/board)
 export type BoardEtapa = {
   id: string;
