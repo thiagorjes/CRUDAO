@@ -39,7 +39,7 @@ export default function NovoProjetoButton() {
       setAberto(false);
       setNome("");
       setDescricao("");
-      router.push(`/projetos/${data.id}/admin`);
+      router.push(`/projetos/${data.id}/admin/projeto`);
       router.refresh();
     } catch {
       setErro("Erro de rede ao criar projeto.");
