@@ -59,9 +59,17 @@ export async function apiProxyFetch(path: string, init: RequestInit = {}): Promi
     });
   }
 
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${sessao.accessToken}`);
+  // Os route handlers de proxy enviam `body: JSON.stringify(...)` sem header próprio; sem isto o
+  // fetch marca `text/plain` e o Spring responde 415. GET sem corpo não é afetado.
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   return fetch(`${env.backendUrl()}${path}`, {
     ...init,
-    headers: { ...(init.headers ?? {}), Authorization: `Bearer ${sessao.accessToken}` },
+    headers,
     cache: "no-store",
   });
 }

@@ -48,6 +48,8 @@ services:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_CLIENT_SECRET: kanban-dev-secret
       APP_KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/kanban-dev
       KANBAN_BOOTSTRAP_ADMIN_EMAIL: admin.teste@crudao.local
+      # Segredo HMAC dos tickets de handshake WebSocket (TASK-07.7). Só para dev local.
+      WS_TICKET_SECRET: ws-ticket-dev-secret-so-para-dev-local
     ports:
       - "8081:8081"
     depends_on:

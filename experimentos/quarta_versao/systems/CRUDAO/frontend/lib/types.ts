@@ -154,3 +154,13 @@ export type Dashboard = {
   leadTimeMedioPorEtapa: EtapaLeadTime[];
   totalTarefasConsideradas: number;
 };
+
+// Notificações (RF-005) — espelha GET /api/notificacoes (NotificacaoController.NotificacaoResponse)
+export type Notificacao = {
+  id: string;
+  tarefaId: string;
+  tarefaTitulo: string;
+  tipo: string;
+  lida: boolean;
+  criadoEm: string;
+};

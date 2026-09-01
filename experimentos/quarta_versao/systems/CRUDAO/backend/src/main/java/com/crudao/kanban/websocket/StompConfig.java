@@ -16,7 +16,8 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  * Configuração de WebSocket com STOMP para suportar atualização em tempo real do board.
  *
  * Fluxo:
- * 1. Cliente conecta a `/ws` via WebSocket com autenticação JWT.
+ * 1. Cliente conecta a `/ws` via WebSocket puro, autenticado por ticket de curta duração
+ *    (`?ticket=`, validado por {@link WsTicketAuthenticationFilter} — TASK-07.7). Sem SockJS.
  * 2. Cliente subscreve a `/topic/board/{projetoId}` ou `/topic/notificacoes/{usuarioId}`.
  * 3. {@link BoardChannelInterceptor} valida autorização no handshake SUBSCRIBE.
  * 4. Adapter LISTEN/NOTIFY publica eventos para o tópico correspondente.
@@ -63,9 +64,12 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
      */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Endpoint WebSocket puro — os clientes STOMP do frontend (board e notificações) conectam
+        // com `new WebSocket('ws://.../ws?ticket=...')`. A autenticação do handshake vem do
+        // WsTicketAuthenticationFilter (TASK-07.7). SockJS foi removido: nenhum cliente o usa e o
+        // `new WebSocket()` cru é incompatível com o protocolo SockJS.
         registry.addEndpoint("/ws")
-            .setAllowedOrigins("*") // Em produção, restringir a origins conhecidos
-            .withSockJS(); // Fallback para navegadores sem WebSocket
+            .setAllowedOrigins("*"); // Em produção, restringir a origins conhecidos
     }
 
     /**

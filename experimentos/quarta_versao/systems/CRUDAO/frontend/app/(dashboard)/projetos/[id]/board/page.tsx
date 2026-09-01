@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import type { BoardResponse, BoardEtapa, BoardRaia, BoardTarefa, EventoBoardMessage } from "@/lib/types";
 import { carregarBoard, moverTarefa, criarTarefa, excluirTarefa, marcarImpedimento, desmarcarImpedimento } from "@/lib/api/board";
+import { obterWsTicket } from "@/lib/api/ws-ticket";
 import { StompManager } from "@/lib/stomp";
 import BoardLayout from "./BoardLayout";
 import CreateCardModal from "./CreateCardModal";
@@ -45,17 +46,12 @@ export default function BoardPage() {
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
     // Converter URL HTTP para WebSocket (http://... → ws://..., https://... → wss://...)
-    const wsUrl = (backendUrl.startsWith("https") ? "wss" : "ws") +
-      "://" + backendUrl.replace(/^https?:\/\//, "") + "/ws";
+    const wsBaseUrl = (backendUrl.startsWith("https") ? "wss" : "ws") +
+      "://" + backendUrl.replace(/^https?:\/\//, "");
 
-    // C1 FIX: Obter access token da sessão (via cookie) para autenticação STOMP
-    // Em production, ler do localStorage/sessionStorage ou passar via props
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("session="))
-      ?.split("=")[1];
-
-    const stompMgr = new StompManager(wsUrl, projetoId, token, {
+    // Autenticação do handshake via ticket de curta duração (TASK-07.7) — o access token
+    // nunca é exposto ao JS; um ticket novo é buscado a cada (re)conexão.
+    const stompMgr = new StompManager(wsBaseUrl, projetoId, obterWsTicket, {
       onMensagem: (evento: EventoBoardMessage) => {
         // C2 FIX: Não processar eventos durante resincronização
         if (syncing) {

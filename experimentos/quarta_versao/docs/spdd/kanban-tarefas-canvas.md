@@ -114,7 +114,7 @@ _Atualizado por: /spdd-canvas v1.0 - 2026-08-27_
 
 ## S — Safeguards
 
-_Atualizado por: /code-review v1.0 - 2026-09-01 (TASK-07.6)_
+_Atualizado por: /code-review v1.0 - 2026-09-01 (TASK-07.7)_
 > Decisoes: ADR-002, ADR-004, ADR-008
 
 Guardrails consolidados a partir dos artefatos e confirmados como requisitos de revisão. A implementação da feature verificada task a task.
@@ -142,6 +142,11 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - **Publicação de eventos é best-effort (não falha a transação); cliente mitiga divergência via resincronização por seq.**
 - **Tipos TypeScript de payloads de API devem espelhar 1:1 o contrato (`docs/techspec/kanban-tarefas/contracts/*`) e o record/DTO do backend — nomes de campo e unidade (segundos, não ms). Dashboard UI (TASK-07.6): `leadTimeMedioPorEtapa[].{leadTimeMedioSegundos,tempoImpedimentoMedioSegundos}` + `totalTarefasConsideradas`. (registrado por /code-review TASK-07.6)**
 - **Rotas de API do frontend (route handlers) NÃO aplicam gate de permissão client-side para o dashboard: autorização é exclusivamente do backend (`permissaoGuard.membro`, 403). Papel `gestor` sem permissão de execução acessa normalmente.**
+- **Autenticação do handshake WebSocket (board + notificações) é via ticket de curta duração (TASK-07.7): `POST /api/ws-ticket` (Bearer, server-side) → ticket HMAC-SHA256 stateless (TTL 30s, e-mail no payload) → `ws://.../ws?ticket=...` → `WsTicketAuthenticationFilter` popula o `Principal`. O access token do Keycloak NUNCA é exposto ao JS do browser; o cookie `kanban_session` permanece httpOnly. NÃO ler token de `document.cookie` no cliente. NÃO usar SockJS (removido — incompatível com `new WebSocket()` cru). Ticket novo a cada (re)conexão.**
+- **`kanban.ws-ticket.secret` NÃO tem default embutido — `WsTicketService` falha o boot se ausente/branco/<16 chars. Produção injeta `WS_TICKET_SECRET`; dev/test/it declaram no `application-<profile>.yml`; todos os pods compartilham o mesmo segredo (ticket validado por qualquer pod). Mesma regra do realm Keycloak: segredo não promovível de dev p/ produção.**
+- **Clientes STOMP DEVEM ter guarda de encerramento (`encerrado`/`desconectar`) que impeça reconexão e novas chamadas de `getTicket()` após unmount do componente.**
+- **`lib/api/proxy.ts` do frontend DEVE delegar para `lib/api.ts` (cookie `kanban_session` cifrado + `decifrarSessao`); nunca ler um cookie de nome `session` nem usar o valor cru como Bearer.**
+- **Payload STOMP de notificações é apenas gatilho: o cliente recarrega `GET /api/notificacoes` (fonte de verdade) a cada MESSAGE; não há lógica de `seq`/gap para notificações (só para o board).**
 
 **Findings desta revisão:**
 
@@ -150,6 +155,7 @@ Guardrails consolidados a partir dos artefatos e confirmados como requisitos de 
 - TASK-04.3 aprovado com ressalvas (1 importante: verificação redundante de projeto finalizado removida, 1 sugestão: TODO para TASK-05.2) em 2026-08-28.
 - TASK-05.1 aprovado com ressalvas (0 críticos, 0 importantes, 3 sugestões: timeout explícito LISTEN, métrica latência NOTIFY→STOMP, logging de gap) em 2026-08-28.
 - TASK-07.6 (Dashboard UI) APROVADO (0 críticos, 0 importantes, 3 sugestões: import via barrel, validação UUID no route handler, testes de `formatarTempo`/status) em 2026-09-01.
+- TASK-07.7 (Notificações UI) — 1º review REPROVADO (C1 tempo real inoperante, I1 SockJS, I2 dedup, I3 contrato). Pós-correção (ticket WS de curta duração, cross-cutting) + re-review: **APROVADO COM RESSALVAS** (0 críticos, 0 importantes residuais, 4 sugestões pós-merge: S1 ticket na query, S3 origins `*`, S4 dedup framing, S5 `shouldNotFilter` prefixo). S2 (fail-fast do segredo) e I1-resid (limpeza SockJS/`/ws/info`) resolvidos. Única ressalva bloqueante: smoke do handshake WS em runtime. 2026-09-01.
 
 ---
 

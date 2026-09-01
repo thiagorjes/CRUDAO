@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { iniciais } from "@/lib/format";
 import type { MeResponse } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
+import NotificacoesSino from "@/components/notificacoes/NotificacoesSino";
 
 interface DashboardShellProps {
   me: MeResponse;
@@ -112,8 +113,8 @@ export default function DashboardShell({ me, children }: DashboardShellProps) {
 
         {/* Ações: notificações (TASK-07.7) e usuário */}
         <div className="topbar-actions">
-          {/* Sino de notificações — placeholder para TASK-07.7 */}
-          {/* <button className="topbar__notif">🔔</button> */}
+          {/* Sino de notificações (TASK-07.7 / RF-005) */}
+          <NotificacoesSino usuarioId={me.id} />
 
           {/* Menu de usuário */}
           <div ref={menuRef} className="topbar__notif-wrapper">

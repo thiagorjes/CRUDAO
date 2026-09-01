@@ -1,6 +1,13 @@
 server:
   port: 8081
 
+kanban:
+  ws-ticket:
+    # Segredo HMAC dos tickets de handshake WebSocket (TASK-07.7). SEM default: produção deve
+    # injetar WS_TICKET_SECRET; dev/test/it declaram o seu no application-<profile>.yml. Vazio
+    # aqui => o boot falha (WsTicketService valida), nunca sobe com segredo público.
+    secret: ${WS_TICKET_SECRET:}
+
 spring:
   application:
     name: kanban-backend

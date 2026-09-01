@@ -34,3 +34,5 @@ app:
 kanban:
   bootstrap:
     admin-email: admin.teste@crudao.local
+  ws-ticket:
+    secret: ${WS_TICKET_SECRET:it-ws-ticket-secret-0123456789}

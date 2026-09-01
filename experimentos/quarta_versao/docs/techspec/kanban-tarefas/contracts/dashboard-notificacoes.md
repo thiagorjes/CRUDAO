@@ -20,19 +20,18 @@ Se `projeto.status=FINALIZADO`: endpoint permanece acessível normalmente (RN-01
 
 ## GET /api/notificacoes
 
-Lista notificações do usuário autenticado (RF-005), mais recentes primeiro.
+Lista as notificações **não lidas** do usuário autenticado (RF-005), mais recentes primeiro. Não há query param — o endpoint sempre retorna apenas não lidas (implementado em TASK-05.2).
 
-**Query params:** `?apenasNaoLidas=true`
+**Response 200:** `[{ "id", "tarefaId", "tarefaTitulo", "tipo", "lida", "criadoEm" }]`
+`tipo` ∈ `{ TRANSICAO_ETAPA, IMPEDIMENTO_MARCADO, IMPEDIMENTO_DESMARCADO }`. A UI deriva o texto a partir de `tipo` + `tarefaTitulo` (não há campo `mensagem`).
 
-**Response 200:** `[{ "id", "tarefaId", "tipo", "mensagem", "lida", "criadoEm" }]`
+## PUT /api/notificacoes/{id}/marcar-como-lida
 
-## POST /api/notificacoes/{id}/lida
-
-Marca notificação como lida.
+Marca notificação como lida. `204 No Content`. O backend valida que a notificação pertence ao usuário autenticado (`404`/`403` caso contrário).
 
 ## WebSocket — /topic/notificacoes/{usuarioId}
 
-Canal STOMP para push de notificações em tempo real, complementar ao GET (RF-005, RNF-001). Payload igual ao item da lista acima, incluindo `seq` (contador por canal, usado para resincronização — ADR-004).
+Canal STOMP para push de notificações em tempo real, complementar ao GET (RF-005, RNF-001). O payload é um **envelope enxuto** (`{ seq, ts, data: { tipo, usuarioId, tarefaId, ... } }`) tratado pelo cliente apenas como **gatilho**: ao receber qualquer MESSAGE, a UI recarrega `GET /api/notificacoes` (fonte de verdade). Handshake autenticado por ticket de curta duração (`POST /api/ws-ticket` → `ws://.../ws?ticket=...`, `WsTicketAuthenticationFilter` — TASK-07.7).
 
 **Autorização na subscrição (achado do Comitê de Análise — Security/Architect):** `SUBSCRIBE` é validado em `ChannelInterceptor` — só é aceito se `usuarioId` do tópico == principal autenticado do JWT da sessão WebSocket. Subscrição de `usuarioId` de terceiros é rejeitada com `ERROR` STOMP (cobre RNF-003 para o canal WebSocket, não só REST).
 

@@ -16,7 +16,9 @@ import org.springframework.security.web.SecurityFilterChain;
  *
  * <p>Duas filter chains: {@code /api/**}/{@code /ws/**} como resource server stateless (opaque
  * token/introspection) e o restante (hoje só health/probe) autenticado sem mecanismo de login
- * próprio — o Authorization Code Flow real é todo feito pelo BFF do Next.js (TASK-07.1).
+ * próprio — o Authorization Code Flow real é todo feito pelo BFF do Next.js (TASK-07.1). O handshake
+ * WebSocket usa ticket de curta duração ({@code ?ticket=}, TASK-07.7) por não poder carregar Bearer
+ * no upgrade nativo.
  *
  * <p>O resource server valida o Bearer token via <b>introspection (opaque token)</b>, não via
  * decodificação local de JWT — isso garante que {@code POST /api/auth/logout} revogando o token no
@@ -36,25 +38,30 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain apiFilterChain(
             HttpSecurity http,
-            AtivoUsuarioFilter ativoUsuarioFilter)
+            AtivoUsuarioFilter ativoUsuarioFilter,
+            com.crudao.kanban.websocket.WsTicketAuthenticationFilter wsTicketAuthenticationFilter)
             throws Exception {
-        // /ws/** (handshake STOMP, TASK-05.1/ADR-004) protegido pelo mesmo resource server opaco —
-        // o AtivoUsuarioFilter resolve o Usuario local no handshake, capturado por
-        // AutenticacaoHandshakeInterceptor para uso na sessão WebSocket. O browser não consegue
-        // enviar Bearer no handshake nativo de WebSocket (BFF do frontend nunca expõe o token ao
-        // JS) — WsTicketAuthenticationFilter autentica via ticket de curta duração nesse caso
-        // (TASK-07.2); /ws/info fica fora da autenticação porque só expõe capacidades de
-        // transporte do SockJS, sem dado sensível.
+        // /ws/** (handshake STOMP, TASK-05.1/ADR-004) protegido pelo mesmo resource server opaco.
+        // O browser não consegue enviar Bearer no handshake nativo de WebSocket (o BFF do frontend
+        // nunca expõe o token ao JS) — WsTicketAuthenticationFilter autentica via ticket de curta
+        // duração passado como `?ticket=` (TASK-07.7). Não há SockJS (removido em StompConfig), logo
+        // nenhum sub-path `/ws/info` a liberar.
         http.securityMatcher("/api/**", "/ws/**")
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/ping", "/ws/info")
+                                auth.requestMatchers("/api/ping")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
+                // Handshake WebSocket: o browser não envia Bearer no upgrade nativo — quando há
+                // `?ticket=`, este filtro valida o ticket de curta duração (TASK-07.7) e popula o
+                // SecurityContext ANTES do BearerTokenAuthenticationFilter (que, sem Bearer, não
+                // autenticaria e a requisição cairia em 401).
+                .addFilterBefore(
+                        wsTicketAuthenticationFilter, BearerTokenAuthenticationFilter.class)
                 // addFilterAfter(UsernamePasswordAuthenticationFilter.class) posicionava ANTES do
                 // slot de BearerTokenAuthenticationFilter na ordem canônica do Spring Security
                 // (achado de execução real, TASK-08.3 — primeira vez que uma chamada HTTP

@@ -24,7 +24,7 @@ _Atualizado em: 2026-08-31 (17h45)_
 
 | Feature | Sistemas afetados | PRD | TechSpec | Tasks | Status |
 |---|---|---|---|---|---|
-| kanban-tarefas | CRUDAO | 1.0 | 1.1 | 1.1 | Em implementação |
+| kanban-tarefas | CRUDAO | 1.0 | 1.1 | 1.1 | Em implementação — EPIC 01–07 concluídos; falta EPIC 08 (hardening) |
 
 ## Artifact Registry
 
@@ -57,6 +57,7 @@ _Atualizado em: 2026-08-31 (17h45)_
 | docs/checklists/kanban-tarefas-TASK-06.1-review.md | 1.0 | ok - Aprovado com ressalvas |
 | docs/checklists/kanban-tarefas-TASK-07.1-review.md | 1.0 | ok - APROVADO (3 importantes corrigidos pós-review) |
 | docs/checklists/kanban-tarefas-TASK-07.6-review.md | 1.0 | ok - APROVADO (0 críticos, 0 importantes, 3 sugestões) |
+| docs/checklists/kanban-tarefas-TASK-07.7-review.md | 1.0 | ok - APROVADO COM RESSALVAS (re-review; ressalva bloqueante: smoke WS runtime) |
 | docs/spdd/kanban-tarefas-canvas.md | — | draft - Safeguards atualizados via /code-review (TASK-05.1) com guardrails STOMP/LISTEN-NOTIFY |
 
 > ADR-001, ADR-002 e ADR-003 foram reconstruidos a partir dos arquivos da primeira versao e das referencias posteriores. ADR-004/006/007/008 registram os refinamentos adotados depois.
@@ -117,6 +118,11 @@ _Atualizado em: 2026-08-31 (17h45)_
 | 2026-08-31 | Correções aplicadas (1 hora): C1 resolvido em 8 route handlers (tarefas + board); I1 implementado (novo endpoint `/api/projetos/{id}/usuarios`, carregamento em frontend, passa para ObservadoresPanel); I2 adicionada validação em proxy.ts. Build ✅ bem-sucedido. |
 | 2026-08-31 | /code-review TASK-07.3 (pós-correções): ✅ APROVADO COM RESSALVAS (0 críticos residuais, 0 importantes residuais, 3 sugestões adiáveis). Código pronto para merge. Sugestões (S1-S3) são melhorias futuras. |
 | 2026-09-01 | TASK-07.4 e TASK-07.5 commitadas (Admin UI projeto/workflows/raias/papéis/permissões/usuários) — `727ce45`, `fbdbc40`. |
+| 2026-09-01 | /implement TASK-07.7 (Notificações UI) concluído — **EPIC 07 concluído**: `lib/types.ts` (tipo `Notificacao`), `lib/api/notificacoes.ts` (listar não lidas + marcar como lida), route handlers `app/api/notificacoes/route.ts` + `.../[id]/marcar-como-lida/route.ts`, `lib/notificacoes-stomp.ts` (cliente STOMP dedicado p/ `/topic/notificacoes/{usuarioId}`, token no CONNECT, reconexão backoff; payload é gatilho → recarrega lista via REST), `components/notificacoes/NotificacoesSino.tsx` (sino topbar, badge, painel, marcar-lida otimista), `DashboardShell.tsx` (placeholder → `<NotificacoesSino>`). Divergência: backend real é `GET /api/notificacoes` (sem query) + `PUT /{id}/marcar-como-lida` + campo `tarefaTitulo` — contrato techspec desatualizado; seguido o backend. `tsc` ✅ `vitest` ✅(5) `next build` ✅. E2E runtime pendente (sem Docker nesta sessão). |
+| 2026-09-01 | /code-review TASK-07.7 (contexto fresco, agent general-purpose): ❌ REPROVADO — C1 (tempo real inoperante: clientes STOMP liam token de `document.cookie` `session=`, mas cookie é `kanban_session` httpOnly/cifrado), I1 (backend só `.withSockJS()`, incompatível com WS cru), I2 (dedup framing STOMP), I3 (contrato `dashboard-notificacoes.md` desatualizado). Defeitos C1/I1 herdados do board (TASK-07.2). |
+| 2026-09-01 | Correção C1/I1 (opção "ticket de curta duração", cross-cutting board+notificações): **Backend** — `WsTicketService` (ticket HMAC-SHA256 stateless, TTL 30s), `WsTicketController` (`POST /api/ws-ticket`), `WsTicketAuthenticationFilter` (valida `?ticket=` em `/ws**`, popula Principal), `StompConfig` sem SockJS, `application.yml` `kanban.ws-ticket.secret`, `WsTicketServiceTest` (5 ✅). **Frontend** — `lib/api/proxy.ts` corrigido (delega p/ `lib/api.ts` → conserta auth de TODOS os route handlers que usavam `@/lib/api/proxy`), `app/api/ws-ticket/route.ts` + `lib/api/ws-ticket.ts`, `lib/stomp.ts` + `lib/notificacoes-stomp.ts` agora recebem `getTicket` e conectam em `/ws?ticket=`, `board/page.tsx` + `NotificacoesSino.tsx` sem hack de cookie. I3 reconciliado. `mvn -o test-compile` ✅, `tsc`/`vitest`/`next build` ✅. **Handshake WS ponta a ponta não exercitado em runtime** (sem Docker). I2 aceito como ressalva pós-merge. Canvas S +4 safeguards. |
+| 2026-09-01 | /code-review TASK-07.7 (re-review pós-correção): **APROVADO COM RESSALVAS** (0 críticos, 0 importantes residuais, 4 sugestões pós-merge). Corrigidos no re-review: `StompManager` flag `encerrado` (reconexão pós-unmount + leak de `getTicket`); `lib/api.ts` `apiProxyFetch` seta `Content-Type: application/json` (senão 415 em todos os route handlers de mutação). **Ressalva bloqueante:** validar handshake WS ponta a ponta em runtime antes de fechar RF-005/EPIC 07. Relatório: `docs/checklists/kanban-tarefas-TASK-07.7-review.md`. |
+| 2026-09-01 | TASK-07.7 — S2 + I1-resid resolvidos: `WsTicketService` sem default público, boot falha se `kanban.ws-ticket.secret` ausente/branco/<16 chars; secret movido para `application-{dev,test,it}.yml` (`application.yml` = `${WS_TICKET_SECRET:}`); `SecurityConfig` sem `/ws/info` permitAll + javadocs atualizados; `StompConfig` javadoc sem SockJS. `WsTicketServiceTest` 6 ✅. Nota: `mvn -o test` sem Docker = 40 erros pré-existentes (ITs `@ActiveProfiles("it")` sem Postgres). |
 | 2026-09-01 | /code-review TASK-07.6: ✅ APROVADO (0 críticos, 0 importantes, 3 sugestões adiáveis: S1 import via barrel `@/lib/api`, S2 validação de UUID no route handler, S3 testes de `formatarTempo`/mapeamento de status). Gate: `tsc` ✅, `vitest` ✅ (5, sem testes de dashboard), eslint inutilizável (config v9 ausente no repo). Canvas S +2 safeguards (tipos TS espelham contrato 1:1 em segundos; dashboard sem gate de permissão client-side). Relatório: `docs/checklists/kanban-tarefas-TASK-07.6-review.md`. |
 | 2026-09-01 | /implement TASK-07.6 (Dashboard UI) concluído: página `projetos/[id]/dashboard/page.tsx`, `components/dashboard/DashboardView.tsx` (tabela lead-time + impedimento médios por etapa, formatação de duração, total de tarefas consideradas), route handler proxy `GET /api/dashboard/[projetoId]` → `/api/projetos/{id}/dashboard`. Tipos `EtapaLeadTime`/`Dashboard` em `lib/types.ts` **realinhados ao contrato real do backend** (`leadTimeMedioPorEtapa`, `leadTimeMedioSegundos`, `tempoImpedimentoMedioSegundos`, `totalTarefasConsideradas`) — o rascunho anterior assumia campos inexistentes (agregado ms, `impedimentoPorEtapa`). Link de nav já existia em `DashboardShell`. `tsc --noEmit` ✅. Falta /code-review. |
 
@@ -145,10 +151,13 @@ _Atualizado em: 2026-08-31 (17h45)_
   - `TASK-07.4` — Admin UI projeto/workflows/raias (2026-09-01, commit `727ce45`)
   - `TASK-07.5` — Admin UI papéis/permissões/usuários (2026-09-01, commit `fbdbc40`)
   - `TASK-07.6` — Dashboard UI (lead-time + impedimento médios/etapa) (2026-09-01) — **Review APROVADO**
+  - `TASK-07.7` — Notificações UI (sino topbar, STOMP `/topic/notificacoes/{id}`, marcar como lida) + autenticação WS por ticket de curta duração (board+notificações) (2026-09-01) — **EPIC 07 concluído**
   - `TASK-08.3` — Dockerização de backend e frontend
-- **Última Etapa:** /code-review TASK-07.6 — APROVADO (0 críticos, 0 importantes, 3 sugestões) (2026-09-01)
+- **Última Etapa:** /code-review TASK-07.7 re-review → APROVADO COM RESSALVAS; S2 + I1-resid corrigidos. Única ressalva restante: smoke do handshake WS em runtime (2026-09-01)
+- **Code review:** TASK-07.7 — APROVADO COM RESSALVAS — 2026-09-01
+- **Findings:** 0 críticos, 0 importantes residuais, 4 sugestões pós-merge
 - **Code review:** TASK-07.6 — APROVADO — 2026-09-01
 - **Findings:** 0 críticos, 0 importantes, 3 sugestões
-- **Testes:** 164 na suíte `-P integration-tests` (inclui `DashboardServiceTest` 8 + `DashboardControllerIntegrationTest` 4). Execução ITs: `systems/CRUDAO/run-integration-tests.ps1`.
+- **Testes:** 164 na suíte `-P integration-tests` (inclui `DashboardServiceTest` 8 + `DashboardControllerIntegrationTest` 4) + `WsTicketServiceTest` 5 (unit, `mvn -o test`). Frontend: `vitest` 5. Execução ITs: `systems/CRUDAO/run-integration-tests.ps1`.
 - **API Status:** ✅ Backend (imagem final) sobe no compose — Flyway V1-V7 validado, STOMP operacional. Actuator expõe `health,info,metrics`; grupo `readiness` reflete estado dos listeners LISTEN/NOTIFY.
-- **Próximo passo recomendado:** `TASK-07.7` (Notificações UI) fecha o EPIC 07. Depois (Notificações UI) fecha o EPIC 07. Epic 08 (hardening) após Epic 07 MVP. Pendências abertas de PO: RN-002 "total agregado" no payload do dashboard (TASK-06.1); `projetoFinalizado` no GET /board (I1 de TASK-07.2/07.3).
+- **Próximo passo recomendado:** smoke do handshake WS no compose (login → board/notificações → SUBSCRIBE aceito → evento entregue) — única ressalva bloqueante da TASK-07.7 — e setar `WS_TICKET_SECRET` no `docker-compose.yml` do backend. Depois merge e EPIC 07 (MVP) fechado. Em seguida (Notificações UI) fecha o EPIC 07. Epic 08 (hardening) após Epic 07 MVP. Pendências abertas de PO: RN-002 "total agregado" no payload do dashboard (TASK-06.1); `projetoFinalizado` no GET /board (I1 de TASK-07.2/07.3).

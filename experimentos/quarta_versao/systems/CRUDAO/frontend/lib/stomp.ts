@@ -42,9 +42,9 @@ interface Subscription {
  *   stompMgr.desconectar();
  */
 export class StompManager {
-  private wsUrl: string;
+  private wsBaseUrl: string;
   private projetoId: string;
-  private accessToken?: string;
+  private getTicket: () => Promise<string>;
   private config: {
     onMensagem?: (evento: EventoBoardMessage) => void;
     onRessinc?: (motivo: string) => void;
@@ -56,23 +56,29 @@ export class StompManager {
   private ws?: WebSocket;
   private reconectTimer?: NodeJS.Timeout;
   private tentativasReconexao: number = 0;
+  private encerrado: boolean = false;
 
   constructor(
-    wsUrl: string,
+    wsBaseUrl: string,
     projetoId: string,
-    accessToken?: string,
+    getTicket: () => Promise<string>,
     config?: typeof this.config
   ) {
-    this.wsUrl = wsUrl;
+    this.wsBaseUrl = wsBaseUrl.replace(/\/$/, "");
     this.projetoId = projetoId;
-    this.accessToken = accessToken;
+    this.getTicket = getTicket;
     this.config = config ?? {};
   }
 
   async conectar(): Promise<void> {
+    if (this.encerrado) return;
+    const ticket = await this.getTicket();
+    if (this.encerrado) return;
     return new Promise((resolve, reject) => {
       try {
-        this.ws = new WebSocket(this.wsUrl);
+        this.ws = new WebSocket(
+          `${this.wsBaseUrl}/ws?ticket=${encodeURIComponent(ticket)}`
+        );
 
         this.ws.onopen = () => {
           this.wsConnected = true;
@@ -110,8 +116,8 @@ export class StompManager {
       headers: {
         accept: "application/json",
         "heart-beat": "10000,10000",
-        // C1 FIX: Autenticação STOMP (RNF-003) — envia token no handshake
-        ...(this.accessToken && { authorization: `Bearer ${this.accessToken}` }),
+        // Autenticação do handshake via ticket na URL (WsTicketAuthenticationFilter) —
+        // não é necessário Authorization no frame CONNECT (RNF-003).
       },
       body: "",
     };
@@ -173,6 +179,7 @@ export class StompManager {
   }
 
   private _reconectar(): void {
+    if (this.encerrado) return;
     if (!this.wsConnected) {
       this.tentativasReconexao++;
       // Backoff exponencial: 1s, 2s, 4s, 8s, 16s, 30s (teto)
@@ -205,20 +212,27 @@ export class StompManager {
   }
 
   desconectar(): void {
+    this.encerrado = true;
     if (this.reconectTimer) {
       clearTimeout(this.reconectTimer);
     }
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const disconnectFrame: StompFrame = {
-        command: "DISCONNECT",
-        headers: { receipt: "disconnect-0" },
-        body: "",
-      };
-      this.ws.send(this._serializarFrame(disconnectFrame));
-      this.ws.close();
+    if (this.ws) {
+      try {
+        if (this.ws.readyState === WebSocket.OPEN) {
+          const disconnectFrame: StompFrame = {
+            command: "DISCONNECT",
+            headers: { receipt: "disconnect-0" },
+            body: "",
+          };
+          this.ws.send(this._serializarFrame(disconnectFrame));
+        }
+        this.ws.close();
+      } catch {
+        /* noop */
+      }
     }
     this.wsConnected = false;
   }

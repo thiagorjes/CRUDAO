@@ -23,3 +23,5 @@ app:
 kanban:
   bootstrap:
     admin-email: admin.teste@crudao.local
+  ws-ticket:
+    secret: ${WS_TICKET_SECRET:dev-ws-ticket-secret-nao-usar-em-producao}
