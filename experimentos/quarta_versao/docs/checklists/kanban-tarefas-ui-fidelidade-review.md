@@ -1,10 +1,11 @@
-> **Remediação aplicada em 2026-09-01 (mesmo dia, 2 commits) — ver `memory/state.md`.**
-> C1, C2, C3, I1-I3, I5 (parcial: workflows/etapas/transições e raias; papéis/usuários seguem
-> pendentes por serem RBAC sem backend, não bug de UI), I6, I7 resolvidos. I4 parcialmente
-> resolvido (KPIs+gráfico adicionados; "geral"/filtro de período seguem limitados pelo contrato
-> do backend). Board/detalhe/dashboard/admin reescritos com o design system; zero Tailwind
-> restante. Este documento é mantido como registro do estado ANTES da remediação — não editado
-> retroativamente para não perder o histórico do achado original.
+> **Remediação aplicada em 2026-09-01 (mesmo dia, 4 commits) — ver `memory/state.md`.**
+> C1, C2, C3, I1-I3, I5 (incl. TL-09 papéis/permissões e escrita de TL-10 — RBAC implementado
+> do zero no backend: pacote `com.crudao.kanban.papel` + migration V8), I6, I7 resolvidos. I4
+> parcialmente resolvido (KPIs+gráfico adicionados; agregado "geral"/filtro de período seguem
+> limitados pelo contrato do backend). Board/detalhe/dashboard/admin reescritos com o design
+> system; zero Tailwind restante. Suíte `-P integration-tests`: 185 testes, 0 falhas. Este
+> documento é mantido como registro do estado ANTES da remediação — não editado retroativamente
+> para não perder o histórico do achado original.
 
 # Code Review — Fidelidade das telas aos protótipos
 
