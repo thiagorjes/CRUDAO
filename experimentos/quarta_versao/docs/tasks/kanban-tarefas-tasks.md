@@ -553,11 +553,12 @@ TASK-01.1 (Setup projeto + docker-compose + Keycloak dev)
 - **RF de origem:** RNF-001, RNF-002
 - **Dependências:** TASK-05.3, TASK-05.2
 - **Contexto:** Validação formal do requisito de escalabilidade horizontal sem inconsistência.
+- **Status:** Concluída (2026-09-01)
 - **O que deve ser feito:**
-  - [ ] Teste de integração com 2 instâncias Spring Boot compartilhando o mesmo PostgreSQL Testcontainer — evento publicado via pod A deve chegar ao cliente STOMP conectado ao pod B.
-  - [ ] Teste de integração com 2 conexões WebSocket simuladas validando propagação do evento em <2s (`Awaitility`).
-  - [ ] Teste de resincronização client-side por gap de `seq`.
-  - [ ] Teste de notificação multi-pod (RF-005 sob RNF-002, achado do Comitê — Architect: dependência de 05.2 estava implícita).
+  - [x] Teste de integração com 2 instâncias Spring Boot compartilhando o mesmo PostgreSQL (compose `kanban_it`; 2º contexto via `SpringApplicationBuilder`, não Testcontainers) — evento publicado no pod B chega ao cliente STOMP do pod A.
+  - [x] Teste de integração com 2 conexões WebSocket em pods distintos validando propagação do evento em <2s (`Awaitility`).
+  - [x] Teste de resincronização client-side por gap de `seq` (`frontend/stomp.test.ts`).
+  - [x] Teste de notificação multi-pod (RF-005 sob RNF-002) — `/topic/notificacoes/{usuarioId}`.
 - **Guia técnico:** `backend/src/test/java/.../multipod/`.
 - **Critérios de aceite:** 0 falhas em 10 execuções consecutivas locais (amostra fixa, achado do Comitê — QA substitui percentual vago de flakiness).
 
