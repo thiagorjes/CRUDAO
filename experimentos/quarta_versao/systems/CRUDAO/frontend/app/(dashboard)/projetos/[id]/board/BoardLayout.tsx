@@ -1,117 +1,112 @@
 "use client";
 
-import type { BoardResponse, BoardTarefa } from "@/lib/types";
+import { useState } from "react";
+import type { BoardResponse, BoardEtapa, BoardTarefa } from "@/lib/types";
 import Card from "@/components/Card";
 
 interface BoardLayoutProps {
   board: BoardResponse;
+  projetoId: string;
   onMover: (tarefaId: string, etapaDestinoId: string) => Promise<void>;
-  onExcluir: (tarefaId: string) => Promise<void>;
-  onToggleImpedimento: (tarefaId: string, impedida: boolean) => Promise<void>;
-  projetoFinalizado?: boolean; // I1 FIX: passar informação de projeto finalizado
+  onNovoCard: () => void;
 }
 
-export default function BoardLayout({
-  board,
-  onMover,
-  onExcluir,
-  onToggleImpedimento,
-  projetoFinalizado = false,
-}: BoardLayoutProps) {
-  // Agrupar tarefas por etapa e raia
-  const tarefasPorEtapaRaia = new Map<string, Map<string, BoardTarefa[]>>();
+/** TL-03 — Board: uma `.swimlane` por raia, `.column` por etapa (docs/design .../tl-03-board-compacto.html). */
+export default function BoardLayout({ board, projetoId, onMover, onNovoCard }: BoardLayoutProps) {
+  const [arrastando, setArrastando] = useState<{ tarefaId: string; etapaOrigemId: string } | null>(
+    null
+  );
+  const [colunaSobre, setColunaSobre] = useState<string | null>(null);
 
-  for (const etapa of board.etapas) {
-    const porRaia = new Map<string, BoardTarefa[]>();
-    for (const raia of board.raias) {
-      porRaia.set(raia.id, []);
-    }
-    tarefasPorEtapaRaia.set(etapa.id, porRaia);
-  }
+  const tarefasDe = (etapaId: string, raiaId: string): BoardTarefa[] =>
+    board.tarefas.filter((t) => t.etapaAtualId === etapaId && t.raiaId === raiaId);
 
-  for (const tarefa of board.tarefas) {
-    const raiaMap = tarefasPorEtapaRaia.get(tarefa.etapaAtualId);
-    if (raiaMap) {
-      const tarefasRaia = raiaMap.get(tarefa.raiaId) || [];
-      tarefasRaia.push(tarefa);
-      raiaMap.set(tarefa.raiaId, tarefasRaia);
+  const destinoPermitido = (etapa: BoardEtapa): boolean => {
+    if (!arrastando) return false;
+    if (arrastando.etapaOrigemId === etapa.id) return false;
+    const origem = board.etapas.find((e) => e.id === arrastando.etapaOrigemId);
+    return !!origem?.transicoesSaida.includes(etapa.id);
+  };
+
+  const handleDrop = async (etapa: BoardEtapa) => {
+    setColunaSobre(null);
+    if (arrastando && destinoPermitido(etapa)) {
+      await onMover(arrastando.tarefaId, etapa.id);
     }
-  }
+    setArrastando(null);
+  };
 
   return (
-    <div className="overflow-x-auto">
-      <div className="flex gap-4 pb-4 min-w-full">
-        {/* Coluna de raias (cabeçalho) */}
-        <div className="flex-shrink-0 w-32">
-          <div className="h-12" /> {/* Espaço para cabeçalho de etapas */}
-          {board.raias.map((raia) => (
-            <div
-              key={raia.id}
-              className="h-24 px-3 py-2 text-sm font-medium text-gray-700 border-b border-gray-200"
-            >
-              {raia.nome}
-            </div>
-          ))}
-        </div>
+    <div>
+      {board.raias.map((raia) => (
+        <section key={raia.id} aria-label={`Board — raia ${raia.nome}`} className="swimlane">
+          <div className="swimlane__title">Raia: {raia.nome}</div>
+          <div className="board">
+            {board.etapas.map((etapa) => {
+              const tarefas = tarefasDe(etapa.id, raia.id);
+              const arrastandoAlgo = !!arrastando;
+              const valido = arrastandoAlgo && destinoPermitido(etapa);
+              const sobre = colunaSobre === `${etapa.id}:${raia.id}`;
+              const classes = [
+                "column",
+                sobre && valido ? "column--drop-valid" : "",
+                sobre && !valido && arrastandoAlgo && arrastando?.etapaOrigemId !== etapa.id
+                  ? "column--drop-invalid"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
 
-        {/* Colunas de etapas */}
-        {board.etapas.map((etapa) => {
-          const raiaMap = tarefasPorEtapaRaia.get(etapa.id) || new Map();
-          return (
-            <div
-              key={etapa.id}
-              className="flex-shrink-0 w-80 bg-white rounded-lg border border-gray-200 overflow-hidden"
-            >
-              {/* Cabeçalho da etapa */}
-              <div className="px-4 py-3 bg-gray-100 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {etapa.nome}
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  {board.tarefas.filter((t) => t.etapaAtualId === etapa.id).length} card(s)
-                </p>
-              </div>
+              return (
+                <div
+                  key={etapa.id}
+                  className={classes}
+                  aria-label={`Coluna ${etapa.nome}`}
+                  onDragOver={(e) => {
+                    if (!arrastando) return;
+                    e.preventDefault();
+                    setColunaSobre(`${etapa.id}:${raia.id}`);
+                  }}
+                  onDragLeave={() => setColunaSobre((c) => (c === `${etapa.id}:${raia.id}` ? null : c))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDrop(etapa);
+                  }}
+                >
+                  <div className="column__header">
+                    <span>{etapa.nome}</span>
+                    <span className="badge badge-neutro-contador">{tarefas.length}</span>
+                  </div>
 
-              {/* Linhas por raia dentro da etapa */}
-              <div className="divide-y divide-gray-200">
-                {board.raias.map((raia) => {
-                  const tarefasRaia = raiaMap.get(raia.id) || [];
-                  return (
-                    <div
-                      key={`${etapa.id}-${raia.id}`}
-                      className="px-3 py-3 min-h-24 bg-white hover:bg-gray-50 transition"
-                    >
-                      <div className="space-y-2">
-                        {tarefasRaia.length === 0 ? (
-                          <p className="text-xs text-gray-400 text-center py-4">
-                            sem cards
-                          </p>
-                        ) : (
-                          tarefasRaia.map((tarefa: BoardTarefa) => (
-                            <Card
-                              key={tarefa.id}
-                              tarefa={tarefa}
-                              etapasDisponiveis={board.etapas}
-                              transicoesSaida={
-                                board.etapas.find((e) => e.id === tarefa.etapaAtualId)
-                                  ?.transicoesSaida || []
-                              }
-                              onMover={onMover}
-                              onExcluir={onExcluir}
-                              onToggleImpedimento={onToggleImpedimento}
-                              projetoFinalizado={projetoFinalizado} // I1 FIX: passar flag
-                            />
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  {tarefas.length === 0 ? (
+                    <p className="text-secondary" style={{ textAlign: "center", padding: "var(--space-md) 0" }}>
+                      Sem tarefas nesta etapa
+                    </p>
+                  ) : (
+                    tarefas.map((tarefa) => (
+                      <Card
+                        key={tarefa.id}
+                        tarefa={tarefa}
+                        projetoId={projetoId}
+                        arrastavel
+                        onDragStart={() => setArrastando({ tarefaId: tarefa.id, etapaOrigemId: etapa.id })}
+                        onDragEnd={() => {
+                          setArrastando(null);
+                          setColunaSobre(null);
+                        }}
+                      />
+                    ))
+                  )}
+
+                  <button type="button" className="btn btn-text" onClick={onNovoCard}>
+                    + Novo card
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

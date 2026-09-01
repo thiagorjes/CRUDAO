@@ -1,6 +1,5 @@
 package com.crudao.kanban.tarefa;
 
-import com.crudao.kanban.domain.tarefa.TarefaAuditoria;
 import com.crudao.kanban.tarefa.dto.BoardResponse;
 import com.crudao.kanban.tarefa.dto.CriarTarefaRequest;
 import com.crudao.kanban.tarefa.dto.CriarTarefaResponse;
@@ -129,10 +128,9 @@ public class TarefaController {
      * RF-017: rastreabilidade completa de alterações.
      */
     @GetMapping("/api/tarefas/{tarefaId}/auditoria")
-    public ResponseEntity<List<TarefaAuditoria>> obterAuditoria(
+    public ResponseEntity<List<com.crudao.kanban.tarefa.dto.TarefaAuditoriaResponse>> obterAuditoria(
             @PathVariable UUID tarefaId) {
-        List<TarefaAuditoria> auditoria = tarefaService.obterAuditoria(tarefaId);
-        return ResponseEntity.ok(auditoria);
+        return ResponseEntity.ok(tarefaService.obterAuditoria(tarefaId));
     }
 }
 

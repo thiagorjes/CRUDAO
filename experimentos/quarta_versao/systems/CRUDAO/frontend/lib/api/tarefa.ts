@@ -37,13 +37,11 @@ export async function obterAuditoria(tarefaId: string): Promise<AuditoriaEntry[]
 }
 
 /**
- * Editar tarefa (titulo, descricao, responsavel)
- * PUT /api/tarefas/{tarefaId}
+ * Editar tarefa (titulo, descricao, responsavel).
+ * PUT /api/tarefas/{tarefaId} — backend responde 204 No Content; recarregue com
+ * `obterTarefaDetalhe` após chamar esta função.
  */
-export async function editarTarefa(
-  tarefaId: string,
-  dados: EditarTarefaRequest
-): Promise<TarefaDetalhe> {
+export async function editarTarefa(tarefaId: string, dados: EditarTarefaRequest): Promise<void> {
   const res = await fetch(`/api/tarefas/${tarefaId}`, {
     method: "PUT",
     credentials: "include",
@@ -55,8 +53,6 @@ export async function editarTarefa(
     const error = (await res.json()) as ApiError;
     throw new Error(error.message || "Erro ao editar tarefa");
   }
-
-  return res.json();
 }
 
 /**

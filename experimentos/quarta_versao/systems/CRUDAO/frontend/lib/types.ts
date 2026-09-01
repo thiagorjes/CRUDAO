@@ -57,23 +57,22 @@ export type EventoBoardMessage = {
   timestamp: string;
 };
 
-// Detalhe da tarefa (TASK-07.3)
+// Detalhe da tarefa — espelha TarefaDetalheResponse (backend) 1:1.
 export type LeadTimeEtapa = {
   etapaId: string;
   etapaNome: string;
-  sequencia: number;
-  duracao: number; // ms
+  leadTimeSegundos: number;
 };
 
+// Espelha TarefaAuditoriaResponse (backend)
 export type AuditoriaEntry = {
   id: string;
-  tipo: string; // CRIACAO, MOVIDA, IMPEDIDA, etc.
-  descricao: string;
-  usuarioId: string;
-  usuarioNome: string;
-  timestamp: string;
-  dadosAntigos?: Record<string, unknown>;
-  dadosNovos?: Record<string, unknown>;
+  campo: string;
+  valorAnterior: string | null;
+  valorNovo: string | null;
+  dataHora: string;
+  autorId: string;
+  autorNome: string;
 };
 
 export type TarefaDetalhe = {
@@ -81,7 +80,7 @@ export type TarefaDetalhe = {
   titulo: string;
   descricaoEscopo?: string;
   etapaAtualId: string;
-  etapaNome: string;
+  etapaAtualNome: string;
   raiaId: string;
   raiaNome: string;
   responsavelId?: string;
@@ -89,13 +88,11 @@ export type TarefaDetalhe = {
   iniciada: boolean;
   impedida: boolean;
   impedidaDesde?: string;
-  criadaEm: string;
+  criadoEm: string;
   criadoPorId: string;
   criadoPorNome: string;
-  atualizadaEm: string;
-  leadTimePorEtapa: LeadTimeEtapa[];
-  leadTimeTotal: number; // ms
-  tempoImpedimento: number; // ms acumulado
+  historicoEtapas: LeadTimeEtapa[];
+  tempoImpedimentoTotalSegundos: number;
   observadores: { id: string; nome: string }[];
 };
 

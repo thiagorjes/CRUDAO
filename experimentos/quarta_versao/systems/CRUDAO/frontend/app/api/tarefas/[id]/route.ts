@@ -43,12 +43,12 @@ export async function PUT(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(errorData, { status: response.status });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Backend responde 204 No Content (TarefaController.editarTarefa) — sem corpo para parsear.
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[PUT /api/tarefas/:id]", error);
     return NextResponse.json(
@@ -64,9 +64,15 @@ export async function DELETE(
 ) {
   try {
     const { id: tarefaId } = await params;
-    const response = await apiProxyFetch(`/api/tarefas/${tarefaId}`, {
-      method: "DELETE",
-    });
+    const projetoId = request.nextUrl.searchParams.get("projetoId");
+    if (!projetoId) {
+      return NextResponse.json({ error: "projetoId é obrigatório" }, { status: 400 });
+    }
+
+    const response = await apiProxyFetch(
+      `/api/tarefas/${tarefaId}?projetoId=${encodeURIComponent(projetoId)}`,
+      { method: "DELETE" }
+    );
 
     if (!response.ok) {
       return NextResponse.json(

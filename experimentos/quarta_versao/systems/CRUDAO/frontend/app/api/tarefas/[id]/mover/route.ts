@@ -15,12 +15,12 @@ export async function POST(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(errorData, { status: response.status });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Backend responde 204 No Content (TarefaController.moverTarefa) — sem corpo para parsear.
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[POST /api/tarefas/:id/mover]", error);
     return NextResponse.json(

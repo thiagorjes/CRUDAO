@@ -20,6 +20,7 @@ import com.crudao.kanban.domain.workflow.Workflow;
 import com.crudao.kanban.evento.EventoBoardPublisher;
 import com.crudao.kanban.notificacao.NotificacaoService;
 import com.crudao.kanban.rbac.PermissaoGuard;
+import com.crudao.kanban.tarefa.dto.TarefaAuditoriaResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.*;
@@ -252,7 +253,7 @@ class TarefaExclusaoServiceTest {
                 .thenReturn(List.of(auditoria1, auditoria2));
 
         // Act
-        List<TarefaAuditoria> resultado = tarefaService.obterAuditoria(tarefaId);
+        List<TarefaAuditoriaResponse> resultado = tarefaService.obterAuditoria(tarefaId);
 
         // Assert
         assertEquals(2, resultado.size());
@@ -284,7 +285,7 @@ class TarefaExclusaoServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // Act
-        List<TarefaAuditoria> resultado = tarefaService.obterAuditoria(tarefaId);
+        List<TarefaAuditoriaResponse> resultado = tarefaService.obterAuditoria(tarefaId);
 
         // Assert
         assertTrue(resultado.isEmpty());

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { iniciais } from "@/lib/format";
 import type { MeResponse } from "@/lib/types";
-import { useEffect, useRef, useState } from "react";
 import NotificacoesSino from "@/components/notificacoes/NotificacoesSino";
 
 interface DashboardShellProps {
@@ -12,146 +12,118 @@ interface DashboardShellProps {
   children?: React.ReactNode;
 }
 
+/**
+ * Shell das telas internas (TL-02..TL-10) — sidebar + topbar do
+ * docs/design/kanban-tarefas/prototypes/_shared.css.
+ */
 export default function DashboardShell({ me, children }: DashboardShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [menuAberto, setMenuAberto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Detecta se está em um projeto específico (ex: /projetos/123/board)
-  const projetoAtualId = pathname.split("/")[2];
+  const projetoAtualId = pathname.startsWith("/projetos/")
+    ? pathname.split("/")[2]
+    : undefined;
   const projetoAtual = me.projetos.find((p) => p.projetoId === projetoAtualId);
+  const podeAdmin =
+    !!projetoAtual &&
+    (me.adminGlobal ||
+      projetoAtual.papeis.some((r) => ["admin", "project_admin"].includes(r)));
 
-  // Fechar menu ao clicar fora (I2)
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false);
+    if (!menuAberto) return;
+    const fora = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuAberto(false);
       }
     };
+    document.addEventListener("mousedown", fora);
+    return () => document.removeEventListener("mousedown", fora);
+  }, [menuAberto]);
 
-    if (showUserMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [showUserMenu]);
+  useEffect(() => setMenuAberto(false), [pathname]);
 
-  // Fechar menu ao navegar
-  useEffect(() => {
-    setShowUserMenu(false);
-  }, [pathname]);
-
-  const handleLogout = async () => {
+  const logout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout falhou:", e);
+    } finally {
       router.push("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-      // Fallback: redirecionar mesmo assim
-      setTimeout(() => router.push("/login"), 2000);
     }
   };
 
+  const emProjetos = pathname === "/projetos" || pathname === "/";
+
   return (
     <div className="app-shell">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar__brand">
-          📋 Kanban
-        </div>
-
-        {/* Seção: Projetos */}
-        <nav>
-          <div className="sidebar-section-title">
-            Meus Projetos
-          </div>
-          {me.projetos.length > 0 ? (
-            me.projetos.map((projeto) => (
-              <Link
-                key={projeto.projetoId}
-                href={`/projetos/${projeto.projetoId}/board`}
-                aria-current={projetoAtualId === projeto.projetoId ? "page" : undefined}
-              >
-                Projeto {projeto.projetoId.substring(0, 8)}
-              </Link>
-            ))
-          ) : (
-            <div className="text-secondary" style={{ padding: "var(--space-sm)" }}>
-              Nenhum projeto
-            </div>
+      <aside className="sidebar" aria-label="Navegação principal">
+        <div className="sidebar__brand">Kanban</div>
+        <nav aria-label="Menu">
+          <Link href="/projetos" aria-current={emProjetos ? "page" : undefined}>
+            Projetos
+          </Link>
+          {projetoAtualId && (
+            <Link
+              href={`/projetos/${projetoAtualId}/dashboard`}
+              aria-current={pathname.endsWith("/dashboard") ? "page" : undefined}
+            >
+              Dashboard
+            </Link>
+          )}
+          {projetoAtualId && podeAdmin && (
+            <Link
+              href={`/projetos/${projetoAtualId}/admin`}
+              aria-current={pathname.includes("/admin") ? "page" : undefined}
+            >
+              Admin
+            </Link>
           )}
         </nav>
-
-        {/* Projeto ativo: Links rápidos */}
-        {projetoAtual && (
-          <div className="sidebar__project-active" style={{ borderTop: "1px solid var(--color-border)", marginTop: "auto" }}>
-            <div className="sidebar-section-title">
-              Ações
-            </div>
-            <nav>
-              <Link href={`/projetos/${projetoAtualId}/board`} aria-current={pathname.endsWith("/board") ? "page" : undefined}>
-                📊 Board
-              </Link>
-              <Link href={`/projetos/${projetoAtualId}/dashboard`} aria-current={pathname.endsWith("/dashboard") ? "page" : undefined}>
-                📈 Dashboard
-              </Link>
-              {/* Admin only — validação no servidor */}
-              {projetoAtual.papeis.some((r) => ["admin", "project_admin"].includes(r)) && (
-                <Link href={`/projetos/${projetoAtualId}/admin`} aria-current={pathname.endsWith("/admin") ? "page" : undefined}>
-                  ⚙️ Admin
-                </Link>
-              )}
-            </nav>
+        {projetoAtualId && (
+          <div className="sidebar__project-active">
+            Projeto ativo: {projetoAtualId.substring(0, 8)}
           </div>
         )}
       </aside>
 
-      {/* Topbar */}
       <header className="topbar">
-        {/* Placeholder para título da página — deixar vazio por enquanto */}
         <div style={{ flex: 1 }} />
-
-        {/* Ações: notificações (TASK-07.7) e usuário */}
         <div className="topbar-actions">
-          {/* Sino de notificações (TASK-07.7 / RF-005) */}
           <NotificacoesSino usuarioId={me.id} />
-
-          {/* Menu de usuário */}
           <div ref={menuRef} className="topbar__notif-wrapper">
             <button
+              type="button"
               className="topbar__user"
-              onClick={() => setShowUserMenu(!showUserMenu)}
+              style={{ background: "none", border: "none", cursor: "pointer" }}
+              onClick={() => setMenuAberto((v) => !v)}
               aria-label="Menu de usuário"
-              aria-expanded={showUserMenu}
+              aria-expanded={menuAberto}
             >
               <span className="avatar">{iniciais(me.nome)}</span>
               <span>{me.nome}</span>
             </button>
-
-            {showUserMenu && (
-              <div className="topbar__notif-painel">
-                <div style={{ padding: "var(--space-sm)" }}>
-                  <div className="text-secondary" style={{ marginBottom: "var(--space-sm)" }}>
-                    {me.email}
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="topbar__logout"
-                    style={{ width: "100%" }}
-                  >
-                    Logout
-                  </button>
-                </div>
+            {menuAberto && (
+              <div className="topbar__notif-painel" role="menu">
+                <p className="text-secondary" style={{ margin: "var(--space-sm)" }}>
+                  {me.email}
+                </p>
+                <button
+                  type="button"
+                  className="topbar__logout"
+                  style={{ margin: "var(--space-sm)" }}
+                  onClick={logout}
+                >
+                  Sair
+                </button>
               </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main content area */}
-      <main className="main">
-        {children}
-      </main>
+      <main className="main">{children}</main>
     </div>
   );
 }

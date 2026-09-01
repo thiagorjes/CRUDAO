@@ -2,137 +2,71 @@
 
 import { useState } from "react";
 
-interface Observador {
-  id: string;
-  nome: string;
-}
-
 interface ObservadoresPanelProps {
-  observadores: Observador[];
+  observadores: { id: string; nome: string }[];
+  usuariosDisponiveis: { id: string; nome: string }[];
   onAdicionar: (usuarioId: string) => Promise<void>;
   onRemover: (usuarioId: string) => Promise<void>;
-  usuariosDisponiveis?: Observador[];
 }
 
+/** Observadores da tarefa (RF-005) — sem protótipo dedicado; usa o design system. */
 export default function ObservadoresPanel({
   observadores,
+  usuariosDisponiveis,
   onAdicionar,
   onRemover,
-  usuariosDisponiveis = [],
 }: ObservadoresPanelProps) {
-  const [selecionado, setSelecionado] = useState<string>("");
+  const [selecionado, setSelecionado] = useState("");
   const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
 
-  const handleAdicionar = async () => {
+  const disponiveis = usuariosDisponiveis.filter(
+    (u) => !observadores.some((o) => o.id === u.id)
+  );
+
+  const adicionar = async () => {
     if (!selecionado) return;
-
     setCarregando(true);
-    setErro(null);
-
     try {
       await onAdicionar(selecionado);
       setSelecionado("");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro ao adicionar observador";
-      setErro(msg);
     } finally {
       setCarregando(false);
     }
   };
-
-  const handleRemover = async (usuarioId: string) => {
-    setCarregando(true);
-    setErro(null);
-
-    try {
-      await onRemover(usuarioId);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro ao remover observador";
-      setErro(msg);
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  // Usuários que já são observadores
-  const observadoresIds = new Set(observadores.map((o) => o.id));
-
-  // Usuários disponíveis para adicionar
-  const disponiveis = usuariosDisponiveis.filter((u) => !observadoresIds.has(u.id));
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900">
-        Observadores
-      </h3>
-
-      {erro && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-          {erro}
-        </div>
-      )}
-
-      {/* Lista de observadores */}
+    <div className="card">
+      <h3 style={{ fontSize: 14, marginTop: 0 }}>Observadores</h3>
       {observadores.length === 0 ? (
-        <p className="text-sm text-gray-500">Nenhum observador ainda</p>
+        <p className="text-secondary">Nenhum observador.</p>
       ) : (
-        <div className="space-y-2">
-          {observadores.map((observador) => (
-            <div
-              key={observador.id}
-              className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded border border-gray-200"
-            >
-              <span className="text-sm text-gray-700">👁️ {observador.nome}</span>
-              <button
-                onClick={() => handleRemover(observador.id)}
-                disabled={carregando}
-                className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 4 }}>
+          {observadores.map((o) => (
+            <li key={o.id} className="row row--between">
+              <span>{o.nome}</span>
+              <button type="button" className="btn btn-text" onClick={() => onRemover(o.id)}>
                 Remover
               </button>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
-      <hr className="border-gray-200" />
-
-      {/* Adicionar observador */}
-      <div className="space-y-2">
-        <label htmlFor="usuarios" className="block text-sm font-medium text-gray-700">
-          Adicionar observador
-        </label>
-
-        <div className="flex gap-2">
-          <select
-            id="usuarios"
-            value={selecionado}
-            onChange={(e) => setSelecionado(e.target.value)}
-            disabled={carregando || disponiveis.length === 0}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-gray-900 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-          >
-            <option value="">
-              {disponiveis.length === 0
-                ? "Sem usuários disponíveis"
-                : "Selecione um usuário..."}
-            </option>
-            {disponiveis.map((usuario) => (
-              <option key={usuario.id} value={usuario.id}>
-                {usuario.nome}
+      {disponiveis.length > 0 && (
+        <div className="row" style={{ marginTop: "var(--space-sm)" }}>
+          <select value={selecionado} onChange={(e) => setSelecionado(e.target.value)} disabled={carregando}>
+            <option value="">Adicionar observador…</option>
+            {disponiveis.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
               </option>
             ))}
           </select>
-
-          <button
-            onClick={handleAdicionar}
-            disabled={!selecionado || carregando}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium text-sm"
-          >
-            {carregando ? "..." : "Adicionar"}
+          <button type="button" className="btn btn-outline" onClick={adicionar} disabled={!selecionado || carregando}>
+            Adicionar
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -32,6 +32,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   background: var(--color-background);
   color: var(--color-text-primary);
   font-size: 16px;
@@ -563,17 +564,19 @@ textarea {
 table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 table th,
 table td {
   text-align: left;
-  padding: 8px 4px;
+  padding: var(--space-sm);
   border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
 }
 table th {
   color: var(--color-text-secondary);
   font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
 }
 
 .checkbox-list {
@@ -595,4 +598,113 @@ table th {
   display: flex;
   align-items: center;
   gap: var(--space-md);
+}
+
+/* ---------------------------------------------------------------------------
+   Paridade com docs/design/kanban-tarefas/prototypes/_shared.css — peças que
+   faltavam no globals.css (badges de tipo, skeleton, KPIs, gráfico de barras,
+   drawer da TL-04, título de seção da sidebar).
+   --------------------------------------------------------------------------- */
+
+.btn-secondary {
+  background: var(--color-secondary);
+  color: #fff;
+}
+
+.badge-tipo {
+  background: var(--color-tipo-badge-bg);
+  color: var(--color-primary);
+}
+.badge-error {
+  background: #f8d7da;
+  color: var(--color-error);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eceef0 25%, #f5f6f7 37%, #eceef0 63%);
+  border-radius: var(--radius-card);
+  height: 16px;
+}
+
+/* TL-07 — Dashboard */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.kpi-card .kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+.kpi-card .kpi-label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-md);
+  height: 160px;
+}
+.bar-chart .bar {
+  background: var(--color-primary);
+  border-radius: 4px 4px 0 0;
+  width: 40px;
+}
+.bar-chart .bar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* TL-04 — Detalhe da Tarefa (drawer lateral sobre o board) */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 37, 41, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 100;
+}
+.drawer {
+  width: 480px;
+  max-width: 100%;
+  background: var(--color-surface);
+  min-height: 100vh;
+  padding: var(--space-lg);
+  border-left: 1px solid var(--color-border);
+  overflow-y: auto;
+}
+
+/* Sidebar — rótulo de seção (usado por DashboardShell) */
+.sidebar-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  padding: 0 var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+/* Utilidades mínimas de layout usadas nas telas reconstruídas */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.row--between {
+  justify-content: space-between;
+}
+.text-right {
+  text-align: right;
 }

@@ -60,6 +60,9 @@ class TarefaMoverServiceTest {
     private TarefaImpedimentoHistoricoRepository tarefaImpedimentoHistoricoRepository;
 
     @Mock
+    private com.crudao.kanban.domain.tarefa.TarefaObservadorRepository tarefaObservadorRepository;
+
+    @Mock
     private ProjetoRepository projetoRepository;
 
     @Mock

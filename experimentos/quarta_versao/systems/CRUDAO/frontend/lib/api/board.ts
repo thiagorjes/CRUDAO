@@ -25,10 +25,8 @@ export async function moverTarefa(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ etapaDestinoId }),
   });
-
   if (!res.ok) {
     const err = (await res.json()) as ApiError;
-    // 409 = transição não configurada; 403 = falta permissão
     throw new Error(err.message || `Erro ao mover tarefa: ${res.status}`);
   }
 }
@@ -48,7 +46,6 @@ export async function criarTarefa(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(dados),
   });
-
   if (!res.ok) {
     const err = (await res.json()) as ApiError;
     throw new Error(err.message || `Erro ao criar tarefa: ${res.status}`);
@@ -56,36 +53,48 @@ export async function criarTarefa(
   return res.json() as Promise<BoardTarefa>;
 }
 
-/** DELETE /api/tarefas/{id} — exclui card */
-export async function excluirTarefa(tarefaId: string): Promise<void> {
-  const res = await fetch(`/api/tarefas/${tarefaId}`, {
-    method: "DELETE",
-  });
-
+/**
+ * DELETE /api/tarefas/{id}?projetoId=... — exclui card.
+ * O backend exige `projetoId` (valida permissão + projeto ativo).
+ */
+export async function excluirTarefa(
+  tarefaId: string,
+  projetoId: string
+): Promise<void> {
+  const res = await fetch(
+    `/api/tarefas/${tarefaId}?projetoId=${encodeURIComponent(projetoId)}`,
+    { method: "DELETE" }
+  );
   if (!res.ok) {
     const err = (await res.json()) as ApiError;
     throw new Error(err.message || `Erro ao excluir tarefa: ${res.status}`);
   }
 }
 
-/** POST /api/tarefas/{id}/impedimento — marca impedimento */
-export async function marcarImpedimento(tarefaId: string): Promise<void> {
-  const res = await fetch(`/api/tarefas/${tarefaId}/impedimento`, {
-    method: "POST",
-  });
-
+/** POST /api/tarefas/{id}/impedimento?projetoId=... — marca impedimento */
+export async function marcarImpedimento(
+  tarefaId: string,
+  projetoId: string
+): Promise<void> {
+  const res = await fetch(
+    `/api/tarefas/${tarefaId}/impedimento?projetoId=${encodeURIComponent(projetoId)}`,
+    { method: "POST" }
+  );
   if (!res.ok) {
     const err = (await res.json()) as ApiError;
     throw new Error(err.message || `Erro ao marcar impedimento: ${res.status}`);
   }
 }
 
-/** DELETE /api/tarefas/{id}/impedimento — desmarca impedimento */
-export async function desmarcarImpedimento(tarefaId: string): Promise<void> {
-  const res = await fetch(`/api/tarefas/${tarefaId}/impedimento`, {
-    method: "DELETE",
-  });
-
+/** DELETE /api/tarefas/{id}/impedimento?projetoId=... — desmarca impedimento */
+export async function desmarcarImpedimento(
+  tarefaId: string,
+  projetoId: string
+): Promise<void> {
+  const res = await fetch(
+    `/api/tarefas/${tarefaId}/impedimento?projetoId=${encodeURIComponent(projetoId)}`,
+    { method: "DELETE" }
+  );
   if (!res.ok) {
     const err = (await res.json()) as ApiError;
     throw new Error(

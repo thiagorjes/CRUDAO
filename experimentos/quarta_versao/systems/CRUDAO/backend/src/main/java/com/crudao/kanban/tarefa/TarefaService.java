@@ -42,6 +42,7 @@ public class TarefaService {
     private final TarefaEtapaHistoricoRepository tarefaEtapaHistoricoRepository;
     private final TarefaAuditoriaRepository tarefaAuditoriaRepository;
     private final TarefaImpedimentoHistoricoRepository tarefaImpedimentoHistoricoRepository;
+    private final TarefaObservadorRepository tarefaObservadorRepository;
     private final ProjetoRepository projetoRepository;
     private final WorkflowRepository workflowRepository;
     private final EtapaRepository etapaRepository;
@@ -335,17 +336,33 @@ public class TarefaService {
             tempoImpedimentoTotal += tempoImpedimento;
         }
 
+        List<TarefaDetalheResponse.ObservadorDTO> observadores =
+                tarefaObservadorRepository.findByTarefaId(tarefaId).stream()
+                        .map(o -> TarefaDetalheResponse.ObservadorDTO.builder()
+                                .id(o.getUsuario().getId())
+                                .nome(o.getUsuario().getNome())
+                                .build())
+                        .toList();
+
         return TarefaDetalheResponse.builder()
                 .id(tarefa.getId())
                 .titulo(tarefa.getTitulo())
                 .descricaoEscopo(tarefa.getDescricaoEscopo())
                 .etapaAtualId(tarefa.getEtapaAtual().getId())
+                .etapaAtualNome(tarefa.getEtapaAtual().getNome())
                 .raiaId(tarefa.getRaia().getId())
+                .raiaNome(tarefa.getRaia().getNome())
                 .responsavelId(tarefa.getResponsavel() != null ? tarefa.getResponsavel().getId() : null)
+                .responsavelNome(tarefa.getResponsavel() != null ? tarefa.getResponsavel().getNome() : null)
                 .iniciada(tarefa.isIniciada())
                 .impedida(tarefa.isImpedida())
+                .impedidaDesde(tarefa.getImpedidaDesde())
+                .criadoEm(tarefa.getCriadoEm())
+                .criadoPorId(tarefa.getCriadoPor().getId())
+                .criadoPorNome(tarefa.getCriadoPor().getNome())
                 .historicoEtapas(historicoETAs)
                 .tempoImpedimentoTotalSegundos(tempoImpedimentoTotal)
+                .observadores(observadores)
                 .build();
     }
 
@@ -500,11 +517,21 @@ public class TarefaService {
      * agregando os registros gravados em TASK-04.2/04.3 e nesta task.
      */
     @Transactional(readOnly = true)
-    public List<TarefaAuditoria> obterAuditoria(UUID tarefaId) {
-        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+    public List<com.crudao.kanban.tarefa.dto.TarefaAuditoriaResponse> obterAuditoria(UUID tarefaId) {
+        tarefaRepository.findById(tarefaId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
 
-        return tarefaAuditoriaRepository.findByTarefaIdOrderByDataHoraAsc(tarefaId);
+        return tarefaAuditoriaRepository.findByTarefaIdOrderByDataHoraAsc(tarefaId).stream()
+                .map(a -> com.crudao.kanban.tarefa.dto.TarefaAuditoriaResponse.builder()
+                        .id(a.getId())
+                        .campo(a.getCampo())
+                        .valorAnterior(a.getValorAnterior())
+                        .valorNovo(a.getValorNovo())
+                        .dataHora(a.getDataHora())
+                        .autorId(a.getAutor().getId())
+                        .autorNome(a.getAutor().getNome())
+                        .build())
+                .toList();
     }
 
     /**
